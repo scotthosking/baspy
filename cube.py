@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # Filename: cube.py
 
-#test
-
 import numpy as np
 import iris
 import iris.coord_categorisation
