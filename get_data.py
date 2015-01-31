@@ -186,7 +186,6 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 		### distinguish between ensemble memebers
 		for j in range(0,len(fnames)):
 			dirfilename = cmip5_dir + dir + fnames[j]
-			print(dirfilename)
 			### contraint by var_name
 			var_name_con = iris.Constraint(cube_func=lambda cube: cube.var_name == var)
 			cube = iris.load_cube(dirfilename, callback=cmip5_callback, constraint=var_name_con)

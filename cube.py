@@ -43,7 +43,7 @@ def months2annual(cube):
 	with iris.FUTURE.context(cell_datetime_objects=False):
 		spans_twelve_months = lambda t: (t.bound[1] - t.bound[0]) > 12 * 29.
 		twelve_months_bound = iris.Constraint(time=spans_twelve_months)
-		complete_annual = seasons.extract(twelve_months_bound)
+		complete_annual = annual.extract(twelve_months_bound)
 
 	return complete_annual
 
