@@ -11,6 +11,13 @@ import baspy as bp
 import iris
 import iris.coords as coords
 
+### Create folder for storing data
+baspy_path = os.path.expanduser("~/.baspy")
+os.makedirs(baspy_path)
+
+### Directories
+cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
+
 
 def erai_filenames(start_date, end_date, level_str):
 	"""
@@ -48,20 +55,19 @@ def erai_filenames(start_date, end_date, level_str):
 def cmip5_catalogue(refresh=None):
 	"""
 	
-	If refresh = True then refresh CMIP5 cataloge
-	Otherwise just just read in cataloge
-	
+	Read CMIP5 catalogue for JASMIN
 	   >>> cat = cmip5_catalogue()
+	   
+	refresh = True: refresh CMIP5 cataloge
+	   >>> cat = cmip5_catalogue(refresh=True)
 	   
 	"""
 	
 	### Location of catologue file
-	cat_file = 'cmip5_catalogue.txt'
+	cat_file = baspy_path+'/cmip5_catalogue.txt'
 	
 	if (refresh == True):
 	
-		cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
-
 		### Get paths for all CMIP5 models and their experiments
 		dirs = glob.glob(cmip5_dir+'/*/*/*/*/*/Amon/*/latest/*')
 		dirs = filter(lambda f: os.path.isdir(f), dirs)
@@ -111,31 +117,6 @@ def cmip5_catalogue(refresh=None):
 
 
 
-def cmip5_dirs(model, experiment, var, run_id):
-	cmip5_dir = '/badc/cmip5/data/cmip5/output1'
-	
-	### Get paths for all CMIP5 models and their experiments
-	dirs = glob.glob(cmip5_dir+'/*/*/*')
-	dirs = filter(lambda f: os.path.isdir(f), dirs)
-	
-	### Convert list to numpy array
-	dirs = np.array(dirs, dtype=str)
-	
-	### Only return paths where experiment exists
-	center = np.chararray(len(dirs), itemsize=14)
-	model  = np.chararray(len(dirs), itemsize=14)
-	exp    = np.chararray(len(dirs), itemsize=14)
-	
-	for i in range(0,len(dirs)):
-		split_str = re.split('/',dirs[i])
-		center_str[i] = split_str[6]
-		model_str[i]  = split_str[7]
-		exp_str[i]    = split_str[8]
-	
-	ind = ( (exp_str == experiment) & (model_str == model) )
-	
-	return dirs[ind]
-
 
 ### callback definitions should always take this form (cube, field, filename)
 def cmip5_callback(cube, field, filename):
@@ -151,25 +132,20 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def cmip5_model_ensemble(START_YEAR, END_YEAR, directory, var): # height
+def cmip5_cubes(START_YEAR, END_YEAR, filt_cat):
 	"""
 	Get CMIP5 data and create multi-ensemble mean for 
 	one specified experiment & experiment & variable
 	"""
-	## Specify directory and filenames
-	runs_dir = directory+"/mon/atmos/Amon/"
 	
-	### Create list of all runs in dir
-	listdirs = os.listdir(runs_dir)
-	runs = []
-	for f in listdirs:
-		### only use dirs which start with r and have data for specified variable
-		if all([f.startswith('r'), os.path.exists(runs_dir+f+"/latest/"+var)]):
-			runs = runs + [f]
+	for i in range(0,len(filt_cat)):
 	
-	for i in range(0,len(runs)):
-		print(directory + ' ' + runs[i])
-		var_dir = runs[i]+"/latest/"+var+"/"
+		dir = cmip5_dir+"/"+filt_cat['Centre']+"/"+filt_cat['Model']+"/"
+				+filt_cat['Experiment']+"/"+filt_cat['Frequency']+"/"+filt_cat['SubModel']
+				+"/Amon/"+filt_cat['RunID']+"/"+filt_cat['Var']+"/"
+		
+		print(dir)
+		
 		netcdfs = os.listdir(runs_dir + var_dir)
 		
 		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 have duplicated data, both in one
@@ -223,31 +199,7 @@ def cmip5_model_ensemble(START_YEAR, END_YEAR, directory, var): # height
 			cubelist2 = iris.cube.CubeList([cube])
 		else:
 			cubelist2.extend([cube])
-		
-		#### mon-->season (or annual)
-		#if any( [period == 'DJF',period == 'MAM',period == 'JJA',period == 'SON',period == 'ANN'] ):
-						
-			#if any( [period == 'ANN'] ):
-				#cube = bp.cube.months2annual(cube)
-			#else:
-				#cube = bp.cube.months2seasons(cube)
-			
-				#### Extract specified season
-				#cube = cube.extract(iris.Constraint(clim_season=season))
 
-				#### Extract period only
-				#con = iris.Constraint(season_year=lambda y: START_YEAR <= y <= END_YEAR)
-				#cube = cube.extract(con)
-
-			#### Create time average over record
-			#cube = cube.collapsed(['time'], iris.analysis.MEAN)
-					
-			#### Create a cubelist from cubes
-			#if (i == 0): 
-				#cubelist2 = iris.cube.CubeList([cube])
-			#else:
-				#cubelist2.extend([cube])
-		
 	### Return cube
 	return cubelist2, runs
 
