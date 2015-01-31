@@ -5,7 +5,7 @@ import iris
 
 def wrf2cube(filename):
 	"""
-	Download ERA-Interim forcing for WRF
+	Read in WRF data into cube
 	"""
 	print 'read wrfout file into cube'
 
