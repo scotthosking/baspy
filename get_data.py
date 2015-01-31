@@ -13,7 +13,8 @@ import iris.coords as coords
 
 ### Create folder for storing data
 baspy_path = os.path.expanduser("~/.baspy")
-os.makedirs(baspy_path)
+if not os.path.exists(baspy_path):
+	os.makedirs(baspy_path)
 
 ### Directories
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
@@ -132,50 +133,63 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def cmip5_cubes(START_YEAR, END_YEAR, filt_cat):
+def cmip5_cubes(filt_cat, file_yr_range=None):
 	"""
 	Get CMIP5 data and create multi-ensemble mean for 
 	one specified experiment & experiment & variable
+
+	Use file_yr_range to read only files which include fields within range, 
+	this will help reduce the number of files read.
+	* file_yr_range = [1979,1981]
+
 	"""
 	
-	for i in range(0,len(filt_cat)):
-	
-		dir = cmip5_dir+"/"+filt_cat['Centre']+"/"+filt_cat['Model']+"/"
-				+filt_cat['Experiment']+"/"+filt_cat['Frequency']+"/"+filt_cat['SubModel']
-				+"/Amon/"+filt_cat['RunID']+"/"+filt_cat['Var']+"/"
+	for i in range(0,filt_cat.size):
+                
+                filt = np.array(filt_cat)	
+		if (filt.size > 1): filt = filt[i]
+
+		dir = ( ''+str(filt['Centre'])+'/'
+			''+str(filt['Model'])+'/'
+			''+str(filt['Experiment'])+'/'
+			''+str(filt['Frequency'])+'/'
+			''+str(filt['SubModel'])+'/Amon/'
+			''+str(filt['RunID'])+'/latest/'
+			''+str(filt['Var'])+'/' )
 		
-		print(dir)
-		
-		netcdfs = os.listdir(runs_dir + var_dir)
-		
+		netcdfs = os.listdir(cmip5_dir + dir)
+		run = str(filt['RunID'])
+		var = str(filt['Var'])
+
 		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 have duplicated data, both in one
 		###					netcdf file and split-up amoung many files 
 		if ( all( [len(netcdfs) > 1
-				,'tas_Amon_IPSL-CM5A-LR_amip_'+runs[i]+'_197901-200912.nc' in netcdfs] )):
-			print('>> DODGY FIX for '+model+' '+runs[i]+' <<')
-			netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+runs[i]+'_197901-200912.nc']
+				,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' in netcdfs] )):
+			print('>> DODGY FIX for '+model+' '+run+' <<')
+			netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc']
 		
 		### make sure that the run id is present in all your 
 		### netcdf filenames and that files endswith '.nc' 
 		### (Note: EC-Earth also has '*.nc4' files present)
-		run_nc = []
+		fnames = []
 		for nc in netcdfs:
-			if all([runs[i] in nc, nc.endswith('.nc')]): 
+			if all([run in nc, nc.endswith('.nc')]): 
 				### Filter out nc files which end before 1979
 				### (Also fixes problem with time coord in EC-Earth files pre-1950ish)
 				file_last_yr = np.float(nc[-9:-3])
-				if (file_last_yr >= ((START_YEAR-1)*100.+ 12.) ): run_nc = run_nc + [nc]
-			if (runs[i] not in nc): 
-				print('>> Misplaced netcdf files found in '+runs_dir+var_dir+' <<')
+				if (file_yr_range != None):
+					if (file_last_yr >= ((file_yr_range[0]-1)*100.+ 12.) ): fnames = fnames + [nc]
+			if (run not in nc): 
+				print('>> Misplaced netcdf files found in '+dir+' <<')
 		
 		### Read data with callback to add Experiment (Run) ID to 
 		### distinguish between ensemble memebers
-		for j in range(0,len(run_nc)):
-			filename = runs_dir + var_dir + run_nc[j]
+		for j in range(0,len(fnames)):
+			dirfilename = cmip5_dir + dir + fnames[j]
+			print(dirfilename)
 			### contraint by var_name
 			var_name_con = iris.Constraint(cube_func=lambda cube: cube.var_name == var)
-			cube = iris.load_cube(filename, callback=cmip5_callback, constraint=var_name_con)
-			
+			cube = iris.load_cube(dirfilename, callback=cmip5_callback, constraint=var_name_con)
 			### Remove attributes to enable cubes to concatenate
 			cube.attributes.clear()
 		
@@ -191,8 +205,8 @@ def cmip5_cubes(START_YEAR, END_YEAR, filt_cat):
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
 		
 		#### Extract period only
-		con = iris.Constraint(season_year=lambda y: START_YEAR <= y <= END_YEAR)
-		cube = cube.extract(con)
+		#con = iris.Constraint(season_year=lambda y: START_YEAR <= y <= END_YEAR)
+		#cube = cube.extract(con)
 		
 		#### Create a cubelist from cubes
 		if (i == 0): 
@@ -201,6 +215,6 @@ def cmip5_cubes(START_YEAR, END_YEAR, filt_cat):
 			cubelist2.extend([cube])
 
 	### Return cube
-	return cubelist2, runs
+	return cubelist2
 
 # End of get_data.py
