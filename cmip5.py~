@@ -1,0 +1,111 @@
+#!/usr/bin/python
+# Filename: get_data.py
+
+import os
+import iris
+
+### Directories
+# if (machine == 'jasmin'): cmip5_dir = '/badc/cmip5/data/cmip5/output1'
+
+def get_data(model, experiment):
+	"""
+	Get data:
+	ERA-Interim, CMIP5 etc on both
+	BAS and JASMIN machines
+	"""
+	return cubelist
+
+
+def cmip5_model_ensemble(exp, model_dir, model, var, season): # height, frequency
+	"""
+	Get CMIP5 data and create multi-ensemble mean for 
+	one specified experiment & experiment & variable
+	"""
+	### Specify directory and filenames
+	exp_dir  = cmip5_dir + model_dir + "/"
+	runs_dir = exp+"/mon/atmos/Amon/"
+	
+	### Create list of all runs in dir
+	listdirs = os.listdir(exp_dir + runs_dir)
+	runs = []
+	for f in listdirs:
+		### only use dirs which start with r and have data for specified variable
+		if all([f.startswith('r'), os.path.exists(exp_dir+runs_dir+f+"/latest/"+var)]):
+			runs = runs + [f]
+		
+	for i in range(0,len(runs)):
+		print(exp + ' ' + model + ' ' + runs[i])
+		var_dir = runs[i]+"/latest/"+var+"/"
+		netcdfs = os.listdir(exp_dir + runs_dir + var_dir)
+		
+		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 have duplicated data, both in one
+		###					netcdf file and split-up amoung many files 
+		if ( all( [len(netcdfs) > 1
+				,'tas_Amon_IPSL-CM5A-LR_amip_'+runs[i]+'_197901-200912.nc' in netcdfs] )):
+			print('>> DODGY FIX for '+model+' '+runs[i]+' <<')
+			netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+runs[i]+'_197901-200912.nc']
+		
+		### make sure that the run id is present in all your 
+		### netcdf filenames and that files endswith '.nc' 
+		### (Note: EC-Earth also has '*.nc4' files present)
+		run_nc = []
+		for nc in netcdfs:
+			if all([runs[i] in nc, nc.endswith('.nc')]): 
+				### Filter out nc files which end before 1979
+				### (Also fixes problem with time coord in EC-Earth files pre-1950ish)
+				end_yr   = np.float(nc[-9:-3])
+				if (end_yr >= 197812.): run_nc = run_nc + [nc]
+			if (runs[i] not in nc): 
+				print('>> Misplaced netcdf files found in '+exp_dir+runs_dir+var_dir+' <<')
+		
+		### Read data with callback to add Experiment (Run) ID to 
+		### distinguish between ensemble memebers
+		for j in range(0,len(run_nc)):
+			filename = exp_dir + runs_dir + var_dir + run_nc[j]
+			### contraint by var_name
+			var_name_con = iris.Constraint(cube_func=lambda cube: cube.var_name == var)
+			cube = iris.load_cube(filename, callback=cmip5_callback, constraint=var_name_con)
+			
+			### Remove attributes to enable cubes to concatenate
+			cube.attributes.clear()
+		
+			if (j == 0): cubelist1 = iris.cube.CubeList([cube])
+			if (j > 0):  cubelist1.extend([cube])
+		
+		### Change reference time of cubes so times match in order to 
+		### encourage cubes to concatenate
+		iris.util.unify_time_units(cubelist1)
+		
+		### if the number of netcdf files (and cubes) >1 then 
+		### merge them together
+		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
+		
+
+
+		#??
+		### mon-->season
+		cube = season_agg(cube)
+		
+		### Extract specified season
+		cube = cube.extract(iris.Constraint(clim_season=season))
+
+
+		
+		#???
+		### Extract 1979 to 2005 only
+		con = iris.Constraint(season_year=lambda y: 1979 <= y <= 2005)
+		cube = cube.extract(con)
+
+		### Create time average over record
+		cube = cube.collapsed(['time'], iris.analysis.MEAN)
+				
+		### Create a cubelist from cubes
+		if (i == 0): 
+			cubelist2 = iris.cube.CubeList([cube])
+		else:
+			cubelist2.extend([cube])
+		
+	### Return cube
+	return cubelist2, runs
+
+# End of get_data.py
