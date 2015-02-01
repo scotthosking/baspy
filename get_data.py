@@ -168,7 +168,7 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 		###					netcdf file and split-up amoung many files 
 		if ( all( [ len(netcdfs) > 1
 				,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' in netcdfs] )):
-			print('>> DODGY FIX for '+model+' '+run+' <<')
+			print('>> Fix for '+model+' '+run+' <<')
 			netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc']
 		
 		### make sure that the run id is present in all your 
