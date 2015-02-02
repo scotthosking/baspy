@@ -143,7 +143,9 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 	* file_yr_range = [1979,1981]
 
 	"""
-	
+
+	filt_cat = np.array(filt_cat)
+		
 	for i in range(0,filt_cat.size):
                 
                 filt = np.array(filt_cat)	
@@ -158,42 +160,55 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 			''+str(filt['Var'])+'/' )
 		
 		netcdfs = os.listdir(cmip5_dir + dir)
-
 		if (netcdfs.__class__ == 'str'): netcdfs = [netcdfs]
-	
-		run = str(filt['RunID'])
-		var = str(filt['Var'])			
+		
+		model = str(filt['Model'])	
+		run   = str(filt['RunID'])
+		var   = str(filt['Var'])			
+		
+		print(dir)
 
-		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 have duplicated data, both in one
-		###					netcdf file and split-up amoung many files 
+		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 
+		### have duplicated data, both in one netcdf file and 
+		### split-up amoung many files 
 		if ( all( [ len(netcdfs) > 1
-				,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' in netcdfs] )):
+			,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' 
+			in netcdfs] )):
 			print('>> Fix for '+model+' '+run+' <<')
 			netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc']
 		
-		### make sure that the run id is present in all your 
-		### netcdf filenames and that files endswith '.nc' 
-		### (Note: EC-Earth also has '*.nc4' files present)
+		### Remove files from chararray where run id not in 
+		### netcdf filenames or remove files that end with '.nc4' 
+		### (Note: EC-Earth has '*.nc4' files present)
+		del_netcdfs = []	
 		for nc in netcdfs:
-			if all([run in nc, nc.endswith('.nc')]): 
-				### Filter out nc files which lie outisde file_yr_range
-				if (file_yr_range != None):
-					file_last_yr  = np.float(nc[-9:-3])
-					file_first_yr = np.float(nc[-16:-10])
-					if (file_last_yr  < ((file_yr_range[0]*100) +1) ):
-						netcdfs.remove(nc)
-					if (file_first_yr > ((file_yr_range[1]*100)+12) ):
-						netcdfs.remove(nc)
-			if (run not in nc): 
-				print('>> Misplaced netcdf files found in '+dir+' <<')
-	
+ 			if (run not in nc): 
+                                print('>> WARNING: Detected misplaced files'
+					' in '+dir+' <<')
+			if any([run not in nc, nc.endswith('.nc4')]):
+				del_netcdfs.append(nc)
+			### Filter out nc files which lie outisde file_yr_range
+			if (file_yr_range != None):
+				file_last_yr  = np.float(nc[-9:-3])
+				file_first_yr = np.float(nc[-16:-10])
+				if (file_last_yr  < ((file_yr_range[0]*100) +1) ):
+					del_netcdfs.append(nc)
+				if (file_first_yr > ((file_yr_range[1]*100)+12) ):
+					del_netcdfs.append(nc)
+
+		### Remove netcdfs according to del_netcdfs
+		for k in del_netcdfs: 
+			if (k in netcdfs): netcdfs.remove(k)
+
 		### Read data with callback to add Experiment (Run) ID to 
 		### distinguish between ensemble memebers
 		for j in netcdfs:
 			dirfilename = cmip5_dir + dir + j
 			### contraint by var_name
-			var_name_con = iris.Constraint(cube_func=lambda cube: cube.var_name == var)
-			cube = iris.load_cube(dirfilename, callback=cmip5_callback, constraint=var_name_con)
+			con  = iris.Constraint(
+				cube_func=lambda cube: cube.var_name == var)
+			cube = iris.load_cube(dirfilename, callback=cmip5_callback,
+				constraint=con)
 			### Remove attributes to enable cubes to concatenate
 			cube.attributes.clear()
 		
@@ -207,10 +222,6 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
-		
-		#### Extract period only
-		#con = iris.Constraint(season_year=lambda y: START_YEAR <= y <= END_YEAR)
-		#cube = cube.extract(con)
 		
 		#### Create a cubelist from cubes
 		if (i == 0): 
