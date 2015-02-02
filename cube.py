@@ -76,4 +76,34 @@ def unify_dim_coords(cubelist, cube_template, dimensions):
 		if (edits > 0): print "unify_dim_coords: "+str(edits)+" edits to dim_coords["+str(j)+"]"
 	return cubelist
 
+
+
+def rm_time_overlaps(cubelist):
+	"""
+	Remove time overlaps from a cubelist
+	keeping the duplicated period from the cube that
+	comes before the two within the cubelist
+	"""	
+	if (cubelist.__class__ != iris.cube.CubeList):
+		print('not a cubelist')	
+		return cubelist
+
+	### Unify time coordinates to identify overlaps
+	iris.util.unify_time_units(cubelist)
+
+	for i in range(0,len(cubelist)-1):
+        	num1 = cubelist[i].coord('time').points
+		num2 = cubelist[i+1].coord('time').points
+		max1 = np.max(num1)
+		min2 = np.min(num2)
+
+		if (min2 <= max1):
+			print('>>> WARNING: Removing temporal overlaps'
+				' from cubelist <<<')
+			con = iris.Constraint(time=lambda t: t > max1)
+			cubelist[i+1] = cubelist[i+1].extract(con)
+
+	return cubelist
+
+
 # End of cube.py

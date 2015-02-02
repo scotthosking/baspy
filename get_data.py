@@ -133,7 +133,7 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def cmip5_cubes(filt_cat, file_yr_range=None):
+def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 	"""
 	Get CMIP5 data and create multi-ensemble mean for 
 	one specified experiment & experiment & variable
@@ -207,11 +207,13 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 			### contraint by var_name
 			con  = iris.Constraint(
 				cube_func=lambda cube: cube.var_name == var)
+			if (level_constraints != None): con = con & level_constraints
 			cube = iris.load_cube(dirfilename, callback=cmip5_callback,
 				constraint=con)
 			### Remove attributes to enable cubes to concatenate
 			cube.attributes.clear()
-		
+			
+			### Create cubelist from cubes
 			if (j == netcdfs[0]): cubelist1 = iris.cube.CubeList([cube])
 			if (j != netcdfs[0]): cubelist1.extend([cube])
 		
@@ -219,6 +221,9 @@ def cmip5_cubes(filt_cat, file_yr_range=None):
 		### encourage cubes to concatenate
 		iris.util.unify_time_units(cubelist1)
 		
+		### Remove temporal overlaps
+		cubelist1 = bp.cube.rm_time_overlaps(cubelist1)
+	
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
