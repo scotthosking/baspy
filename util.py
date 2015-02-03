@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Filename: cube.py
+# Filename: util.py
 
 import numpy as np
 import iris
@@ -50,30 +50,47 @@ def months2annual(cube):
 
 
 
-def unify_dim_coords(cubelist, cube_template, dimensions):
+def unify_grid_coords(cubelist, cube_template):
 	"""
 	If cube[i].dim_coords[n] != cube[j].dim_coords[n] but you know that 
 	they are on the same grid then place all cubes on an identical 
 	grid (matching cube[0])
 	
 	Usage:
-		unify_dim_coords(cubelist, cube_template, dimensions)
+		unify_grid_coords(cubelist, cube_template, dimensions)
 		
 	Example:
-		unify_dim_coords(my_cubes, my_cubes[0], [1,2])
+		unify_grid_coords(my_cubes, my_cubes[0], [1,2])
 		
 	"""
-	for j in dimensions:
+
+	if (cube_template.__class__ != iris.cube.Cube):
+		print('cube_template is not a cube')
+		return cubelist
+
+	if (cubelist.__class__ == iris.cube.CubeList):
+		n_cubes = len(cubelist)
+
+	if (cubelist.__class__ == iris.cube.Cube):
+		n_cubes = 1
+	
+	for j in ['latitude','longitude']:
 		edits = 0
-		A =  cube_template.dim_coords[j]
-		for i in range(1,len(cubelist)):
-			B =  cubelist[i].dim_coords[j]
+		A =  cube_template.coords(j)[0]
+		for i in range(0,n_cubes):
+			
+			if (cubelist.__class__ == iris.cube.CubeList): B =  cubelist[i].coords(j)[0]
+			if (cubelist.__class__ == iris.cube.Cube):     B =  cubelist.coords(j)[0]			
+			
 			if ((A != B) & (A.points.shape == B.points.shape)):
 				if (np.max(np.abs(A.points - B.points)) < 0.001):
 					edits = edits + 1
-					cubelist[i].dim_coords[j].points = cubelist[0].dim_coords[j].points
-					cubelist[i].dim_coords[j].bounds = cubelist[0].dim_coords[j].bounds
-		if (edits > 0): print "unify_dim_coords: "+str(edits)+" edits to dim_coords["+str(j)+"]"
+					B.points = A.points
+					B.bounds = A.bounds
+		
+		if (edits > 0): 
+			print ">>> unify_grid_coords: "+str(edits)+" edits to coords["+str(j)+"] <<<"
+		
 	return cubelist
 
 
@@ -85,25 +102,40 @@ def rm_time_overlaps(cubelist):
 	comes before the two within the cubelist
 	"""	
 	if (cubelist.__class__ != iris.cube.CubeList):
-		print('not a cubelist')	
 		return cubelist
-
+	
+	if (len(cubelist) == 1): return cubelist
+	
+	### add check that all cubes are of the same var, exp etc !!!!
+	#
+	# TO DO !
+	#
+	
 	### Unify time coordinates to identify overlaps
 	iris.util.unify_time_units(cubelist)
+	
+	### Sort cubelist by start year !!!!
+	#
+	# TO DO !
+	#
 
-	for i in range(0,len(cubelist)-1):
-        	num1 = cubelist[i].coord('time').points
-		num2 = cubelist[i+1].coord('time').points
-		max1 = np.max(num1)
-		min2 = np.min(num2)
+	i = 1
+	while i < len(cubelist):
 
+		max1 = np.max(cubelist[i-1].coord('time').points)
+		min2 = np.min(cubelist[i].coord('time').points)
+		
 		if (min2 <= max1):
 			print('>>> WARNING: Removing temporal overlaps'
-				' from cubelist <<<')
+					' from cubelist <<<')
 			con = iris.Constraint(time=lambda t: t > max1)
-			cubelist[i+1] = cubelist[i+1].extract(con)
+			cubelist[i] = cubelist[i].extract(con)
 
+		if (cubelist[i].__class__ != iris.cube.Cube):
+			cubelist.pop(i)
+		else:
+			i = i + 1
+	
 	return cubelist
 
-
-# End of cube.py
+# End of util.py

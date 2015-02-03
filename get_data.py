@@ -171,11 +171,11 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 
 		### have duplicated data, both in one netcdf file and 
 		### split-up amoung many files 
-		if ( all( [ len(netcdfs) > 1
-			,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' 
-			in netcdfs] )):
-			print('>> Fix for '+model+' '+run+' <<')
-			netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc']
+		#if ( all( [ len(netcdfs) > 1
+			#,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' 
+			#in netcdfs] )):
+			#print('>> Fix for '+model+' '+run+' <<')
+			#netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc']
 		
 		### Remove files from chararray where run id not in 
 		### netcdf filenames or remove files that end with '.nc4' 
@@ -222,7 +222,10 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 		iris.util.unify_time_units(cubelist1)
 		
 		### Remove temporal overlaps
-		cubelist1 = bp.cube.rm_time_overlaps(cubelist1)
+		cubelist1 = bp.util.rm_time_overlaps(cubelist1)
+
+		### Unify lat-lon grid
+		cubelist1 = bp.util.unify_grid_coords(cubelist1, cubelist1[0])
 	
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
