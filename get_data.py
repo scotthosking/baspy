@@ -14,10 +14,32 @@ import iris.coords as coords
 ### Create folder for storing data
 baspy_path = os.path.expanduser("~/.baspy")
 if not os.path.exists(baspy_path):
-	os.makedirs(baspy_path)
+	os.makedirs(os.path.expanduser(baspy_path))
 
 ### Directories
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
+
+def eg_cube():
+	""" 
+	Load an example cube
+	"""
+	cube = iris.load_cube(cmip5_dir + 
+			'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
+			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc')
+	return cube
+
+
+def eg_cubelist():
+	"""
+	Load an example cubelist
+	"""
+	cubelist = iris.load(
+			[cmip5_dir+'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
+			'psl/psl_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc', 
+			cmip5_dir +'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
+			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc']
+			)
+	return cubelist
 
 
 def erai_filenames(start_date, end_date, level_str):
@@ -127,7 +149,7 @@ def cmip5_callback(cube, field, filename):
     label = split_str[4]
     
     # Create a coordinate with the experiment label in it
-    exp_coord = coords.AuxCoord(label, long_name='Experiment', units='no_unit')
+    exp_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
     # and add it to the cube
     cube.add_aux_coord(exp_coord)
     
@@ -144,13 +166,13 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 
 	"""
 
-	filt_cat = np.array(filt_cat)
+	if (filt_cat.__class__ != np.ndarray):
+		filt_cat = np.array(filt_cat)
 		
-	for i in range(0,filt_cat.size):
-                
-                filt = np.array(filt_cat)	
-		if (filt.size > 1): filt = filt[i]
-
+	for i in range(0,len(filt_cat)):
+		
+		filt = np.array(filt_cat[i])
+		
 		dir = ( ''+str(filt['Centre'])+'/'
 			''+str(filt['Model'])+'/'
 			''+str(filt['Experiment'])+'/'
@@ -183,7 +205,7 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 		del_netcdfs = []	
 		for nc in netcdfs:
  			if (run not in nc): 
-                                print('>> WARNING: Detected misplaced files'
+					print('>> WARNING: Detected misplaced files'
 					' in '+dir+' <<')
 			if any([run not in nc, nc.endswith('.nc4')]):
 				del_netcdfs.append(nc)
@@ -226,7 +248,7 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 
 		### Unify lat-lon grid
 		cubelist1 = bp.util.unify_grid_coords(cubelist1, cubelist1[0])
-	
+		
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)

@@ -65,8 +65,8 @@ def unify_grid_coords(cubelist, cube_template):
 	"""
 
 	if (cube_template.__class__ != iris.cube.Cube):
-		print('cube_template is not a cube')
-		return cubelist
+		raise ValueError('cube_template is not a cube')
+
 
 	if (cubelist.__class__ == iris.cube.CubeList):
 		n_cubes = len(cubelist)
@@ -83,6 +83,7 @@ def unify_grid_coords(cubelist, cube_template):
 			if (cubelist.__class__ == iris.cube.Cube):     B =  cubelist.coords(j)[0]			
 			
 			if ((A != B) & (A.points.shape == B.points.shape)):
+				print('>>> Grid coordinates are different between cubes <<<')
 				if (np.max(np.abs(A.points - B.points)) < 0.001):
 					edits = edits + 1
 					B.points = A.points
@@ -114,7 +115,7 @@ def rm_time_overlaps(cubelist):
 	### Unify time coordinates to identify overlaps
 	iris.util.unify_time_units(cubelist)
 	
-	### Sort cubelist by start year !!!!
+	### Sort cubelist by start time !!!!
 	#
 	# TO DO !
 	#

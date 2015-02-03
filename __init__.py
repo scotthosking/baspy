@@ -18,4 +18,4 @@ Created by:   Scott H
 from baspy import (util,get_data,wrf)
 
 ### BASpy version number
-__version__ = "0.01"
+__version__ = "0.2"
