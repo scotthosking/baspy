@@ -87,12 +87,14 @@ def cmip5_catalogue(refresh=None):
 	"""
 	
 	### Location of catologue file
-	cat_file = baspy_path+'/cmip5_catalogue.txt'
+	cat_file = baspy_path+'/cmip5_catalogue.npy'
 	
 	if (refresh == True):
 	
 		### Get paths for all CMIP5 models and their experiments
-		dirs = glob.glob(cmip5_dir+'/*/*/*/*/*/Amon/*/latest/*')
+		dirs = glob.glob(cmip5_dir+'*/*/*/*/atmos/Amon/*/latest/*')
+		dirs2 = glob.glob(cmip5_dir+'*/*/*/*/seaIce/OImon/*/latest/*')
+		dirs.extend(dirs2)
 		dirs = filter(lambda f: os.path.isdir(f), dirs)
 
 		### Convert list to numpy array
@@ -104,6 +106,7 @@ def cmip5_catalogue(refresh=None):
 		exp_str      = np.chararray(len(dirs), itemsize=14)
 		freq_str     = np.chararray(len(dirs), itemsize=14)
 		submodel_str = np.chararray(len(dirs), itemsize=14)
+		miptable_str = np.chararray(len(dirs), itemsize=14)
 		run_id_str   = np.chararray(len(dirs), itemsize=14)
 		var_str      = np.chararray(len(dirs), itemsize=14)
 
@@ -114,28 +117,26 @@ def cmip5_catalogue(refresh=None):
 			exp_str[i]      = split_str[8]
 			freq_str[i]     = split_str[9]
 			submodel_str[i] = split_str[10]
+			miptable_str[i] = split_str[11]
 			run_id_str[i]   = split_str[12]
 			var_str[i]      = split_str[14]
 			
 		dt = np.dtype([('Centre', '|S14'), ('Model', '|S14'), ('Experiment', '|S14'), ('Frequency', '|S14'), 
-							('SubModel', '|S14'), ('RunID', '|S14'), ('Var', '|S14') ])
+							('SubModel', '|S14'), ('MIPtable', '|S14'), ('RunID', '|S14'), ('Var', '|S14') ])
 		a = np.zeros(len(dirs), dt)
 		a['Centre']     = centre_str
 		a['Model']      = model_str
 		a['Experiment'] = exp_str
 		a['Frequency']  = freq_str
 		a['SubModel']   = submodel_str
+		a['MIPtable']	= miptable_str
 		a['RunID']      = run_id_str
 		a['Var']        = var_str
 
-		titles = ['Centre', 'Model', 'Experiment', 'Frequency', 'SubModel', 'RunID', 'Var']
-		header = '%-14s %-14s %-14s %-14s %-14s %-14s %-14s' % ( tuple(titles) )
-		header = header+'\n'
-		np.savetxt(cat_file, a, header=header, comments='', fmt='%-14s %-14s %-14s %-14s %-14s %-14s %-14s')
-		
+		np.save(cat_file,a)	
 	else:
 		### Read in CMIP5 catalogue
-		cat = np.genfromtxt(cat_file, names=True, dtype=None)
+		cat = np.load(cat_file)
 		return cat
 
 
@@ -155,14 +156,10 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
+def cmip5_cubes(filt_cat, files_yr_range=None):
 	"""
 	Get CMIP5 data and create multi-ensemble mean for 
 	one specified experiment & experiment & variable
-
-	Use file_yr_range to read only files which include fields within range, 
-	this will help reduce the number of files read.
-	* file_yr_range = [1979,1981]
 
 	"""
 
@@ -177,7 +174,8 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 			''+str(filt['Model'])+'/'
 			''+str(filt['Experiment'])+'/'
 			''+str(filt['Frequency'])+'/'
-			''+str(filt['SubModel'])+'/Amon/'
+			''+str(filt['SubModel'])+'/'
+			''+str(filt['MIPtable'])+'/'
 			''+str(filt['RunID'])+'/latest/'
 			''+str(filt['Var'])+'/' )
 		
@@ -189,15 +187,6 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 		var   = str(filt['Var'])			
 		
 		print(dir)
-
-		### SPECIAL CASE: AMIP IPSL-CM5A-LR r2i1p1 & r3i1p1 
-		### have duplicated data, both in one netcdf file and 
-		### split-up amoung many files 
-		#if ( all( [ len(netcdfs) > 1
-			#,'tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc' 
-			#in netcdfs] )):
-			#print('>> Fix for '+model+' '+run+' <<')
-			#netcdfs = ['tas_Amon_IPSL-CM5A-LR_amip_'+run+'_197901-200912.nc']
 		
 		### Remove files from chararray where run id not in 
 		### netcdf filenames or remove files that end with '.nc4' 
@@ -209,13 +198,13 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 					' in '+dir+' <<')
 			if any([run not in nc, nc.endswith('.nc4')]):
 				del_netcdfs.append(nc)
-			### Filter out nc files which lie outisde file_yr_range
-			if (file_yr_range != None):
+			### Filter out nc files which lie outisde files_yr_range
+			if (files_yr_range != None):
 				file_last_yr  = np.float(nc[-9:-3])
 				file_first_yr = np.float(nc[-16:-10])
-				if (file_last_yr  < ((file_yr_range[0]*100) +1) ):
+				if (file_last_yr  < ((files_yr_range[0]*100) +1) ):
 					del_netcdfs.append(nc)
-				if (file_first_yr > ((file_yr_range[1]*100)+12) ):
+				if (file_first_yr > ((files_yr_range[1]*100)+12) ):
 					del_netcdfs.append(nc)
 
 		### Remove netcdfs according to del_netcdfs
@@ -229,9 +218,13 @@ def cmip5_cubes(filt_cat, file_yr_range=None, level_constraints=None):
 			### contraint by var_name
 			con  = iris.Constraint(
 				cube_func=lambda cube: cube.var_name == var)
-			if (level_constraints != None): con = con & level_constraints
+			
+			### Additional constrains (level, time)
+			#if (constraints != None): con = con & constraints
+			
 			cube = iris.load_cube(dirfilename, callback=cmip5_callback,
-				constraint=con)
+														constraint=con)
+			
 			### Remove attributes to enable cubes to concatenate
 			cube.attributes.clear()
 			
