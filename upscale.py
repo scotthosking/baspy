@@ -51,8 +51,8 @@ def catalogue(refresh=None):
 		
 		for i in range(0,len(dirs)):
 			split_str = re.split('/',dirs[i])
-			JobID_str[i]    = split_str[6]
-			stream_str[i]   = split_str[7]
+			JobID_str[i]    = split_str[4]
+			stream_str[i]   = split_str[5]
 			
 			if ( JobID_str[i] in ['xhqij', 'xhqik', 'xhqil', 'xhqin', 'xhqio'] ):
 				# present_n96
@@ -87,7 +87,7 @@ def catalogue(refresh=None):
 		a['Resolution']  = res_str
 
 		### Remove 'unlabeled' items
-		keep_ind = ( exp_str.startswith('N') )
+		keep_ind = ( res_str.startswith('N') )
 		a = a[keep_ind]
 
 		np.save(cat_file,a)	

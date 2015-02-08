@@ -15,7 +15,7 @@ Created by:   Scott H
 
 """
 
-from baspy import (util,get_data,wrf)
+from baspy import (util,cmip5,erai,upscale,wrf)
 
 ### BASpy version number
-__version__ = "0.2"
+__version__ = "0.3"
