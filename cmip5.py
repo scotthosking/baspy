@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Filename: get_data.py
+# Filename: cmip5.py
 
 import os
 import numpy as np
@@ -18,61 +18,6 @@ if not os.path.exists(baspy_path):
 
 ### Directories
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
-
-def eg_cube():
-	""" 
-	Load an example cube
-	"""
-	cube = iris.load_cube(cmip5_dir + 
-			'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
-			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc')
-	return cube
-
-
-def eg_cubelist():
-	"""
-	Load an example cubelist
-	"""
-	cubelist = iris.load(
-			[cmip5_dir+'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
-			'psl/psl_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc', 
-			cmip5_dir +'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
-			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc']
-			)
-	return cubelist
-
-
-def erai_filenames(start_date, end_date, level_str):
-	"""
-	Get /Path/filenames for ERA-Interim files within date range
-	level_str for JASMIN:
-		'as' surface variables
-		'ap' pressure level variables
-	"""
-	start_datetime = datetime.datetime.strptime(start_date, '%Y-%m-%d_%H%M')
-	end_datetime   = datetime.datetime.strptime(end_date,  '%Y-%m-%d_%H%M')
-	
-	filenames = [] # create an empty list, ready to create list of *.nc filenames
-	date = start_datetime
-	
-	### Get all filenames for all 6 hourly fields between start and end, inclusive
-	while date <= end_datetime:
-		yr       = str(date.year)
-		mon      = str("{:0>2d}".format(date.month))
-		day      = str("{:0>2d}".format(date.day))
-		hr       = str("{:0>2d}".format(date.hour))
-		minute   = str("{:0>2d}".format(date.minute))
-		date_str = ''.join([yr,mon,day,hr,minute])
-		
-		file = '/badc/ecmwf-era-interim/data/gg/as/'+yr+'/'+mon+'/'+day+'/ggas'+date_str+'.nc'
-		
-		filenames.append(file)
-		
-		# Add 6 hours to read in next file
-		time_increment = datetime.timedelta(days=0, hours=6, minutes=0)
-		date = date + time_increment  
-	
-	return filenames
 
 
 def cmip5_catalogue(refresh=None):
@@ -255,4 +200,4 @@ def cmip5_cubes(filt_cat, files_yr_range=None):
 	### Return cube
 	return cubelist2
 
-# End of get_data.py
+# End of cmip5.py

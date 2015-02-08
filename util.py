@@ -5,6 +5,9 @@ import numpy as np
 import iris
 import iris.coord_categorisation
 
+cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
+
+
 def months2seasons(cube):
 	"""
 	Create seasons from monthly data
@@ -138,5 +141,29 @@ def rm_time_overlaps(cubelist):
 			i = i + 1
 	
 	return cubelist
+
+
+def eg_cube():
+	""" 
+	Load an example cube
+	"""
+	cube = iris.load_cube(cmip5_dir + 
+			'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
+			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc')
+	return cube
+
+
+def eg_cubelist():
+	"""
+	Load an example cubelist
+	"""
+	cubelist = iris.load(
+			[cmip5_dir+'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
+			'psl/psl_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc', 
+			cmip5_dir +'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
+			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc']
+			)
+	return cubelist
+
 
 # End of util.py
