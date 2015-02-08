@@ -70,7 +70,8 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 			var_str[i]      = split_str[14]
 			
 		dt = np.dtype([('Centre', '|S14'), ('Model', '|S14'), ('Experiment', '|S14'), ('Frequency', '|S14'), 
-							('SubModel', '|S14'), ('MIPtable', '|S14'), ('RunID', '|S14'), ('Var', '|S14') ])
+							('SubModel', '|S14'), ('MIPtable', '|S14'), ('RunID', '|S14'), 
+							('Var', '|S14') ])
 		a = np.zeros(len(dirs), dt)
 		a['Centre']     = centre_str
 		a['Model']      = model_str
@@ -205,7 +206,7 @@ def get_cubes(filt_cat, files_yr_range=None):
 			#if (constraints != None): con = con & constraints
 			
 			cube = iris.load_cube(dirfilename, callback=cmip5_callback,
-														constraint=con)
+						constraint=con)
 			
 			### Remove attributes to enable cubes to concatenate
 			cube.attributes.clear()
