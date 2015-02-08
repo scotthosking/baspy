@@ -20,7 +20,7 @@ if not os.path.exists(baspy_path):
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def cmip5_catalogue(refresh=None):
+def catalogue(refresh=None):
 	"""
 	
 	Read CMIP5 catalogue for JASMIN
@@ -101,7 +101,7 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def cmip5_cubes(filt_cat, files_yr_range=None):
+def get_cubes(filt_cat, files_yr_range=None):
 	"""
 	Get CMIP5 data and create multi-ensemble mean for 
 	one specified experiment & experiment & variable
