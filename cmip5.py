@@ -20,11 +20,14 @@ if not os.path.exists(baspy_path):
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def catalogue(refresh=None):
+def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=None):
 	"""
 	
-	Read CMIP5 catalogue for JASMIN
+	Read whole CMIP5 catalogue for JASMIN
 	   >>> cat = cmip5_catalogue()
+
+	Read filtered CMIP5 catalogue for JASMIN
+	   >>> cat = cmip5_catalogue(Experiment=['amip','historical'], Var='tas', Frequency=['mon'])
 	   
 	refresh = True: refresh CMIP5 cataloge
 	   >>> cat = cmip5_catalogue(refresh=True)
@@ -79,10 +82,44 @@ def catalogue(refresh=None):
 		a['Var']        = var_str
 
 		np.save(cat_file,a)	
-	else:
-		### Read in CMIP5 catalogue
-		cat = np.load(cat_file)
-		return cat
+	
+	### Read CMIP5 catalogue and filter data
+	cat = np.load(cat_file)
+	use_bool = 0
+	
+	cat_bool = np.zeros(len(cat), dtype=bool)	
+	if (Experiment != None):
+		if (Experiment.__class__ == str): Experiment = [Experiment]
+		for i in range(0,len(Experiment)):
+			cat_bool = np.add(cat_bool, (cat['Experiment'] == Experiment[i]) )
+			use_bool = use_bool + 1
+		cat = cat[cat_bool]	
+		
+	cat_bool = np.zeros(len(cat), dtype=bool)
+	if (Frequency != None): 
+		if (Frequency.__class__ == str): Frequency = [Frequency]
+		for i in range(0,len(Frequency)):
+			cat_bool = np.add(cat_bool, (cat['Frequency'] == Frequency[i]) )
+			use_bool = use_bool + 1
+		cat = cat[cat_bool]
+	
+	cat_bool = np.zeros(len(cat), dtype=bool)
+	if (Model != None): 
+		if (Model.__class__ == str): Model = [Model]
+		for i in range(0,len(Model)):
+			cat_bool = np.add(cat_bool, (cat['Model'] == Model[i]) )
+			use_bool = use_bool + 1
+		cat = cat[cat_bool]
+
+	cat_bool = np.zeros(len(cat), dtype=bool)
+	if (Var != None): 
+		if (Var.__class__ == str): Var = [Var]
+		for i in range(0,len(Var)):
+			cat_bool = np.add(cat_bool, (cat['Var'] == Var[i]) )
+			use_bool = use_bool + 1
+		cat = cat[cat_bool]
+	
+	return cat
 
 
 
