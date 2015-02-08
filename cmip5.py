@@ -97,7 +97,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	if (Experiment != None):
 		if (Experiment.__class__ == str): Experiment = [Experiment]
 		for i in range(0,len(Experiment)):
-			if (Experiment[i] not in all_exp): raise ValueError('Experiment not found. See available: '+all_exp)
+			if (Experiment[i] not in all_exp): raise ValueError('Experiment not found. See available: '+np.array_str(all_exp) )
 			cat_bool = np.add(cat_bool, (cat['Experiment'] == Experiment[i]) )
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]	
@@ -106,7 +106,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	if (Frequency != None): 
 		if (Frequency.__class__ == str): Frequency = [Frequency]
 		for i in range(0,len(Frequency)):
-			if (Frequency[i] not in all_exp): raise ValueError('Frequency not found. See available: '+all_frq)
+			if (Frequency[i] not in all_frq): raise ValueError('Frequency not found. See available: '+np.array_str(all_frq) )
 			cat_bool = np.add(cat_bool, (cat['Frequency'] == Frequency[i]) )
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
@@ -115,7 +115,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	if (Model != None): 
 		if (Model.__class__ == str): Model = [Model]
 		for i in range(0,len(Model)):
-			if (Model[i] not in all_exp): raise ValueError('Model not found. See available: '+all_mod)
+			if (Model[i] not in all_mod): raise ValueError('Model not found. See available: '+np.array_str(all_mod) )
 			cat_bool = np.add(cat_bool, (cat['Model'] == Model[i]) )
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
@@ -124,7 +124,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	if (Var != None): 
 		if (Var.__class__ == str): Var = [Var]
 		for i in range(0,len(Var)):
-			if (Var[i] not in all_exp): raise ValueError('Var not found. See available: '+all_var)
+			if (Var[i] not in all_var): raise ValueError('Var not found. See available: '+np.array_str(all_var) )
 			cat_bool = np.add(cat_bool, (cat['Var'] == Var[i]) )
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
