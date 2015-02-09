@@ -5,4 +5,6 @@
 * git clone https://github.com/shclim/baspy.git
 
 $> ipython
->>> import baspy as bp
+```
+ import baspy as bp
+```
