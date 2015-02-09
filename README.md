@@ -1,5 +1,7 @@
 # baspy
 
+baspy is a python package, and a set of wrappers around Iris (http://scitools.org.uk/iris/).
+
 ### Setup and import package
 
 Setup your PYTHONPATH to point to your directory of python scripts.  Then download (or git clone) baspy python package.
@@ -11,4 +13,15 @@ $> cd $PYTHONPATH
 $> git clone https://github.com/shclim/baspy.git
 $> ipython
 >>> import baspy as bp
+```
+
+### Install Python, Iris using conda
+
+see: http://scitools.org.uk/iris/docs/latest/installing.html
+
+Once you have installed miniconda you can then use these commands to install iris and ipython (tested for Ubuntu 14.04 64-bit)
+
+```
+$> conda install -c scitools iris
+$> conda install ipython
 ```

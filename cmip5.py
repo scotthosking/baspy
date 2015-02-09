@@ -150,13 +150,17 @@ def cmip5_callback(cube, field, filename):
     
 def get_cubes(filt_cat, files_yr_range=None):
 	"""
-	Get CMIP5 data and create multi-ensemble mean for 
-	one specified experiment & experiment & variable
-
+	Use filtered catalogue of CMIP5 data and return a CubeList
+	
+	>>> cat = bp.cmip5.catalogue(Experiment='historical', Frequency='mon', Var='psl')
+	>>> cubelist = bp.cmip5.get_cubes(cat)
+	
 	"""
 
-	if (filt_cat.__class__ != np.ndarray):
-		filt_cat = np.array(filt_cat)
+	### if filt_cat has only one element then 
+	### convert to array
+	if (filt_cat.__class__ == np.void):
+		filt_cat = np.array([filt_cat])
 		
 	for i in range(0,len(filt_cat)):
 		
