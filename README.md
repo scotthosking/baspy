@@ -1,6 +1,6 @@
 # baspy
 
-## Setup 
+### Setup 
 
 * Setup your PYTHONPATH to point to your directory of python scripts.
 * cd $PYTHONPATH
