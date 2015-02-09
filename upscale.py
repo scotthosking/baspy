@@ -71,7 +71,7 @@ def catalogue(refresh=None):
 			
 			if ( JobID_str[i] in ['xhqij', 'xhqik', 'xhqil', 'xhqin', 'xhqio'] ):
 				# present_n96
-				exp_str[i], res_str[i] = 'historical', 'N96'
+				exp_str[i], res_str[i] = 'present', 'N96'
 
 			if ( JobID_str[i] in ['xhqir', 'xhqis'] ):
 				# future_n96
