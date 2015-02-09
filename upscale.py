@@ -20,6 +20,21 @@ if not os.path.exists(baspy_path):
 upscale_dir = '/group_workspaces/jasmin/upscale'
 
 
+
+def upscale_callback(cube, field, filename):
+    """ 
+    A function which adds a "JobID" coordinate which comes from the filename. 
+    """
+    str_split = re.split("/", filename)
+    ppfile    = str_split[-1]
+    label     = ppfile[0:5] # take the first 5 letters as JobID 
+    # Create a coordinate with the JobID label in it
+    job_coord = coords.AuxCoord(label, long_name='JobID', units='no_unit')
+    # and add it to the cube
+    cube.add_aux_coord(job_coord)
+    
+    
+
 def catalogue(refresh=None):
 	"""
 	
