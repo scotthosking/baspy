@@ -43,7 +43,7 @@ def months2annual(cube, time_coord=None):
 	if (time_coord == None): time_coord = 'time'
 	
 	### Create annual means
-	iris.coord_categorisation.add_year(cube, 'time', name='year')
+	iris.coord_categorisation.add_year(cube, time_coord, name='year')
 	annual = cube.aggregated_by(['year'], iris.analysis.MEAN)
 
 	#### Remove all of the resultant times which do not cover a 12 month period.
