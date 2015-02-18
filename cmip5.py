@@ -175,12 +175,18 @@ def get_cubes(filt_cat, files_yr_range=None):
 			''+str(filt['RunID'])+'/latest/'
 			''+str(filt['Var'])+'/' )
 		
+		model = str(filt['Model'])	
+		run   = str(filt['RunID'])
+		var   = str(filt['Var'])
+		
 		netcdfs = os.listdir(cmip5_dir + dir)
 		if (netcdfs.__class__ == 'str'): netcdfs = [netcdfs]
 		
-		model = str(filt['Model'])	
-		run   = str(filt['RunID'])
-		var   = str(filt['Var'])			
+		### Remove hidden files that start with '.'
+		nc2 = []
+		for nc in netcdfs:
+			if (nc.startswith('.') == False): nc2.append(nc)
+		netcdfs = nc2
 		
 		print(dir)
 		
@@ -192,6 +198,7 @@ def get_cubes(filt_cat, files_yr_range=None):
  			if (run not in nc): 
 					print('>> WARNING: Detected misplaced files'
 					' in '+dir+' <<')
+					print(run, nc)
 			if any([run not in nc, nc.endswith('.nc4')]):
 				del_netcdfs.append(nc)
 			### Filter out nc files which lie outisde files_yr_range
