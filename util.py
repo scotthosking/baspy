@@ -8,57 +8,6 @@ import iris.coord_categorisation
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def months2seasons(cube, time_coord=None):
-	"""
-	Create seasons from monthly data
-	
-	"""
-	
-	if (time_coord == None): time_coord = 'time'
-	
-	### Create seasonal means (unique and specified 3-month seasons)
-	seasons=['mam', 'jja', 'son', 'djf']
-	iris.coord_categorisation.add_season(cube, time_coord, name='clim_season', seasons=seasons)
-	iris.coord_categorisation.add_season_year(cube, time_coord, name='season_year', seasons=seasons)
-	seasons = cube.aggregated_by(['clim_season', 'season_year'], iris.analysis.MEAN)
-	
-	### Remove all of the resultant times which do not cover a three month period.
-	### Check bounds and units (e.g., seasons[4].coord('time') ) 
-	### before you specify your lambda function
-	#with iris.FUTURE.context(cell_datetime_objects=False):
-		#spans_three_months = lambda t: (t.bound[1] - t.bound[0]) > 3 * 28.
-		#three_months_bound = iris.Constraint(time_coord=spans_three_months)
-		#seasons = seasons.extract(three_months_bound)
-
-	return seasons
-
-
-
-def months2annual(cube, time_coord=None):
-	"""
-	Create annual data from monthly data
-	
-	"""
-	
-	if (time_coord == None): time_coord = 'time'
-	
-	### Create annual means
-	iris.coord_categorisation.add_year(cube, time_coord, name='year')
-	annual = cube.aggregated_by(['year'], iris.analysis.MEAN)
-
-	#### Remove all of the resultant times which do not cover a 12 month period.
-	#### Check bounds and units (e.g., annual[4].coord('time') ) 
-	#### before you specify your lambda function
-	#with iris.FUTURE.context(cell_datetime_objects=False):
-		#spans_twelve_months = lambda t: (t.bound[1] - t.bound[0]) > 12 * 29.
-		#twelve_months_bound = iris.Constraint(time=spans_twelve_months)
-		#annual = annual.extract(twelve_months_bound)
-
-	return annual
-
-
-
-
 def unify_grid_coords(cubelist, cube_template):
 	"""
 	If cube[i].dim_coords[n] != cube[j].dim_coords[n] but you know that 
