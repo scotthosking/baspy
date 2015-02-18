@@ -195,12 +195,15 @@ def get_cubes(filt_cat, files_yr_range=None):
 		### (Note: EC-Earth has '*.nc4' files present)
 		del_netcdfs = []	
 		for nc in netcdfs:
+			
  			if (run not in nc): 
 					print('>> WARNING: Detected misplaced files'
 					' in '+dir+' <<')
 					print(run, nc)
+					
 			if any([run not in nc, nc.endswith('.nc4')]):
 				del_netcdfs.append(nc)
+				
 			### Filter out nc files which lie outisde files_yr_range
 			if (files_yr_range != None):
 				file_last_yr  = np.float(nc[-9:-3])

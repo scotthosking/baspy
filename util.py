@@ -87,8 +87,9 @@ def rm_time_overlaps(cubelist):
 		if (min2 <= max1):
 			print('>>> WARNING: Removing temporal overlaps'
 					' from cubelist <<<')
-			con = iris.Constraint(time=lambda t: t > max1)
-			cubelist[i] = cubelist[i].extract(con)
+			with iris.FUTURE.context(cell_datetime_objects=False):
+				con = iris.Constraint(time=lambda t: t > max1)
+				cubelist[i] = cubelist[i].extract(con)
 
 		if (cubelist[i].__class__ != iris.cube.Cube):
 			cubelist.pop(i)
