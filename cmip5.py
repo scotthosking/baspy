@@ -148,7 +148,7 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def get_cubes(filt_cat, files_yr_range=None):
+def get_cubes(filt_cat):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
 	
@@ -204,15 +204,6 @@ def get_cubes(filt_cat, files_yr_range=None):
 			if any([run not in nc, nc.endswith('.nc4')]):
 				del_netcdfs.append(nc)
 				
-			### Filter out nc files which lie outisde files_yr_range
-			if (files_yr_range != None):
-				file_last_yr  = np.float(nc[-9:-3])
-				file_first_yr = np.float(nc[-16:-10])
-				if (file_last_yr  < ((files_yr_range[0]*100) +1) ):
-					del_netcdfs.append(nc)
-				if (file_first_yr > ((files_yr_range[1]*100)+12) ):
-					del_netcdfs.append(nc)
-
 		### Remove netcdfs according to del_netcdfs
 		for k in del_netcdfs: 
 			if (k in netcdfs): netcdfs.remove(k)
