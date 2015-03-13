@@ -148,7 +148,7 @@ def cmip5_callback(cube, field, filename):
     
     
     
-def get_cubes(filt_cat):
+def get_cubes(filt_cat, constraints=None):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
 	
@@ -217,7 +217,7 @@ def get_cubes(filt_cat):
 				cube_func=lambda cube: cube.var_name == var)
 			
 			### Additional constrains (level, time)
-			#if (constraints != None): con = con & constraints
+			if (constraints != None): con = con & constraints
 			
 			cube = iris.load_cube(dirfilename, callback=cmip5_callback,
 						constraint=con)
