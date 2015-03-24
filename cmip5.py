@@ -10,6 +10,7 @@ import glob, os.path
 import baspy as bp
 import iris
 import iris.coords as coords
+import iris.coord_categorisation
 
 ### Create folder for storing data
 baspy_path = os.path.expanduser("~/.baspy")
@@ -146,9 +147,11 @@ def cmip5_callback(cube, field, filename):
     # and add it to the cube
     cube.add_aux_coord(exp_coord)
     
+    # Add year catagorisation
+    iris.coord_categorisation.add_year(cube, 'time', name='year')
+
     
-    
-def get_cubes(filt_cat, constraints=None):
+def get_cubes(filt_cat, constraints=None, debug=False):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
 	
@@ -210,6 +213,7 @@ def get_cubes(filt_cat, constraints=None):
 
 		### Read data with callback to add Experiment (Run) ID to 
 		### distinguish between ensemble memebers
+		cubelist1 = iris.cube.CubeList([])
 		for j in netcdfs:
 			dirfilename = cmip5_dir + dir + j
 			### contraint by var_name
@@ -219,16 +223,20 @@ def get_cubes(filt_cat, constraints=None):
 			### Additional constrains (level, time)
 			if (constraints != None): con = con & constraints
 			
-			cube = iris.load_cube(dirfilename, callback=cmip5_callback,
-						constraint=con)
-			
-			### Remove attributes to enable cubes to concatenate
-			cube.attributes.clear()
-			
-			### Create cubelist from cubes
-			if (j == netcdfs[0]): cubelist1 = iris.cube.CubeList([cube])
-			if (j != netcdfs[0]): cubelist1.extend([cube])
-		
+			cube = iris.load(dirfilename, callback=cmip5_callback,
+						constraints=con)
+
+			if (len(cube) > 1): raise ValueError('more than one cube loaded, expected only one!')
+
+			if ( (type(cube) == iris.cube.CubeList) & (len(cube) == 1) ):	
+				cube = cube[0]
+				
+				### Remove attributes to enable cubes to concatenate
+				cube.attributes.clear()
+				
+				### Create cubelist from cubes
+				cubelist1.extend([cube])
+
 		### Change reference time of cubes so times match in order to 
 		### encourage cubes to concatenate
 		iris.util.unify_time_units(cubelist1)
@@ -237,10 +245,13 @@ def get_cubes(filt_cat, constraints=None):
 		cubelist1 = bp.util.rm_time_overlaps(cubelist1)
 
 		### Unify lat-lon grid
-		cubelist1 = bp.util.unify_grid_coords(cubelist1, cubelist1[0])
+		#cubelist1 = bp.util.unify_grid_coords(cubelist1, cubelist1[0])
 		
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
+		if (debug == True): 
+			print(cubelist1)
+			print(cmip5_dir + dir)
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
 		
 		#### Create a cubelist from cubes
