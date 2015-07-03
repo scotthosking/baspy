@@ -244,8 +244,8 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 
 		### Fix EC-Earth
 		### turn Gregorian calendars into standard ones
-    	### !!! assumes that the dates are actually the same in Gregorian and standard calendar
-    	### (this is definitely true for historical and RCP runs)
+		### !!! assumes that the dates are actually the same in Gregorian and standard calendar
+		### (this is definitely true for historical and RCP runs)
 		if (model == 'EC-EARTH'):
 			if ( (run.startswith('rcp')) | (run.startswith('hist')) ):
 			    for cube in cubelist1:
