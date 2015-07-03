@@ -138,18 +138,23 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 ### callback definitions should always take this form (cube, field, filename)
 def cmip5_callback(cube, field, filename):
     """ A function which adds an "Experiment" coordinate to the cube """
-    # Extract the experiment name from the filename
+    ### Extract the experiment name from the filename
     split_str = re.split('_',filename) # split string by delimiter
     label = split_str[4]
     
-    # Create a coordinate with the experiment label in it
+    ### Create a coordinate with the experiment label in it
     exp_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
-    # and add it to the cube
+    ### and add it to the cube
     cube.add_aux_coord(exp_coord)
     
-    # Add year catagorisation
+    ### Add year catagorisation
     iris.coord_categorisation.add_year(cube, 'time', name='year')
+    iris.coord_categorisation.add_month_number(cube, 'time', name='month')
 
+    ### Add season
+    seasons = ['djf', 'mam', 'jja', 'son']
+    iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
+    iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
     
 def get_cubes(filt_cat, constraints=None, debug=False):
 	"""
@@ -230,12 +235,36 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 
 			if ( (type(cube) == iris.cube.CubeList) & (len(cube) == 1) ):	
 				cube = cube[0]
-				
+			
 				### Remove attributes to enable cubes to concatenate
 				cube.attributes.clear()
 				
 				### Create cubelist from cubes
 				cubelist1.extend([cube])
+
+		### Fix EC-Earth
+		### turn Gregorian calendars into standard ones
+    	### !!! assumes that the dates are actually the same in Gregorian and standard calendar
+    	### (this is definitely true for historical and RCP runs)
+		if (model == 'EC-EARTH'):
+			if ( (run.startswith('rcp')) | (run.startswith('hist')) ):
+			    for cube in cubelist1:
+			    	for time_coord in cube.coords():
+			            if time_coord.units.is_time_reference():
+			                if time_coord.units.calendar == u'gregorian':
+			                    time_coord.units = iris.unit.Unit(time_coord.units.origin, u'standard')
+			    #
+			    iris.util.unify_time_units(cubelist1)
+			    #
+			    # remove long_name from all time units
+			    for cube in cubelist1:
+			        for time_coord in cube.coords():
+			            if time_coord.units.is_time_reference():
+			                time_coord.long_name = None
+				#
+				for c in cubelist1: c.attributes.clear()
+				#
+			print('>> Applied EC-Earth fixes <<')
 
 		### Change reference time of cubes so times match in order to 
 		### encourage cubes to concatenate
@@ -252,6 +281,7 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		if (debug == True): 
 			print(cubelist1)
 			print(cmip5_dir + dir)
+			for c in cubelist1: print(c.summary)
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
 		
 		#### Create a cubelist from cubes
