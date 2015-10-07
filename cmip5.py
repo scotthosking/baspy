@@ -132,9 +132,9 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	
 	return cat
 
-def get_lowres_cube():
+def get_template_cube():
 	'''
-	Get a low res cube to use as a CMIP5 template
+	Get a cube to use as a CMIP5 template
 	'''
 	cat = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
 	con  = iris.Constraint(cube_func=lambda cube: cube.var_name == 'tas') & iris.Constraint(year=2000) & iris.Constraint(month=1)
