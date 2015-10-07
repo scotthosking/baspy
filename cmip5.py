@@ -132,8 +132,14 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	
 	return cat
 
-
-
+def get_lowres_cube():
+	'''
+	Get a low res cube to use as a CMIP5 template
+	'''
+	cat = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
+	con  = iris.Constraint(cube_func=lambda cube: cube.var_name == 'tas') & iris.Constraint(year=2000) & iris.Constraint(month=1)
+	cube = get_cubes(cat[0], constraints=con)
+	return cube[0]
 
 ### callback definitions should always take this form (cube, field, filename)
 def cmip5_callback(cube, field, filename):
@@ -228,6 +234,9 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 			### Additional constrains (level, time)
 			if (constraints != None): con = con & constraints
 			
+			if (debug == True):
+				print('Reading:', dirfilename)
+
 			cube = iris.load(dirfilename, callback=cmip5_callback,
 						constraints=con)
 
