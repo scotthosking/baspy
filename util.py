@@ -7,6 +7,32 @@ import iris.coord_categorisation
 
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
+def months2seasons(cube, seasons=None):
+	import iris.coord_categorisation
+	### Create seasonal means (unique and specified 3-month seasons)
+	if (seasons == None):
+	   seasons=['mam', 'jja', 'son', 'djf']
+	if len(cube.coords('clim_season')) == 0:
+	   iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
+	if len(cube.coords('season_year')) == 0:
+	   iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
+
+	# Keep only those times where we can produce seasonal means using exactly 3 months
+	# (i.e., remove times from cubelist where only 1 or 2 times exist for that season)
+	clim_seasons = cube.coords('clim_season')[0].points
+	season_years = cube.coords('season_year')[0].points
+	ntimes = len(cube.coords('time')[0].points)
+
+	keep_ind = np.zeros((0), dtype=np.int)
+	for i in range(0,ntimes):
+	   ind = np.where( (clim_seasons == clim_seasons[i]) & (season_years == season_years[i]) )[0]
+	   n_months_in_season = len(clim_seasons[i]) # length of string, usually 3 (e.g., 'djfm' = 4)
+	   if (len(ind) == n_months_in_season): keep_ind = np.append(keep_ind,i)
+	cube = cube[keep_ind]
+
+	seasons = cube.aggregated_by(['clim_season', 'season_year'], iris.analysis.MEAN)
+	return seasons
+
 
 def unify_grid_coords(cubelist, cube_template):
 	"""
