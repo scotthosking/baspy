@@ -22,6 +22,5 @@ see: http://scitools.org.uk/iris/docs/latest/installing.html
 Once you have installed miniconda you can then use these commands to install iris and ipython (tested for Ubuntu 14.04 64-bit)
 
 ```
-$> conda install -c scitools iris
-$> conda install ipython
+$> conda install -c scitools iris ipython
 ```
