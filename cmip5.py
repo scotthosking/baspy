@@ -143,25 +143,25 @@ def get_template_cube():
 
 ### callback definitions should always take this form (cube, field, filename)
 def cmip5_callback(cube, field, filename):
-    """ A function which adds an "Experiment" coordinate to the cube """
-    ### Extract the experiment name from the filename
-    split_str = re.split('_',filename) # split string by delimiter
-    label = split_str[4]
-    
-    ### Create a coordinate with the experiment label in it
-    exp_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
-    ### and add it to the cube
-    cube.add_aux_coord(exp_coord)
-    
-    ### Add year catagorisation
-    iris.coord_categorisation.add_year(cube, 'time', name='year')
-    iris.coord_categorisation.add_month_number(cube, 'time', name='month')
+	""" A function which adds an "Experiment" coordinate to the cube """
+	### Extract the experiment name from the filename
+	split_str = re.split('_',filename) # split string by delimiter
+	label = split_str[4]
 
-    ### Add season
-    seasons = ['djf', 'mam', 'jja', 'son']
-    iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
-    iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
-    
+	### Create a coordinate with the experiment label in it
+	exp_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
+	### and add it to the cube
+	cube.add_aux_coord(exp_coord)
+
+	### Add year catagorisation
+	iris.coord_categorisation.add_year(cube, 'time', name='year')
+	iris.coord_categorisation.add_month_number(cube, 'time', name='month')
+
+	### Add season
+	seasons = ['djf', 'mam', 'jja', 'son']
+	iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
+	iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
+
 def get_cubes(filt_cat, constraints=None, debug=False):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
@@ -211,7 +211,7 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		del_netcdfs = []	
 		for nc in netcdfs:
 			
- 			if (run not in nc): 
+			if (run not in nc):
 					print('>> WARNING: Detected misplaced files'
 					' in '+dir+' <<')
 					print(run, nc)
@@ -259,11 +259,11 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		if (model == 'EC-EARTH'):
 			if ( (exp.startswith('rcp')) | (exp.startswith('hist')) ):
 				# fix calendar
-			    for cube in cubelist1:
-			        for time_coord in cube.coords():
-			            if time_coord.units.is_time_reference():
-			                if time_coord.units.calendar == u'gregorian':
-			                    time_coord.units = iris.unit.Unit(time_coord.units.origin, u'standard')
+				for cube in cubelist1:
+					for time_coord in cube.coords():
+						if time_coord.units.is_time_reference():
+							if time_coord.units.calendar == u'gregorian':
+								time_coord.units = iris.unit.Unit(time_coord.units.origin, u'standard')
 
 			# promote auxiliary time coordinates to dimension coordinates
 			for cube in cubelist1:
@@ -276,9 +276,9 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 
 			# remove long_name from all time units
 			for cube in cubelist1:
-                for time_coord in cube.coords():
-                    if time_coord.units.is_time_reference():
-                        time_coord.long_name = None
+				for time_coord in cube.coords():
+					if time_coord.units.is_time_reference():
+						time_coord.long_name = None
 
 			for c in cubelist1: c.attributes.clear()
 
