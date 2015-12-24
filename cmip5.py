@@ -192,6 +192,7 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		model = str(filt['Model'])	
 		run   = str(filt['RunID'])
 		var   = str(filt['Var'])
+		exp   = str(filt['Experiment'])
 		
 		netcdfs = os.listdir(cmip5_dir + dir)
 		if (netcdfs.__class__ == 'str'): netcdfs = [netcdfs]
@@ -256,23 +257,31 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		### !!! assumes that the dates are actually the same in Gregorian and standard calendar
 		### (this is definitely true for historical and RCP runs)
 		if (model == 'EC-EARTH'):
-			if ( (run.startswith('rcp')) | (run.startswith('hist')) ):
-			    for cube in cubelist1:
-			    	for time_coord in cube.coords():
-			            if time_coord.units.is_time_reference():
-			                if time_coord.units.calendar == u'gregorian':
-			                    time_coord.units = iris.unit.Unit(time_coord.units.origin, u'standard')
-			    #
-			    iris.util.unify_time_units(cubelist1)
-			    #
-			    # remove long_name from all time units
+			if ( (exp.startswith('rcp')) | (exp.startswith('hist')) ):
+				# fix calendar
 			    for cube in cubelist1:
 			        for time_coord in cube.coords():
 			            if time_coord.units.is_time_reference():
-			                time_coord.long_name = None
-				#
-				for c in cubelist1: c.attributes.clear()
-				#
+			                if time_coord.units.calendar == u'gregorian':
+			                    time_coord.units = iris.unit.Unit(time_coord.units.origin, u'standard')
+
+			# promote auxiliary time coordinates to dimension coordinates
+			for cube in cubelist1:
+				for time_coord in cube.coords():
+					if time_coord.units.is_time_reference():
+						if (time_coord in cube.aux_coords and time_coord not in cube.dim_coords):
+							iris.util.promote_aux_coord_to_dim_coord( cube, time_coord )
+
+			iris.util.unify_time_units(cubelist1)
+
+			# remove long_name from all time units
+			for cube in cubelist1:
+                for time_coord in cube.coords():
+                    if time_coord.units.is_time_reference():
+                        time_coord.long_name = None
+
+			for c in cubelist1: c.attributes.clear()
+
 			print('>> Applied EC-Earth fixes <<')
 
 		### Change reference time of cubes so times match in order to 
