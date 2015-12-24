@@ -93,7 +93,8 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	all_frq = np.unique(cat['Frequency'])
 	all_mod = np.unique(cat['Model'])
 	all_var = np.unique(cat['Var'])
-	
+	all_run = np.unique(cat['RunID'])
+
 	cat_bool = np.zeros(len(cat), dtype=bool)	
 	if (Experiment != None):
 		if (Experiment.__class__ == str): Experiment = [Experiment]
@@ -127,6 +128,15 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 		for i in range(0,len(Var)):
 			if (Var[i] not in all_var): raise ValueError('Var not found. See available: '+np.array_str(all_var) )
 			cat_bool = np.add(cat_bool, (cat['Var'] == Var[i]) )
+			use_bool = use_bool + 1
+		cat = cat[cat_bool]
+
+	cat_bool = np.zeros(len(cat), dtype=bool)
+	if (RunID != None):
+		if (RunID.__class__ == str): RunID = [RunID]
+		for i in range(0,len(RunID)):
+			if (RunID[i] not in all_run): raise ValueError('RunID not found. See available: '+np.array_str(all_run) )
+			cat_bool = np.add(cat_bool, (cat['RunID'] == RunID[i]) )
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
 	
