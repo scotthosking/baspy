@@ -21,7 +21,7 @@ if not os.path.exists(baspy_path):
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=None):
+def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=None, RunID=None):
 	"""
 	
 	Read whole CMIP5 catalogue for JASMIN
