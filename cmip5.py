@@ -153,15 +153,27 @@ def get_template_cube():
 
 ### callback definitions should always take this form (cube, field, filename)
 def cmip5_callback(cube, field, filename):
-	""" A function which adds an "Experiment" coordinate to the cube """
-	### Extract the experiment name from the filename
+	"""
+	A function which adds a "RunID" coordinate to the cube
+	"""
+
+	### Extract the Model name from the filename
+	split_str = re.split('_',filename) # split string by delimiter
+	label = split_str[2]
+	new_coord = coords.AuxCoord(label, long_name='Model', units='no_unit')
+	cube.add_aux_coord(new_coord)
+
+	### Extract the Experiment name from the filename
+	split_str = re.split('_',filename) # split string by delimiter
+	label = split_str[3]
+	new_coord = coords.AuxCoord(label, long_name='Experiment', units='no_unit')
+	cube.add_aux_coord(new_coord)
+
+	### Extract the RunID name from the filename
 	split_str = re.split('_',filename) # split string by delimiter
 	label = split_str[4]
-
-	### Create a coordinate with the experiment label in it
-	exp_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
-	### and add it to the cube
-	cube.add_aux_coord(exp_coord)
+	new_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
+	cube.add_aux_coord(new_coord)
 
 	### Add year catagorisation
 	iris.coord_categorisation.add_year(cube, 'time', name='year')
@@ -171,6 +183,8 @@ def cmip5_callback(cube, field, filename):
 	seasons = ['djf', 'mam', 'jja', 'son']
 	iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
 	iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
+
+
 
 def get_cubes(filt_cat, constraints=None, debug=False):
 	"""
