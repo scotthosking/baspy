@@ -21,7 +21,7 @@ if not os.path.exists(baspy_path):
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=None, RunID=None):
+def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=None, RunID=None, SubModel=None):
 	"""
 	
 	Read whole CMIP5 catalogue for JASMIN
@@ -94,6 +94,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	all_mod = np.unique(cat['Model'])
 	all_var = np.unique(cat['Var'])
 	all_run = np.unique(cat['RunID'])
+	all_submodel = np.unique(cat['SubModel'])
 
 	cat_bool = np.zeros(len(cat), dtype=bool)	
 	if (Experiment != None):
@@ -139,7 +140,16 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 			cat_bool = np.add(cat_bool, (cat['RunID'] == RunID[i]) )
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
-	
+
+	cat_bool = np.zeros(len(cat), dtype=bool)
+	if (SubModel != None):
+		if (RunID.__class__ == str): SubModel = [SubModel]
+		for i in range(0,len(SubModel)):
+			if (SubModel[i] not in all_submodel): raise ValueError('SubModel not found. See available: '+np.array_str(all_submodel) )
+			cat_bool = np.add(cat_bool, (cat['SubModel'] == SubModel[i]) )
+			use_bool = use_bool + 1
+		cat = cat[cat_bool]
+
 	return cat
 
 def get_template_cube():
@@ -192,7 +202,6 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 	
 	>>> cat = bp.cmip5.catalogue(Experiment='historical', Frequency='mon', Var='psl')
 	>>> cubelist = bp.cmip5.get_cubes(cat)
-	
 	"""
 
 	### if filt_cat has only one element then 
