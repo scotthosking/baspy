@@ -143,7 +143,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 
 	cat_bool = np.zeros(len(cat), dtype=bool)
 	if (SubModel != None):
-		if (RunID.__class__ == str): SubModel = [SubModel]
+		if (SubModel.__class__ == str): SubModel = [SubModel]
 		for i in range(0,len(SubModel)):
 			if (SubModel[i] not in all_submodel): raise ValueError('SubModel not found. See available: '+np.array_str(all_submodel) )
 			cat_bool = np.add(cat_bool, (cat['SubModel'] == SubModel[i]) )
