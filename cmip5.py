@@ -151,6 +151,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 		cat = cat[cat_bool]
 
 	if (len(np.unique(cat['SubModel'])) > 1) & (Var != None):
+		print('SubModel=', np.unique(cat['SubModel']))
 		raise ValueError('Var is ambiguous, try setting SubModel')
 
 	return cat
