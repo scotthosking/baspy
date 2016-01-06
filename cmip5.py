@@ -150,6 +150,9 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
 
+	# Some Var names are duplicated across SubModels (e.g., Var='pr')
+	# Cause code to fall over if we spot more than one unique SubModel
+	# when Var= has been set.
 	if (len(np.unique(cat['SubModel'])) > 1) & (Var != None):
 		print('SubModel=', np.unique(cat['SubModel']))
 		raise ValueError('Var is ambiguous, try setting SubModel')
