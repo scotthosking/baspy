@@ -150,6 +150,9 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 			use_bool = use_bool + 1
 		cat = cat[cat_bool]
 
+	if (len(np.unique(cat['SubModel'])) > 1) & (Var != None):
+		raise ValueError('Var is ambiguous, try setting SubModel')
+
 	return cat
 
 def get_template_cube():
