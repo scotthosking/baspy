@@ -51,7 +51,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 
 		### Only return paths where experiment exists
 		centre_str   = np.chararray(len(dirs), itemsize=14)
-		model_str    = np.chararray(len(dirs), itemsize=14)
+		model_str    = np.chararray(len(dirs), itemsize=15)
 		exp_str      = np.chararray(len(dirs), itemsize=14)
 		freq_str     = np.chararray(len(dirs), itemsize=14)
 		submodel_str = np.chararray(len(dirs), itemsize=14)
@@ -70,7 +70,7 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 			run_id_str[i]   = split_str[12]
 			var_str[i]      = split_str[14]
 			
-		dt = np.dtype([('Centre', '|S14'), ('Model', '|S14'), ('Experiment', '|S14'), ('Frequency', '|S14'), 
+		dt = np.dtype([('Centre', '|S14'), ('Model', '|S15'), ('Experiment', '|S14'), ('Frequency', '|S14'), 
 							('SubModel', '|S14'), ('MIPtable', '|S14'), ('RunID', '|S14'), 
 							('Var', '|S14') ])
 		a = np.zeros(len(dirs), dt)
