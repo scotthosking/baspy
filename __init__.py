@@ -18,4 +18,4 @@ Created by:   Scott H
 from baspy import (util,cmip5,erai,upscale,wrf)
 
 ### BASpy version number
-__version__ = "0.3-dev"
+__version__ = "0.3"
