@@ -17,7 +17,7 @@ if not os.path.exists(baspy_path):
 	os.makedirs(os.path.expanduser(baspy_path))
 
 ### Directories
-upscale_dir = '/group_workspaces/jasmin/upscale'
+upscale_dir = '/group_workspaces/jasmin/upscale/PP'
 
 
 
@@ -51,23 +51,23 @@ def catalogue(refresh=None):
 	
 	if (refresh == True):
 	
+		print('refreshing upscale catalogue')
+
 		### Get paths for all CMIP5 models and their experiments
-		dirs = glob.glob(upscale_dir+'/x????/*')
-		dirs = filter(lambda f: os.path.isdir(f), dirs)
+		dirs = glob.glob(upscale_dir+'/x????')
 
 		### Convert list to numpy array
 		dirs = np.array(dirs, dtype=str)
 
 		### Only return paths where experiment exists
 		JobID_str   = np.chararray(len(dirs), itemsize=14)
-		stream_str  = np.chararray(len(dirs), itemsize=14)
 		exp_str     = np.chararray(len(dirs), itemsize=14)
 		res_str     = np.chararray(len(dirs), itemsize=14)
 		
 		for i in range(0,len(dirs)):
 			split_str = re.split('/',dirs[i])
-			JobID_str[i]    = split_str[4]
-			stream_str[i]   = split_str[5]
+			JobID_str[i]    = split_str[5]
+			#stream_str[i]   = split_str[6]
 			
 			if ( JobID_str[i] in ['xhqij', 'xhqik', 'xhqil', 'xhqin', 'xhqio'] ):
 				# present_n96
@@ -93,11 +93,9 @@ def catalogue(refresh=None):
 				# future_n512
 				exp_str[i], res_str[i] = 'future', 'N512'
 		
-		dt = np.dtype([('JobID', '|S14'), ('Stream', '|S14'), ('Experiment', '|S14'), 
-					('Resolution', '|S14') ])
+		dt = np.dtype([('JobID', '|S14'), ('Experiment', '|S14'), ('Resolution', '|S14') ])
 		a = np.zeros(len(dirs), dt)
 		a['JobID']       = JobID_str
-		a['Stream']      = stream_str
 		a['Experiment']  = exp_str
 		a['Resolution']  = res_str
 
