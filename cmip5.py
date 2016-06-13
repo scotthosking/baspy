@@ -21,7 +21,7 @@ if not os.path.exists(baspy_path):
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=None, RunID=None, SubModel=None):
+def catalogue(refresh=None, **kwargs):
 	"""
 	
 	Read whole CMIP5 catalogue for JASMIN
@@ -38,6 +38,12 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 	### Location of catologue file
 	cat_file = baspy_path+'/cmip5_catalogue.npy'
 	
+	### If cat_file does not exist, then set refresh=True
+	if (os.path.isfile(cat_file) == False):
+		print("Catalogue of data files does not exist, this may be the first time you've run this code")
+		print("Building catalogue now... this could take a few minutes")
+		refresh=True
+
 	if (refresh == True):
 	
 		### Get paths for all CMIP5 models and their experiments
@@ -85,70 +91,27 @@ def catalogue(refresh=None, Experiment=None, Frequency=None, Model=None, Var=Non
 
 		np.save(cat_file,a)	
 	
-	### Read CMIP5 catalogue and filter data
+	### Read catalogue 
 	cat = np.load(cat_file)
-	use_bool = 0
-	
-	all_exp = np.unique(cat['Experiment'])
-	all_frq = np.unique(cat['Frequency'])
-	all_mod = np.unique(cat['Model'])
-	all_var = np.unique(cat['Var'])
-	all_run = np.unique(cat['RunID'])
-	all_submodel = np.unique(cat['SubModel'])
 
-	cat_bool = np.zeros(len(cat), dtype=bool)	
-	if (Experiment != None):
-		if (Experiment.__class__ == str): Experiment = [Experiment]
-		for i in range(0,len(Experiment)):
-			if (Experiment[i] not in all_exp): raise ValueError('Experiment not found. See available: '+np.array_str(all_exp) )
-			cat_bool = np.add(cat_bool, (cat['Experiment'] == Experiment[i]) )
-			use_bool = use_bool + 1
-		cat = cat[cat_bool]	
-		
-	cat_bool = np.zeros(len(cat), dtype=bool)
-	if (Frequency != None): 
-		if (Frequency.__class__ == str): Frequency = [Frequency]
-		for i in range(0,len(Frequency)):
-			if (Frequency[i] not in all_frq): raise ValueError('Frequency not found. See available: '+np.array_str(all_frq) )
-			cat_bool = np.add(cat_bool, (cat['Frequency'] == Frequency[i]) )
-			use_bool = use_bool + 1
+	### Filter data
+	names = kwargs.viewkeys()
+
+	for name in names:
+
+		uniq_label = np.unique( cat[name] )
+		cat_bool   = np.zeros(len(cat), dtype=bool)
+
+		vals = kwargs[name]
+
+		if (vals.__class__ == str): vals = [vals]
+		for val in vals:
+			if (val not in uniq_label): 
+				raise ValueError(val+' not found. See available: '+np.array_str(uniq_label) )
+			cat_bool = np.add(cat_bool, (cat[name] == val) )
 		cat = cat[cat_bool]
 	
-	cat_bool = np.zeros(len(cat), dtype=bool)
-	if (Model != None): 
-		if (Model.__class__ == str): Model = [Model]
-		for i in range(0,len(Model)):
-			if (Model[i] not in all_mod): raise ValueError('Model not found. See available: '+np.array_str(all_mod) )
-			cat_bool = np.add(cat_bool, (cat['Model'] == Model[i]) )
-			use_bool = use_bool + 1
-		cat = cat[cat_bool]
-
-	cat_bool = np.zeros(len(cat), dtype=bool)
-	if (Var != None): 
-		if (Var.__class__ == str): Var = [Var]
-		for i in range(0,len(Var)):
-			if (Var[i] not in all_var): raise ValueError('Var not found. See available: '+np.array_str(all_var) )
-			cat_bool = np.add(cat_bool, (cat['Var'] == Var[i]) )
-			use_bool = use_bool + 1
-		cat = cat[cat_bool]
-
-	cat_bool = np.zeros(len(cat), dtype=bool)
-	if (RunID != None):
-		if (RunID.__class__ == str): RunID = [RunID]
-		for i in range(0,len(RunID)):
-			if (RunID[i] not in all_run): raise ValueError('RunID not found. See available: '+np.array_str(all_run) )
-			cat_bool = np.add(cat_bool, (cat['RunID'] == RunID[i]) )
-			use_bool = use_bool + 1
-		cat = cat[cat_bool]
-
-	cat_bool = np.zeros(len(cat), dtype=bool)
-	if (SubModel != None):
-		if (SubModel.__class__ == str): SubModel = [SubModel]
-		for i in range(0,len(SubModel)):
-			if (SubModel[i] not in all_submodel): raise ValueError('SubModel not found. See available: '+np.array_str(all_submodel) )
-			cat_bool = np.add(cat_bool, (cat['SubModel'] == SubModel[i]) )
-			use_bool = use_bool + 1
-		cat = cat[cat_bool]
+	return cat
 
 	# Some Var names are duplicated across SubModels (e.g., Var='pr')
 	# Cause code to fall over if we spot more than one unique SubModel

@@ -7,8 +7,15 @@ import iris.coord_categorisation
 
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
+
+
+
 def months2seasons(cube, seasons=None):
+
 	import iris.coord_categorisation
+
+	### to-do: Add check that cube is monthly!!!!!!!!! 
+
 	### Create seasonal means (unique and specified 3-month seasons)
 	if (seasons == None):
 	   seasons=['mam', 'jja', 'son', 'djf']
@@ -32,6 +39,35 @@ def months2seasons(cube, seasons=None):
 
 	seasons = cube.aggregated_by(['clim_season', 'season_year'], iris.analysis.MEAN)
 	return seasons
+
+
+
+def months2annual(cube):
+
+	import iris.coord_categorisation
+
+	### to-do: Add check that cube is monthly!!!!!!!!! 
+
+	if len(cube.coords('year')) == 0:
+	   iris.coord_categorisation.add_year(cube, 'time', name='year')
+
+	if len(cube.coords('month')) == 1:       cube.remove_coord('month')
+	if len(cube.coords('clim_season')) == 1: cube.remove_coord('clim_season')
+	if len(cube.coords('season_year')) == 1: cube.remove_coord('season_year')
+
+	### Keep only those times where we can produce annual means using exactly 12 months
+	years = cube.coords('year')[0].points
+	ntimes = len(cube.coords('time')[0].points)
+
+	keep_ind = np.zeros((0), dtype=np.int)
+	for i in range(0,ntimes):
+	   ind = np.where( (years == years[i]) )[0]
+	   n_months_in_year = 12
+	   if (len(ind) == n_months_in_year): keep_ind = np.append(keep_ind,i)
+	cube = cube[keep_ind]
+
+	annual = cube.aggregated_by(['year'], iris.analysis.MEAN)
+	return annual
 
 
 def unify_grid_coords(cubelist, cube_template):
@@ -91,17 +127,15 @@ def rm_time_overlaps(cubelist):
 	
 	if (len(cubelist) == 1): return cubelist
 	
-	### add check that all cubes are of the same var, exp etc !!!!
+	### to-do: add check that all cubes are of the same var, exp etc !!!!
 	#
-	# TO DO !
 	#
 	
 	### Unify time coordinates to identify overlaps
 	iris.util.unify_time_units(cubelist)
 	
-	### Sort cubelist by start time !!!!
+	### to-do: Sort cubelist by start time !!!!
 	#
-	# TO DO !
 	#
 
 	i = 1
@@ -113,6 +147,7 @@ def rm_time_overlaps(cubelist):
 		if (min2 <= max1):
 			print('>>> WARNING: Removing temporal overlaps'
 					' from cubelist <<<')
+			print(min2, max1)
 			with iris.FUTURE.context(cell_datetime_objects=False):
 				con = iris.Constraint(time=lambda t: t > max1)
 				cubelist[i] = cubelist[i].extract(con)
