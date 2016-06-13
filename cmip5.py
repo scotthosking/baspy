@@ -111,8 +111,6 @@ def catalogue(refresh=None, **kwargs):
 			cat_bool = np.add(cat_bool, (cat[name] == val) )
 		cat = cat[cat_bool]
 	
-	return cat
-
 	# Some Var names are duplicated across SubModels (e.g., Var='pr')
 	# Cause code to fall over if we spot more than one unique SubModel
 	# when Var= has been set.
