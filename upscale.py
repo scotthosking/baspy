@@ -72,6 +72,21 @@ def catalogue(refresh=None, **kwargs):
 		### Convert list to numpy array
 		dirs = np.array(dirs, dtype=str)
 
+		### Keep only dirs which include standard UPSCALE job IDs
+		GA3_job_ids = [		'xhqij','xhqik','xhqil','xhqin','xhqio',
+							'xgxqo','xgxqp','xgxqq',
+							'xgxqe','xgxqf','xgxqg','xgxqh','xgxqi',
+							'xhqir','xhqis','xgyip',
+							'xgyid','xgyie','xgyif',
+							'xgxqk','xgxql','xgxqm'
+						]
+
+		keep_dirs = []
+		for dir in dirs:
+			for jobid in GA3_job_ids:
+				if jobid in dir: keep_dirs.append(dir)
+		dirs = keep_dirs
+
 		### setup character arrays
 		GA_str    = np.chararray(len(dirs), itemsize=14)
 		exp_str   = np.chararray(len(dirs), itemsize=16)
