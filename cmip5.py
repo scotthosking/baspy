@@ -114,9 +114,9 @@ def catalogue(refresh=None, **kwargs):
 	# Some Var names are duplicated across SubModels (e.g., Var='pr')
 	# Cause code to fall over if we spot more than one unique SubModel
 	# when Var= has been set.
-	if (len(np.unique(cat['SubModel'])) > 1) & (Var != None):
+	if (len(np.unique(cat['SubModel'])) > 1) & ('Var' in names):
 		print('SubModel=', np.unique(cat['SubModel']))
-		raise ValueError('Var is ambiguous, try setting SubModel')
+		raise ValueError("Var is ambiguous, try setting Submodel (e.g., SubModel='atmos')")
 
 	return cat
 
