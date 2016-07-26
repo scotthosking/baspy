@@ -8,6 +8,46 @@ import iris.coord_categorisation
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
+def cube_trend(cube, var_name=None):
+
+	'''
+	Currently this def for calculating trends should only be used for year-to-year cubes.
+	e.g.,
+		* A cube where each timeframe represents annual means 
+		* A cube where each timeframe represents seasonal means (one season per year)
+
+	Note: this definition will be replaced at some point with one that Tony is writing.
+	'''
+
+	from scipy import stats
+	import iris.coords as coords
+
+	lons, lats = cube.coord('longitude').points, cube.coord('latitude').points
+
+	### Define years for trend analysis
+	years = []
+	if len(cube.coords('year')) > 0:        years = cube.coord('year').points
+	if len(cube.coords('season_year')) > 0: years = cube.coord('season_year').points
+	if len(years) == 0:
+		raise ValueError("Need to assign either 'year' or 'season_year' as Auxiliary coordinates to cube")
+
+	### Collapse cube to correctly assign time bounds in output metadata
+	cube2 = cube.collapsed('time', iris.analysis.MEAN)
+
+	slope, p_value = iris.cube.copy.deepcopy(cube2), iris.cube.copy.deepcopy(cube2)
+	slope.data[:,:], p_value.data[:,:] = np.nan, np.nan
+
+	slope.rename(var_name+'_trend')
+	p_value.rename(var_name+'_trend_sig')
+
+	slope.units = str(slope.units)+' yr-1'
+	p_value.units = '1'
+
+	for x in range(0,len(lons)):
+		for y in range(0,len(lats)):
+			slope.data[y,x], intercept, r_value, p_value.data[y,x], std_err = stats.linregress( years, cube.data[:,y,x] )
+
+	return slope, p_value
 
 
 def months2seasons(cube, seasons=None):
