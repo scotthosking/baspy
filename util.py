@@ -8,7 +8,7 @@ import iris.coord_categorisation
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
-def cube_trend(cube, var_name=None):
+def cube_trend(cube, var_name=None, time_coord=None):
 
 	'''
 	Currently this def for calculating trends should only be used for year-to-year cubes.
@@ -32,7 +32,8 @@ def cube_trend(cube, var_name=None):
 		raise ValueError("Need to assign either 'year' or 'season_year' as Auxiliary coordinates to cube")
 
 	### Collapse cube to correctly assign time bounds in output metadata
-	cube2 = cube.collapsed('time', iris.analysis.MEAN)
+	if (time_coord == None): time_coord = 'time'
+	cube2 = cube.collapsed(time_coord, iris.analysis.MEAN)
 
 	slope, p_value = iris.cube.copy.deepcopy(cube2), iris.cube.copy.deepcopy(cube2)
 	slope.data[:,:], p_value.data[:,:] = np.nan, np.nan
