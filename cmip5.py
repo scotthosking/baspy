@@ -163,7 +163,7 @@ def get_template_cube():
 	'''
 	cat  = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
 	con  = iris.Constraint(cube_func=lambda cube: cube.var_name == 'tas') & iris.Constraint(year=2000) & iris.Constraint(month=1)
-	cube = get_cubes(cat[0], constraints=con)
+	cube = get_cubes(cat, constraints=con)
 	return cube[0]
 
 
@@ -352,7 +352,7 @@ def get_orog(model):
 	if (model == 'HadGEM2-AO'): model = 'HadGEM2-CC'
 
 	filt_cat = catalogue(Model=model, Frequency='fx', Var='orog')
-	exps     = filt_cat['Experiment']
+	exps     = filt_cat['Experiment'].values
 
 	if (len(exps) == 0): raise ValueError('No orography files exists for '+model)
 
