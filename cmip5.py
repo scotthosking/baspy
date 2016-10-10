@@ -3,22 +3,38 @@
 
 import os
 import numpy as np
+import pandas as pd
 import re
 import datetime
 import glob, os.path
-
+import shutil
 import baspy as bp
 import iris
 import iris.coords as coords
 import iris.coord_categorisation
 
-### Create folder for storing data
-baspy_path = os.path.expanduser("~/.baspy")
-if not os.path.exists(baspy_path):
-	os.makedirs(os.path.expanduser(baspy_path))
+cmip5_cat_fname = 'cmip5_catalogue.csv'
+
+### Location of personal catologue file
+__baspy_path = os.path.expanduser("~/.baspy")
+if not os.path.exists(__baspy_path): 
+	os.makedirs(os.path.expanduser(__baspy_path))
+cat_file = __baspy_path+'/'+cmip5_cat_fname
+
+### If personal catologue file does not exist then copy shared catologue file
+__shared_cat_file = '/group_workspaces/jasmin/bas_climate/data/data_catalogues/'+cmip5_cat_fname
+if (os.path.isfile(cat_file) == False):	
+	print("Catalogue of CMIP5 data does not exist, this may be the first time you've run this code")
+	print('Copying shared catalogue to '+__baspy_path)
+	shutil.copy2(__shared_cat_file, cat_file)
 
 ### Directories
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
+
+### Originally set cat to nothing
+### global cat will be updated for the first time it is read
+__cat = []
+
 
 
 def catalogue(refresh=None, **kwargs):
@@ -30,106 +46,129 @@ def catalogue(refresh=None, **kwargs):
 	Read filtered CMIP5 catalogue for JASMIN
 	   >>> cat = cmip5_catalogue(Experiment=['amip','historical'], Var='tas', Frequency=['mon'])
 	   
-	refresh = True: refresh CMIP5 cataloge
+	refresh = True: refresh CMIP5 cataloge (both personal and shared catalogues)
 	   >>> cat = cmip5_catalogue(refresh=True)
 	   
 	"""
 	
-	### Location of catologue file
-	cat_file = baspy_path+'/cmip5_catalogue.npy'
-	
-	### If cat_file does not exist, then set refresh=True
-	if (os.path.isfile(cat_file) == False):
-		print("Catalogue of data files does not exist, this may be the first time you've run this code")
-		print("Building catalogue now... this could take a few minutes")
-		refresh=True
+	################################
+	### Build a new catalogue
+	################################
 
 	if (refresh == True):
+
+		print("Building catalogue now... go grab a cuppa, this could take a while...")
 	
 		### Get paths for all CMIP5 models and their experiments
-		dirs = glob.glob(cmip5_dir+'*/*/*/*/atmos/Amon/*/latest/*')
-		dirs2 = glob.glob(cmip5_dir+'*/*/*/*/seaIce/OImon/*/latest/*')
-		dirs.extend(dirs2)
+		dirs      = glob.glob(cmip5_dir+'*/*/*/*/atmos/Amon/*/latest/*')    # atmos variables
+		dirs.extend(glob.glob(cmip5_dir+'*/*/*/*/seaIce/OImon/*/latest/*')) # sea ice
+		dirs.extend(glob.glob(cmip5_dir+'*/*/*/*/atmos/fx/*/latest/*'))     # orography
+
 		dirs = filter(lambda f: os.path.isdir(f), dirs)
 
-		### Convert list to numpy array
-		dirs = np.array(dirs, dtype=str)
+		centre_str   = []
+		model_str    = []
+		exp_str      = []
+		freq_str     = []
+		submodel_str = []
+		miptable_str = []
+		run_id_str   = []
+		var_str      = []
 
-		### Only return paths where experiment exists
-		centre_str   = np.chararray(len(dirs), itemsize=14)
-		model_str    = np.chararray(len(dirs), itemsize=15)
-		exp_str      = np.chararray(len(dirs), itemsize=14)
-		freq_str     = np.chararray(len(dirs), itemsize=14)
-		submodel_str = np.chararray(len(dirs), itemsize=14)
-		miptable_str = np.chararray(len(dirs), itemsize=14)
-		run_id_str   = np.chararray(len(dirs), itemsize=14)
-		var_str      = np.chararray(len(dirs), itemsize=14)
-
-		for i in range(0,len(dirs)):
-			split_str = re.split('/',dirs[i])
-			centre_str[i]   = split_str[6]
-			model_str[i]    = split_str[7]
-			exp_str[i]      = split_str[8]
-			freq_str[i]     = split_str[9]
-			submodel_str[i] = split_str[10]
-			miptable_str[i] = split_str[11]
-			run_id_str[i]   = split_str[12]
-			var_str[i]      = split_str[14]
+		for dir in dirs:
+			split_str    = re.split( '/', dir )
+			centre_str   = np.append( centre_str,   split_str[6]  )
+			model_str    = np.append( model_str,    split_str[7]  )
+			exp_str      = np.append( exp_str,      split_str[8]  )
+			freq_str     = np.append( freq_str,     split_str[9]  )
+			submodel_str = np.append( submodel_str, split_str[10] )
+			miptable_str = np.append( miptable_str, split_str[11] )
+			run_id_str   = np.append( run_id_str,   split_str[12] )
+			var_str      = np.append( var_str,      split_str[14] )
 			
-		dt = np.dtype([('Centre', '|S14'), ('Model', '|S15'), ('Experiment', '|S14'), ('Frequency', '|S14'), 
-							('SubModel', '|S14'), ('MIPtable', '|S14'), ('RunID', '|S14'), 
-							('Var', '|S14') ])
-		a = np.zeros(len(dirs), dt)
-		a['Centre']     = centre_str
-		a['Model']      = model_str
-		a['Experiment'] = exp_str
-		a['Frequency']  = freq_str
-		a['SubModel']   = submodel_str
-		a['MIPtable']	= miptable_str
-		a['RunID']      = run_id_str
-		a['Var']        = var_str
+		### Writing data to CSV file using pandas
+		df = pd.DataFrame()
+		df['Centre']     = centre_str
+		df['Model']      = model_str
+		df['Experiment'] = exp_str
+		df['Frequency']  = freq_str
+		df['SubModel']   = submodel_str
+		df['MIPtable']	 = miptable_str
+		df['RunID']      = run_id_str
+		df['Var']        = var_str
+		df['Path']       = dirs
 
-		np.save(cat_file,a)	
-	
-	### Read catalogue 
-	cat = np.load(cat_file)
+		### save to local dir
+		df.to_csv(cat_file, index=False)
 
-	### Filter data
+		### Copy this newly created catalogue to the shared catalogue directory
+		### for others to use
+		shutil.copy2(cat_file, __shared_cat_file)
+
+
+	################################
+	### Read and filter catalogue
+	################################
+
+	### read if not already loaded
+	global __cat
+	if (len(__cat) == 0): 
+		print('### Loading CMIP5 Catalogue ###')
+		__cat = pd.read_csv(cat_file) 
+
+		### Check to see if there is a newer version of the catalogue available
+		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
+			print('')
+			print('Note: There is a newer version of the CMIP5 catalogue avaiable at')
+			print(__shared_cat_file)
+			print('although it is safe to continue using the one you are using in '+__baspy_path)
+			print('')
+
+	### Filter catalogue
 	names = kwargs.viewkeys()
 
 	for name in names:
 
-		uniq_label = np.unique( cat[name] )
-		cat_bool   = np.zeros(len(cat), dtype=bool)
+		uniq_label = np.unique( __cat[name] )
+		cat_bool   = np.zeros(len(__cat), dtype=bool)
 
 		vals = kwargs[name]
 
+		### if vals has just 1 element (i.e., is a string) then convert to a list
 		if (vals.__class__ == str): vals = [vals]
+		if (vals.__class__ == np.string_): vals = [vals]
+
 		for val in vals:
 			if (val not in uniq_label): 
 				raise ValueError(val+' not found. See available: '+np.array_str(uniq_label) )
-			cat_bool = np.add(cat_bool, (cat[name] == val) )
-		cat = cat[cat_bool]
+			cat_bool = np.add(cat_bool, (__cat[name] == val) )
+		__cat = __cat[cat_bool]
 	
 	# Some Var names are duplicated across SubModels (e.g., Var='pr')
 	# Cause code to fall over if we spot more than one unique SubModel
 	# when Var= has been set.
-	if (len(np.unique(cat['SubModel'])) > 1) & ('Var' in names):
-		print('SubModel=', np.unique(cat['SubModel']))
+	if (len(np.unique(__cat['SubModel'])) > 1) & ('Var' in names):
+		print('SubModel=', np.unique(__cat['SubModel']))
 		raise ValueError("Var is ambiguous, try setting Submodel (e.g., SubModel='atmos')")
 
-	return cat
+	return __cat
+
+
+
+
 
 def get_template_cube():
 	'''
 	Get a cube to use as a CMIP5 template
 	'''
-	cat = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
+	cat  = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
 	con  = iris.Constraint(cube_func=lambda cube: cube.var_name == 'tas') & iris.Constraint(year=2000) & iris.Constraint(month=1)
 	cube = get_cubes(cat[0], constraints=con)
 	return cube[0]
 
-### callback definitions should always take this form (cube, field, filename)
+
+
+
 def cmip5_callback(cube, field, filename):
 	"""
 	A function which adds a "RunID" coordinate to the cube
@@ -153,58 +192,55 @@ def cmip5_callback(cube, field, filename):
 	new_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
 	cube.add_aux_coord(new_coord)
 
-	### Add year catagorisation
-	iris.coord_categorisation.add_year(cube, 'time', name='year')
-	iris.coord_categorisation.add_month_number(cube, 'time', name='month')
+	if (len(cube.coords('time')) > 0): ### this should be generised for recognised time dimensions !!!!
 
-	### Add season
-	seasons = ['djf', 'mam', 'jja', 'son']
-	iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
-	iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
+		### Add year catagorisation
+		iris.coord_categorisation.add_year(cube, 'time', name='year')
+		iris.coord_categorisation.add_month_number(cube, 'time', name='month')
+
+		### Add season
+		seasons = ['djf', 'mam', 'jja', 'son']
+		iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
+		iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
 
 
 
-def get_cubes(filt_cat, constraints=None, debug=False):
+def get_cubes(filt_cat, constraints=None, verbose=True):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
-	
+
 	>>> cat = bp.cmip5.catalogue(Experiment='historical', Frequency='mon', Var='psl')
 	>>> cubelist = bp.cmip5.get_cubes(cat)
 	"""
 
-	### if filt_cat has only one element then 
-	### convert to array
-	if (filt_cat.__class__ == np.void):
-		filt_cat = np.array([filt_cat])
+	### start with empty cubelist, then expand within loop
+	cubelist2 = iris.cube.CubeList([])
+
+	count = 0
+	len_filt = len(filt_cat.index)
+
+	for i in filt_cat.index:
 		
-	for i in range(0,len(filt_cat)):
+		filt   = filt_cat[filt_cat.index == i]
+		path   = filt['Path'].values[0]
+		model  = filt['Model'].values[0]
+		run_id = filt['RunID'].values[0]
+		var    = filt['Var'].values[0]
+		exp    = filt['Experiment'].values[0]
 		
-		filt = np.array(filt_cat[i])
-		
-		dir = ( ''+str(filt['Centre'])+'/'
-			''+str(filt['Model'])+'/'
-			''+str(filt['Experiment'])+'/'
-			''+str(filt['Frequency'])+'/'
-			''+str(filt['SubModel'])+'/'
-			''+str(filt['MIPtable'])+'/'
-			''+str(filt['RunID'])+'/latest/'
-			''+str(filt['Var'])+'/' )
-		
-		model = str(filt['Model'])	
-		run   = str(filt['RunID'])
-		var   = str(filt['Var'])
-		exp   = str(filt['Experiment'])
-		
-		netcdfs = os.listdir(cmip5_dir + dir)
-		if (netcdfs.__class__ == 'str'): netcdfs = [netcdfs]
+		### Print progress to screen
+		if (verbose == True): 
+			count = count+1 ### could also add total (e.g., 1 of 101) !!!!!!!!!!!!!!!!!!!!!
+			print('['+str(count)+'/'+str(len_filt)+'] CMIP5 '+model+' '+run_id+' '+exp+' '+var)
+
+		netcdfs = os.listdir(path)
 		
 		### Remove hidden files that start with '.'
 		nc2 = []
 		for nc in netcdfs:
 			if (nc.startswith('.') == False): nc2.append(nc)
 		netcdfs = nc2
-		
-		print(dir)
+
 		
 		### Remove files from chararray where run id not in 
 		### netcdf filenames or remove files that end with '.nc4' 
@@ -212,12 +248,12 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		del_netcdfs = []	
 		for nc in netcdfs:
 			
-			if (run not in nc):
+			if (run_id not in nc):
 					print('>> WARNING: Detected misplaced files'
-					' in '+dir+' <<')
-					print(run, nc)
+					' in '+path+' <<')
+					print(run_id, nc)
 					
-			if any([run not in nc, nc.endswith('.nc4')]):
+			if any([run_id not in nc, nc.endswith('.nc4')]):
 				del_netcdfs.append(nc)
 				
 		### Remove netcdfs according to del_netcdfs
@@ -228,7 +264,7 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		### distinguish between ensemble memebers
 		cubelist1 = iris.cube.CubeList([])
 		for j in netcdfs:
-			dirfilename = cmip5_dir + dir + j
+			dirfilename = path+'/'+j
 			### contraint by var_name
 			con  = iris.Constraint(
 				cube_func=lambda cube: cube.var_name == var)
@@ -236,9 +272,6 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 			### Additional constrains (level, time)
 			if (constraints != None): con = con & constraints
 			
-			if (debug == True):
-				print('Reading:', dirfilename)
-
 			cube = iris.load(dirfilename, callback=cmip5_callback,
 						constraints=con)
 
@@ -297,19 +330,52 @@ def get_cubes(filt_cat, constraints=None, debug=False):
 		
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
-		if (debug == True): 
-			print(cubelist1)
-			print(cmip5_dir + dir)
-			for c in cubelist1: print(c.summary)
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
 		
 		#### Create a cubelist from cubes
-		if (i == 0): 
-			cubelist2 = iris.cube.CubeList([cube])
-		else:
-			cubelist2.extend([cube])
+		cubelist2.extend([cube])
 
-	### Return cube
 	return cubelist2
+
+
+
+def get_orog(model):
+	'''
+	Get Orography for model
+
+		>>> orog = get_orog('HadCM3')
+
+	'''
+
+	### substitute orography for models where file is missing
+	### with models with the same orography --- CHECK THESE ARE SAME RESOLUTION!!!!!
+	if (model == 'HadGEM2-AO'): model = 'HadGEM2-CC'
+
+	filt_cat = catalogue(Model=model, Frequency='fx', Var='orog')
+	exps     = filt_cat['Experiment']
+
+	if (len(exps) == 0): raise ValueError('No orography files exists for '+model)
+
+	### whitelist experiments to read orog data from (ordered list)
+	whitelist = ['historical', 'piControl', 'amip', 'rcp45', 'decadal1980']
+
+	for wl in whitelist:
+		if (wl in exps): 
+			orog = get_cubes(catalogue(Model=model, Frequency='fx', Var='orog', Experiment=wl))
+			if (len(orog) > 1): print('Warning: more than one orography file found.  Using first one.')
+			return orog[0]
+
+	### You should not get this far, if so then consider extending the whitelist
+	print('List of experiments = '+exps)
+	raise ValueError('Extend whitelist of Experiments to read orog file from')
+
+
+
+
+
+
+
+
+
 
 # End of cmip5.py
