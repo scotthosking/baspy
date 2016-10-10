@@ -163,7 +163,7 @@ def get_template_cube():
 	'''
 	cat  = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
 	con  = iris.Constraint(cube_func=lambda cube: cube.var_name == 'tas') & iris.Constraint(year=2000) & iris.Constraint(month=1)
-	cube = get_cubes(cat, constraints=con)
+	cube = get_cubes(cat.iloc[[0]], constraints=con)
 	return cube[0]
 
 
