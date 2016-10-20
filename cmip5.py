@@ -60,43 +60,24 @@ def catalogue(refresh=None, **kwargs):
 		print("Building catalogue now... go grab a cuppa, this could take a while...")
 	
 		### Get paths for all CMIP5 models and their experiments
-		dirs      = glob.glob(cmip5_dir+'*/*/*/*/atmos/Amon/*/latest/*')    # atmos variables
-		dirs.extend(glob.glob(cmip5_dir+'*/*/*/*/seaIce/OImon/*/latest/*')) # sea ice
-		dirs.extend(glob.glob(cmip5_dir+'*/*/*/*/atmos/fx/*/latest/*'))     # orography
+		model_exp_dirs = glob.glob(cmip5_dir+'*/*/*/*')
+		
+		dirs = []
+		for model_exp in model_exp_dirs:
+		    print(model_exp)
+		    dirs.extend(glob.glob(model_exp+'/*/*/*/latest/*'))
 
 		dirs = filter(lambda f: os.path.isdir(f), dirs)
 
-		centre_str   = []
-		model_str    = []
-		exp_str      = []
-		freq_str     = []
-		submodel_str = []
-		miptable_str = []
-		run_id_str   = []
-		var_str      = []
-
+		### write data to catalogue (.csv) using a Pandas DataFrame
+		rows = []
 		for dir in dirs:
-			split_str    = re.split( '/', dir )
-			centre_str   = np.append( centre_str,   split_str[6]  )
-			model_str    = np.append( model_str,    split_str[7]  )
-			exp_str      = np.append( exp_str,      split_str[8]  )
-			freq_str     = np.append( freq_str,     split_str[9]  )
-			submodel_str = np.append( submodel_str, split_str[10] )
-			miptable_str = np.append( miptable_str, split_str[11] )
-			run_id_str   = np.append( run_id_str,   split_str[12] )
-			var_str      = np.append( var_str,      split_str[14] )
-			
-		### Writing data to CSV file using pandas
-		df = pd.DataFrame()
-		df['Centre']     = centre_str
-		df['Model']      = model_str
-		df['Experiment'] = exp_str
-		df['Frequency']  = freq_str
-		df['SubModel']   = submodel_str
-		df['MIPtable']	 = miptable_str
-		df['RunID']      = run_id_str
-		df['Var']        = var_str
-		df['Path']       = dirs
+		    parts = re.split('/', dir)[6:]
+		    parts.pop(7)
+		    parts.append(dir)
+		    rows.append(parts)
+
+		df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','MIPtable','RunID','Var','Path'])
 
 		### save to local dir
 		df.to_csv(cat_file, index=False)
@@ -127,6 +108,13 @@ def catalogue(refresh=None, **kwargs):
 	### Filter catalogue
 	names = kwargs.viewkeys()
 
+	### TO DO!!!
+	#
+	#  If Frequency has not been set then default to 'mon'
+	#
+	#  Print a Warning to this effect
+	#
+
 	for name in names:
 
 		uniq_label = np.unique( __cat[name] )
@@ -149,7 +137,12 @@ def catalogue(refresh=None, **kwargs):
 	# when Var= has been set.
 	if (len(np.unique(__cat['SubModel'])) > 1) & ('Var' in names):
 		print('SubModel=', np.unique(__cat['SubModel']))
-		raise ValueError("Var is ambiguous, try setting Submodel (e.g., SubModel='atmos')")
+		raise ValueError("Var is ambiguous, try defining Submodel (e.g., SubModel='atmos')")
+
+	### As standard, we do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
+	if (len(np.unique(__cat['Frequency'])) > 1) & ('Var' in names):
+		print('Frequency=', np.unique(__cat['Frequency']))
+		raise ValueError("Multiple time Frequencies present, try defining Frequency (e.g., Frequency='mon')")
 
 	return __cat
 
