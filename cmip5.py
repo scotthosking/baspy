@@ -91,19 +91,18 @@ def catalogue(refresh=None, **kwargs):
 	### Read and filter catalogue
 	################################
 
-	### read if not already loaded
-	global __cat
-	if (len(__cat) == 0): 
-		print('### Loading CMIP5 Catalogue ###')
-		__cat = pd.read_csv(cat_file) 
+	# ### read if not already loaded
+	# if (len(__cat) == 0): 
+	# 	### Check to see if there is a newer version of the catalogue available
+	# 	if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
+	# 		print('')
+	# 		print('Note: There is a newer version of the CMIP5 catalogue avaiable at')
+	# 		print(__shared_cat_file)
+	# 		print('although it is safe to continue using the one you are using in '+__baspy_path)
+	# 		print('')
 
-		### Check to see if there is a newer version of the catalogue available
-		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
-			print('')
-			print('Note: There is a newer version of the CMIP5 catalogue avaiable at')
-			print(__shared_cat_file)
-			print('although it is safe to continue using the one you are using in '+__baspy_path)
-			print('')
+	### Read catalgoue
+	__cat = pd.read_csv(cat_file) 			
 
 	### Filter catalogue
 	names = kwargs.viewkeys()
@@ -140,7 +139,7 @@ def catalogue(refresh=None, **kwargs):
 		raise ValueError("Var is ambiguous, try defining Submodel (e.g., SubModel='atmos')")
 
 	### As standard, we do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
-	if (len(np.unique(__cat['Frequency'])) > 1) & ('Var' in names):
+	if (len(np.unique(__cat['Frequency'])) > 1):
 		print('Frequency=', np.unique(__cat['Frequency']))
 		raise ValueError("Multiple time Frequencies present, try defining Frequency (e.g., Frequency='mon')")
 
@@ -185,16 +184,18 @@ def cmip5_callback(cube, field, filename):
 	new_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
 	cube.add_aux_coord(new_coord)
 
-	if (len(cube.coords('time')) > 0): ### this should be generised for recognised time dimensions !!!!
+	### Add additional time coordinate categorisations
+	if (len(cube.coords(axis='t')) > 0):
 
-		### Add year catagorisation
-		iris.coord_categorisation.add_year(cube, 'time', name='year')
-		iris.coord_categorisation.add_month_number(cube, 'time', name='month')
+		time_name = cube.coord(axis='t').var_name
+
+		iris.coord_categorisation.add_year(cube, time_name, name='year')
+		iris.coord_categorisation.add_month_number(cube, time_name, name='month')
 
 		### Add season
 		seasons = ['djf', 'mam', 'jja', 'son']
-		iris.coord_categorisation.add_season(cube, 'time', name='clim_season', seasons=seasons)
-		iris.coord_categorisation.add_season_year(cube, 'time', name='season_year', seasons=seasons)
+		iris.coord_categorisation.add_season(cube, time_name,      name='clim_season', seasons=seasons)
+		iris.coord_categorisation.add_season_year(cube, time_name, name='season_year', seasons=seasons)
 
 
 
@@ -213,7 +214,6 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 	len_filt = len(filt_cat.index)
 
 	for i in filt_cat.index:
-		
 		filt   = filt_cat[filt_cat.index == i]
 		path   = filt['Path'].values[0]
 		model  = filt['Model'].values[0]
@@ -223,7 +223,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		
 		### Print progress to screen
 		if (verbose == True): 
-			count = count+1 ### could also add total (e.g., 1 of 101) !!!!!!!!!!!!!!!!!!!!!
+			count = count+1
 			print('['+str(count)+'/'+str(len_filt)+'] CMIP5 '+model+' '+run_id+' '+exp+' '+var)
 
 		netcdfs = os.listdir(path)
@@ -332,6 +332,30 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 
 
+def get_fx(model, Var):
+
+	### substitute var (e.g., Orography) for models where file is missing
+	### with models with the same orography --- CHECK THESE ARE SAME RESOLUTION!!!!!
+	if (model == 'HadGEM2-AO'): model = 'HadGEM2-CC'
+
+	filt_cat = catalogue(Model=model, Frequency='fx', Var=Var)
+	exps     = filt_cat['Experiment'].values
+
+	if (len(exps) == 0): raise ValueError('No '+Var+' files exists for '+model)
+
+	### whitelist experiments to read data from (ordered list)
+	whitelist = ['historical', 'piControl', 'amip', 'rcp45', 'decadal1980']
+
+	for wl in whitelist:
+		if (wl in exps): 
+			fx = get_cubes(catalogue(Model=model, Frequency='fx', Var=Var, Experiment=wl))
+			if (len(fx) > 1): print('Warning: more than one '+Var+' file found.  Using first one.')
+			return fx[0]
+
+	### You should not get this far, if so then consider extending the whitelist
+	print('List of experiments = '+exps)
+	raise ValueError('Extend whitelist of Experiments to read '+Var+' file from')
+
 def get_orog(model):
 	'''
 	Get Orography for model
@@ -339,28 +363,11 @@ def get_orog(model):
 		>>> orog = get_orog('HadCM3')
 
 	'''
+	return get_fx(model, 'orog')
 
-	### substitute orography for models where file is missing
-	### with models with the same orography --- CHECK THESE ARE SAME RESOLUTION!!!!!
-	if (model == 'HadGEM2-AO'): model = 'HadGEM2-CC'
 
-	filt_cat = catalogue(Model=model, Frequency='fx', Var='orog')
-	exps     = filt_cat['Experiment'].values
-
-	if (len(exps) == 0): raise ValueError('No orography files exists for '+model)
-
-	### whitelist experiments to read orog data from (ordered list)
-	whitelist = ['historical', 'piControl', 'amip', 'rcp45', 'decadal1980']
-
-	for wl in whitelist:
-		if (wl in exps): 
-			orog = get_cubes(catalogue(Model=model, Frequency='fx', Var='orog', Experiment=wl))
-			if (len(orog) > 1): print('Warning: more than one orography file found.  Using first one.')
-			return orog[0]
-
-	### You should not get this far, if so then consider extending the whitelist
-	print('List of experiments = '+exps)
-	raise ValueError('Extend whitelist of Experiments to read orog file from')
+def get_laf(model):
+	return get_fx(model, 'sftlf')
 
 
 
