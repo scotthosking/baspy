@@ -17,7 +17,7 @@ if not os.path.exists(baspy_path):
 	os.makedirs(os.path.expanduser(baspy_path))
 
 
-def get_fnames(start_date, end_date, level_str):
+def get_6hr_fnames(start_date, end_date, level_str):
 	"""
 	Get /Path/filenames for ERA-Interim files within date range
 	level_str for JASMIN:
@@ -48,5 +48,62 @@ def get_fnames(start_date, end_date, level_str):
 		date = date + time_increment  
 	
 	return filenames
+
+
+def edit_erai_attributes(cube, field, filename):
+	### Remove attributes from cube on read
+    cube.attributes.pop('history', None)
+    cube.attributes.pop('time',    None)
+    cube.attributes.pop('date',    None)
+    cube.coord('t').attributes.pop('time_origin', None)
+
+
+def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None):
+
+	"""
+	Get /Path/filenames for ERA-Interim files within date range
+	level_str for JASMIN:
+		'as' surface variables
+		'ap' pressure level variables
+	"""
+
+	### Reference cube to standarise coordinate points/names etc
+	if frequency == '6hr': ref_nc = '/badc/ecmwf-era-interim/data/gg/as/1979/01/01/ggas197901010000.nc'
+
+	with iris.unit.suppress_unit_warnings():
+		ref_cube = iris.load_cube(ref_nc, constraints=constraints, callback=edit_erai_attributes)
+
+	### To do....
+	#
+	# if >30 fnames then do 30 fnames at a time, and then concatenate at the end !!!!!!!!!
+	#
+	# change default frequency to monthly
+
+	if frequency == '6hr': fnames = get_6hr_fnames(start_date, end_date, level_str)
+	
+	with iris.unit.suppress_unit_warnings():
+		cubelist = iris.load(fnames, constraints=constraints, callback=edit_erai_attributes)
+
+	### Fix cubes to all match a reference cube before we can merge
+
+	for c in cubelist: 
+		c.coord('latitude').points         = ref_cube.coord('latitude').points
+		c.coord('longitude').points        = ref_cube.coord('longitude').points
+		c.coord('latitude').standard_name  = ref_cube.coord('latitude').standard_name
+		c.coord('longitude').standard_name = ref_cube.coord('longitude').standard_name
+		c.coord('t').var_name              = ref_cube.coord('t').var_name
+
+	iris.util.unify_time_units(cubelist)
+	cube = cubelist.concatenate_cube()
+	cube = iris.util.squeeze(cube)
+
+	return cube
+
+
+def get_land_mask():
+	cube = iris.load_cube('/group_workspaces/jasmin/bas_climate/data/ecmwf1/era-interim/erai_invariant.nc', 'land_binary_mask')
+	return cube
+
+
 
 # End of erai.py
