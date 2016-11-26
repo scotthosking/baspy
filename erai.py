@@ -101,7 +101,8 @@ def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None)
 
 
 def get_land_mask():
-	cube = iris.load_cube('/group_workspaces/jasmin/bas_climate/data/ecmwf1/era-interim/erai_invariant.nc', 'land_binary_mask')
+	with iris.unit.suppress_unit_warnings():
+		cube = iris.load_cube('/group_workspaces/jasmin/bas_climate/data/ecmwf1/era-interim/erai_invariant.nc', 'land_binary_mask')
 	return cube
 
 

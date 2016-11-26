@@ -332,6 +332,23 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 
 
+def get_cube(filt_cat, constraints=None, verbose=True):
+
+	if (len(filt_cat.index) == 1): 
+		cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose)
+		cube = cube[0]
+
+	if (len(filt_cat) > 1): 
+		raise ValueError("Error: more than one cube present.  Try 'get_cubes' instead")
+	if (len(filt_cat) == 0): 
+		raise ValueError("Error: no cubes specified in catalogue.")
+
+	return cube
+
+
+
+
+
 def get_fx(model, Var):
 
 	### substitute var (e.g., Orography) for models where file is missing
@@ -368,12 +385,6 @@ def get_orog(model):
 
 def get_laf(model):
 	return get_fx(model, 'sftlf')
-
-
-
-
-
-
 
 
 
