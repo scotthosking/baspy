@@ -46,7 +46,7 @@ def __refresh_catalogue():
 
 	### Get paths for all CMIP5 models and their experiments
 	model_exp_dirs = glob.glob(cmip5_dir+'*/*/*/*')
-	
+
 	dirs = []
 	for model_exp in model_exp_dirs:
 	    print(model_exp)
@@ -61,13 +61,15 @@ def __refresh_catalogue():
 	    parts = re.split('/', dir)[6:]
 	    parts.pop(7)
 
-	    ### Add version to catalogue
+	    ### Add Version to catalogue and Path
 	    real_path = os.path.realpath(dir)
 	    version   = re.split('/',real_path)[-2]
 	    parts.append(version)
-	    dir = dir.replace( '/latest/', '/'+version+'/' )
+	    a = re.split('/', dir)
+	    a[-2] = version
+	    dir = '/'.join(a)
 
-	    parts.append(dir)
+	    parts.append(dir)        
 	    rows.append(parts)
 
 	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','MIPtable','RunID','Var','Version','Path'])
@@ -117,8 +119,10 @@ def __combine_dictionaries(keys, dict1_in, dict2_in):
 
 def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
+	keys = cat_dict.keys()
+
 	### Filter catalogue
-	for key in cat_dict.keys():
+	for key in keys:
 
 		vals      = cat_dict[key]
 		cat_bool  = np.zeros(len(cat), dtype=bool)
@@ -141,10 +145,19 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 	### "2nd Pass" keep only items where all Variables are available for that Model/Experiment/RunID/Frequency etc
 	if (complete_var_set == True):
 
-		vals = cat_dict['Var']
+	    if ('Var' not in keys):
+	        raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
 
-		if (len(vals) < 2): 
-			raise ValueError('Two or more Varaibles (var=) need to be specified in order to use complete_var_set')
+	    vals = cat_dict['Var']
+
+	    if (len(vals) < 2):
+	        raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
+
+	    other_keys = cat_dict.keys()
+	    other_keys.remove('Var')
+	    for i in other_keys: 
+	        if len(cat_dict[i]) > 1:
+	            raise ValueError('To use complete_var_set, currently only one item is allowed for all keys other than Var. i.e., You have: '+i+'='+str(cat_dict[i]) )
 
 		### Create a new column in catalogue, same as 'Path' but with the trailing (Var) directory removed
 		path_head = np.array([])
@@ -205,7 +218,7 @@ def __compare_dict(dict1_in, dict2_in):
 
 
 
-def catalogue(refresh=None, **kwargs):
+def catalogue(refresh=None, complete_var_set=False, **kwargs):
 	"""
 	
 	Read whole CMIP5 catalogue for JASMIN
@@ -214,9 +227,13 @@ def catalogue(refresh=None, **kwargs):
 	Read filtered CMIP5 catalogue for JASMIN
 	   >>> cat = cmip5_catalogue(Experiment=['amip','historical'], Var='tas', Frequency=['mon'])
 	   
+	complete_var_set = True: return a complete set where all Variables are available
+	   >>> cat = cmip5_catalogue(Var=['tas','psl','tasmx'], complete_var_set=True)
+
 	refresh = True: refresh CMIP5 cataloge (both personal and shared catalogues)
 	   >>> cat = cmip5_catalogue(refresh=True)
 	   
+
 	"""
 
 	### Build a new catalogue
@@ -261,7 +278,7 @@ def catalogue(refresh=None, **kwargs):
 		print('---------------------------------------------------')
 
 	### Produce the catalogue for user
-	cat = __filter_cat_by_dictionary( __cached_cat, user_values )
+	cat = __filter_cat_by_dictionary( __cached_cat, user_values, complete_var_set=complete_var_set )
 
 	# Some Var names are duplicated across SubModels (e.g., Var='pr')
 	# Force code to fall over if we spot more than one unique SubModel
