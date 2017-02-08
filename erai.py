@@ -7,7 +7,6 @@ import re
 import datetime
 import glob, os.path
 
-import baspy as bp
 import iris
 import iris.coords as coords
 

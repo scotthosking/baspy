@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# Filename: util.py
 
 import numpy as np
 import iris

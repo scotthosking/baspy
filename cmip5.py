@@ -8,10 +8,11 @@ import re
 import datetime
 import glob, os.path
 import shutil
-import baspy as bp
 import iris
 import iris.coords as coords
 import iris.coord_categorisation
+import baspy.util
+
 
 cmip5_cat_fname = 'cmip5_catalogue.csv'
 
@@ -31,9 +32,176 @@ if (os.path.isfile(cat_file) == False):
 ### Directories
 cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
-### Originally set cat to nothing
-### global cat will be updated for the first time it is read
-__cat = []
+### Originally set cat to an empty DataFrame
+__cached_cat    = pd.DataFrame([])
+__cached_values = {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 'Frequency':['mon']}
+
+
+def __refresh_catalogue():
+	'''
+	Rebuild the CMIP5 catalogue
+	'''
+
+	print("Building catalogue now... go grab a cuppa, this could take a while...")
+
+	### Get paths for all CMIP5 models and their experiments
+	model_exp_dirs = glob.glob(cmip5_dir+'*/*/*/*')
+	
+	dirs = []
+	for model_exp in model_exp_dirs:
+	    print(model_exp)
+	    dirs.extend(glob.glob(model_exp+'/*/*/*/latest/*'))
+
+	dirs = filter(lambda f: os.path.isdir(f), dirs)
+
+	### write data to catalogue (.csv) using a Pandas DataFrame
+	rows = []
+	for dir in dirs:
+
+	    parts = re.split('/', dir)[6:]
+	    parts.pop(7)
+
+	    ### Add version to catalogue
+	    real_path = os.path.realpath(dir)
+	    version   = re.split('/',real_path)[-2]
+	    parts.append(version)
+	    dir = dir.replace( '/latest/', '/'+version+'/' )
+
+	    parts.append(dir)
+	    rows.append(parts)
+
+	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','MIPtable','RunID','Var','Version','Path'])
+
+	### save to local dir
+	df.to_csv(cat_file, index=False)
+
+	### Copy this newly created catalogue to the shared catalogue directory
+	### for others to use
+	shutil.copy2(cat_file, __shared_cat_file)
+
+
+
+
+def __combine_dictionaries(keys, dict1_in, dict2_in):
+
+	'''
+	Combine dictionaries for only those specified keys
+	'''
+ 
+	dict1 = dict1_in.copy()
+	dict2 = dict2_in.copy()
+
+	for key in keys:
+
+		### if key not defined in dictionaries then add an empty key (e.g., {'Model':[]})
+		if key not in dict1.keys(): dict1.update({key:[]})
+		if key not in dict2.keys(): dict2.update({key:[]})
+
+		### If not already, convert list
+		if (dict1[key].__class__ == str):        dict1[key] = [dict1[key]]
+		if (dict1[key].__class__ == np.string_): dict1[key] = [dict1[key]]
+		if (dict2[key].__class__ == str):        dict2[key] = [dict2[key]]
+		if (dict2[key].__class__ == np.string_): dict2[key] = [dict2[key]]
+
+		### combine dictionaries (add dict2 to dict1) and
+		### remove duplicated items from within a key's list 
+		###     e.g, Var=['tas','tas','va'] --> Var=['tas','va']
+		dict1[key] = list( set(dict1[key] + dict2[key]) )
+
+		### if a dict key has size 0 (no items) then remove it from dict
+		if len(dict1[key]) == 0: del dict1[key]
+
+	return dict1
+
+
+
+def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
+
+	### Filter catalogue
+	for key in cat_dict.keys():
+
+		vals      = cat_dict[key]
+		cat_bool  = np.zeros(len(cat), dtype=bool)
+		uniq_vals = np.unique(cat[key])
+
+		### if vals has just 1 element (i.e., is a string) then convert to a list
+		if (vals.__class__ == str):        vals = [vals]
+		if (vals.__class__ == np.string_): vals = [vals]
+
+		for val in vals:
+			if (val not in uniq_vals): 
+				print('Are you sure that data exists that satisfy all your constraints?')
+				raise ValueError(val+' not found. See available in current catalouge: '+np.array_str(uniq_vals) )
+			cat_bool = np.add( cat_bool, (cat[key] == val) )
+
+		### Apply filter 	
+		cat = cat[cat_bool]
+
+
+	### "2nd Pass" keep only items where all Variables are available for that Model/Experiment/RunID/Frequency etc
+	if (complete_var_set == True):
+
+		vals = cat_dict['Var']
+
+		if (len(vals) < 2): 
+			raise ValueError('Two or more Varaibles (var=) need to be specified in order to use complete_var_set')
+
+		### Create a new column in catalogue, same as 'Path' but with the trailing (Var) directory removed
+		path_head = np.array([])
+		for path in cat['Path'].values:
+			path_head = np.append(path_head, os.path.split(path)[0])
+		cat.loc[:,'Path_head'] = path_head
+
+		### Remove (drop) all items which do not complete a full set of Variables
+		for val in vals:
+			df0    = cat[ cat['Var'] == vals[0] ]
+			df1    = cat[ cat['Var'] == val     ]
+			paths0 = np.unique( df0['Path_head'].values ).tolist()
+			paths1 = np.unique( df1['Path_head'].values ).tolist()
+			diff   = set(paths0).symmetric_difference(set(paths1))
+
+			for d in diff: 
+				ind = cat[ cat['Path_head'] == d ].index
+				cat = cat.drop(ind, axis=0)
+
+		### Remove temporary column 'Path_head'
+		cat = cat.drop('Path_head', axis=1)
+
+	### Return a filtered catalogue
+	return cat
+
+
+
+
+def __compare_dict(dict1_in, dict2_in):
+
+	dict1 = dict1_in.copy()
+	dict2 = dict2_in.copy()
+	compare_dicts = 'same'
+	uniq_keys = list( set(dict1.keys() + dict2.keys()) )
+
+	for key in uniq_keys:
+
+		### if key not defined in dictionaries then add an empty key (e.g., {'Model':[]})
+		if key not in dict1.keys(): dict1.update({key:[]})
+		if key not in dict2.keys(): dict2.update({key:[]})
+
+		### convert string to list 
+		if (type(dict1[key]) == str): dict1[key] = [dict1[key]]
+		if (type(dict2[key]) == str): dict2[key] = [dict2[key]]
+		
+		### remove duplicated items from within a key's list
+		###     e.g, Var=['tas','tas','va'] --> Var=['tas','va']
+		dict1[key] = list(set(dict1[key]))
+		dict2[key] = list(set(dict2[key]))
+
+		### Sort key list
+		dict1[key].sort()
+		dict2[key].sort()
+
+		if dict1[key] != dict2[key]: compare_dicts = 'different'
+
+	return compare_dicts
 
 
 
@@ -50,100 +218,75 @@ def catalogue(refresh=None, **kwargs):
 	   >>> cat = cmip5_catalogue(refresh=True)
 	   
 	"""
-	
-	################################
+
 	### Build a new catalogue
-	################################
+	if (refresh == True): __refresh_catalogue()
 
-	if (refresh == True):
+	global __cached_cat
+	global __cached_values
 
-		print("Building catalogue now... go grab a cuppa, this could take a while...")
-	
-		### Get paths for all CMIP5 models and their experiments
-		model_exp_dirs = glob.glob(cmip5_dir+'*/*/*/*')
-		
-		dirs = []
-		for model_exp in model_exp_dirs:
-		    print(model_exp)
-		    dirs.extend(glob.glob(model_exp+'/*/*/*/latest/*'))
+	update_cached_cat = False
 
-		dirs = filter(lambda f: os.path.isdir(f), dirs)
+	### Read catalgoue for the first time
+	if (__cached_cat.size == 0):
 
-		### write data to catalogue (.csv) using a Pandas DataFrame
-		rows = []
-		for dir in dirs:
-		    parts = re.split('/', dir)[6:]
-		    parts.pop(7)
-		    parts.append(dir)
-		    rows.append(parts)
+		### This is the first time we have run the code, so read and cache catalogue (done below)
+		update_cached_cat = True
 
-		df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','MIPtable','RunID','Var','Path'])
-
-		### save to local dir
-		df.to_csv(cat_file, index=False)
-
-		### Copy this newly created catalogue to the shared catalogue directory
-		### for others to use
-		shutil.copy2(cat_file, __shared_cat_file)
+		### Check to see if there is a newer version of the catalogue available
+		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
+			print('')
+			print('Note: There is a newer version of the CMIP5 catalogue avaiable at')
+			print(__shared_cat_file)
+			print('although it is safe to continue using the one you are using in '+__baspy_path)
+			print('')
 
 
-	################################
-	### Read and filter catalogue
-	################################
+	### Get user defined filter/dictionary from kwargs
+	user_values = kwargs.copy()
 
-	# ### read if not already loaded
-	# if (len(__cat) == 0): 
-	# 	### Check to see if there is a newer version of the catalogue available
-	# 	if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
-	# 		print('')
-	# 		print('Note: There is a newer version of the CMIP5 catalogue avaiable at')
-	# 		print(__shared_cat_file)
-	# 		print('although it is safe to continue using the one you are using in '+__baspy_path)
-	# 		print('')
+	### Update/expand cached catalogue
+	### Add any additional items from user for only those keys already defined in cached_cat (ignore other keys from user)
+	expanded_cached_values = __combine_dictionaries(__cached_values.keys(), __cached_values, user_values)
+	compare_dicts          = __compare_dict(expanded_cached_values, __cached_values)
+	if (compare_dicts == 'different'): update_cached_cat = True
 
-	### Read catalgoue
-	__cat = pd.read_csv(cat_file) 			
+	if (update_cached_cat == True):
+		print('Updating cached catalogue...') 
+		__cached_cat    = pd.read_csv(cat_file)
+		__cached_values = expanded_cached_values.copy()
+		__cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
+		print('-- Cached values from catalogue has been updated --')
+		print(__cached_values)
+		print('---------------------------------------------------')
 
-	### Filter catalogue
-	names = kwargs.viewkeys()
+	### Produce the catalogue for user
+	cat = __filter_cat_by_dictionary( __cached_cat, user_values )
 
-	### TO DO!!!
-	#
-	#  If Frequency has not been set then default to 'mon'
-	#
-	#  Print a Warning to this effect
-	#
-
-	for name in names:
-
-		uniq_label = np.unique( __cat[name] )
-		cat_bool   = np.zeros(len(__cat), dtype=bool)
-
-		vals = kwargs[name]
-
-		### if vals has just 1 element (i.e., is a string) then convert to a list
-		if (vals.__class__ == str): vals = [vals]
-		if (vals.__class__ == np.string_): vals = [vals]
-
-		for val in vals:
-			if (val not in uniq_label): 
-				raise ValueError(val+' not found. See available: '+np.array_str(uniq_label) )
-			cat_bool = np.add(cat_bool, (__cat[name] == val) )
-		__cat = __cat[cat_bool]
-	
 	# Some Var names are duplicated across SubModels (e.g., Var='pr')
-	# Cause code to fall over if we spot more than one unique SubModel
-	# when Var= has been set.
-	if (len(np.unique(__cat['SubModel'])) > 1) & ('Var' in names):
-		print('SubModel=', np.unique(__cat['SubModel']))
-		raise ValueError("Var is ambiguous, try defining Submodel (e.g., SubModel='atmos')")
+	# Force code to fall over if we spot more than one unique SubModel
+	# when Var has been set.
+	if (len(np.unique(cat['SubModel'])) > 1) & ('Var' in user_values.keys()):
+		print('SubModel=', np.unique(cat['SubModel']))
+		raise ValueError("Var maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
 
-	### As standard, we do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
-	if (len(np.unique(__cat['Frequency'])) > 1):
-		print('Frequency=', np.unique(__cat['Frequency']))
-		raise ValueError("Multiple time Frequencies present, try defining Frequency (e.g., Frequency='mon')")
+	### We do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
+	if (len(np.unique(cat['Frequency'])) > 1):
+		print('Frequency=', np.unique(cat['Frequency']))
+		raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
 
-	return __cat
+	return cat
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -316,10 +459,10 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		iris.util.unify_time_units(cubelist1)
 		
 		### Remove temporal overlaps
-		cubelist1 = bp.util.rm_time_overlaps(cubelist1)
+		cubelist1 = baspy.util.rm_time_overlaps(cubelist1)
 
 		### Unify lat-lon grid
-		#cubelist1 = bp.util.unify_grid_coords(cubelist1, cubelist1[0])
+		#cubelist1 = baspy.util.util.unify_grid_coords(cubelist1, cubelist1[0])
 		
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
