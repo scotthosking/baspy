@@ -7,7 +7,6 @@ import pandas as pd
 import re
 import datetime
 import glob, os.path
-import shutil
 import iris
 import iris.coords as coords
 import iris.coord_categorisation
@@ -27,6 +26,7 @@ __shared_cat_file = '/group_workspaces/jasmin/bas_climate/data/data_catalogues/'
 if (os.path.isfile(cat_file) == False):	
 	print("Catalogue of CMIP5 data does not exist, this may be the first time you've run this code")
 	print('Copying shared catalogue to '+__baspy_path)
+	import shutil
 	shutil.copy2(__shared_cat_file, cat_file)
 
 ### Directories
@@ -36,8 +36,10 @@ cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 __cached_cat    = pd.DataFrame([])
 __cached_values = {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 'Frequency':['mon']}
 
+__orig_cached_values = __cached_values.copy()
 
-def __refresh_catalogue():
+
+def __refresh_shared_catalogue():
 	'''
 	Rebuild the CMIP5 catalogue
 	'''
@@ -75,11 +77,7 @@ def __refresh_catalogue():
 	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','MIPtable','RunID','Var','Version','Path'])
 
 	### save to local dir
-	df.to_csv(cat_file, index=False)
-
-	### Copy this newly created catalogue to the shared catalogue directory
-	### for others to use
-	shutil.copy2(cat_file, __shared_cat_file)
+	df.to_csv(__shared_cat_file, index=False)
 
 
 
@@ -124,13 +122,13 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 	### Filter catalogue
 	for key in keys:
 
+		### Ensure that values within a key are defined as a list
+		if (cat_dict[key].__class__ == str):        cat_dict[key] = [cat_dict[key]]
+		if (cat_dict[key].__class__ == np.string_): cat_dict[key] = [cat_dict[key]]
+
 		vals      = cat_dict[key]
 		cat_bool  = np.zeros(len(cat), dtype=bool)
 		uniq_vals = np.unique(cat[key])
-
-		### if vals has just 1 element (i.e., is a string) then convert to a list
-		if (vals.__class__ == str):        vals = [vals]
-		if (vals.__class__ == np.string_): vals = [vals]
 
 		for val in vals:
 			if (val not in uniq_vals): 
@@ -147,17 +145,17 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
 	    if ('Var' not in keys):
 	        raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
+	    if (len(cat_dict['Var']) < 2):
+	        raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
+
 
 	    vals = cat_dict['Var']
-
-	    if (len(vals) < 2):
-	        raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
 
 	    other_keys = cat_dict.keys()
 	    other_keys.remove('Var')
 	    for i in other_keys: 
 	        if len(cat_dict[i]) > 1:
-	            raise ValueError('To use complete_var_set, currently only one item is allowed for all keys other than Var. i.e., You have: '+i+'='+str(cat_dict[i]) )
+	            raise ValueError('complete_var_set: only one item allowed for keys other than Var. You have: '+i+'='+str(cat_dict[i]) )
 
 		### Create a new column in catalogue, same as 'Path' but with the trailing (Var) directory removed
 		path_head = np.array([])
@@ -230,14 +228,17 @@ def catalogue(refresh=None, complete_var_set=False, **kwargs):
 	complete_var_set = True: return a complete set where all Variables are available
 	   >>> cat = cmip5_catalogue(Var=['tas','psl','tasmx'], complete_var_set=True)
 
-	refresh = True: refresh CMIP5 cataloge (both personal and shared catalogues)
+	refresh = True: refresh the shared CMIP5 cataloge 
+					(the user can then choose to replace their personal catalogue once completed)
+					This should only be run when new data has been uploaded into the data archive, 
+					or when there has been a change to the items stored within the catalogue
 	   >>> cat = cmip5_catalogue(refresh=True)
 	   
 
 	"""
 
 	### Build a new catalogue
-	if (refresh == True): __refresh_catalogue()
+	if (refresh == True): __refresh_shared_catalogue()
 
 	global __cached_cat
 	global __cached_values
@@ -252,11 +253,12 @@ def catalogue(refresh=None, complete_var_set=False, **kwargs):
 
 		### Check to see if there is a newer version of the catalogue available
 		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
-			print('')
-			print('Note: There is a newer version of the CMIP5 catalogue avaiable at')
+			print('###################################################################')
+			print('Note that there is a newer version of the shared CMIP5 catalogue at')
 			print(__shared_cat_file)
-			print('although it is safe to continue using the one you are using in '+__baspy_path)
-			print('')
+			print('For now you will continue to use the one in your personal directory')
+			print(__baspy_path+'/.')
+			print('###################################################################')
 
 
 	### Get user defined filter/dictionary from kwargs
@@ -273,24 +275,32 @@ def catalogue(refresh=None, complete_var_set=False, **kwargs):
 		__cached_cat    = pd.read_csv(cat_file)
 		__cached_values = expanded_cached_values.copy()
 		__cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
-		print('-- Cached values from catalogue has been updated --')
+		print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')
 		print(__cached_values)
-		print('---------------------------------------------------')
+		print('')
 
-	### Produce the catalogue for user
-	cat = __filter_cat_by_dictionary( __cached_cat, user_values, complete_var_set=complete_var_set )
+	if user_values != {}:
 
-	# Some Var names are duplicated across SubModels (e.g., Var='pr')
-	# Force code to fall over if we spot more than one unique SubModel
-	# when Var has been set.
-	if (len(np.unique(cat['SubModel'])) > 1) & ('Var' in user_values.keys()):
-		print('SubModel=', np.unique(cat['SubModel']))
-		raise ValueError("Var maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
+		### Produce the catalogue for user
+		cat = __filter_cat_by_dictionary( __cached_cat, user_values, complete_var_set=complete_var_set )
 
-	### We do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
-	if (len(np.unique(cat['Frequency'])) > 1):
-		print('Frequency=', np.unique(cat['Frequency']))
-		raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
+		# Some Var names are duplicated across SubModels (e.g., Var='pr')
+		# Force code to fall over if we spot more than one unique SubModel
+		# when Var has been set.
+		if (len(np.unique(cat['SubModel'])) > 1) & ('Var' in user_values.keys()):
+			print('SubModel=', np.unique(cat['SubModel']))
+			raise ValueError("Var maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
+
+		### We do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
+		if (len(np.unique(cat['Frequency'])) > 1):
+			print('Frequency=', np.unique(cat['Frequency']))
+			raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
+
+	else:
+
+		### If no user_values are specified then read in default/original list of cached values
+		print('No user values defined, will therefore filter catalogue using default values')
+		cat = __filter_cat_by_dictionary( __cached_cat, __orig_cached_values )
 
 	return cat
 
