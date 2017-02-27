@@ -3,12 +3,10 @@
 
 import os
 import numpy as np
-import re
 import datetime
-import glob, os.path
-
+import os.path
+import cf_units as units
 import iris
-import iris.coords as coords
 
 ### Create folder for storing data
 baspy_path = os.path.expanduser("~/.baspy")
@@ -69,7 +67,7 @@ def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None)
 	### Reference cube to standarise coordinate points/names etc
 	if frequency == '6hr': ref_nc = '/badc/ecmwf-era-interim/data/gg/as/1979/01/01/ggas197901010000.nc'
 
-	with iris.unit.suppress_unit_warnings():
+	with units.suppress_errors():
 		ref_cube = iris.load_cube(ref_nc, constraints=constraints, callback=edit_erai_attributes)
 
 	### To do....
@@ -80,7 +78,7 @@ def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None)
 
 	if frequency == '6hr': fnames = get_6hr_fnames(start_date, end_date, level_str)
 	
-	with iris.unit.suppress_unit_warnings():
+	with units.suppress_errors():
 		cubelist = iris.load(fnames, constraints=constraints, callback=edit_erai_attributes)
 
 	### Fix cubes to all match a reference cube before we can merge
@@ -100,7 +98,7 @@ def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None)
 
 
 def get_land_mask():
-	with iris.unit.suppress_unit_warnings():
+	with units.suppress_errors():
 		cube = iris.load_cube('/group_workspaces/jasmin/bas_climate/data/ecmwf1/era-interim/erai_invariant.nc', 'land_binary_mask')
 	return cube
 

@@ -222,4 +222,41 @@ def eg_cubelist():
 	return cubelist
 
 
+
+
+
+
+def make_ts_cube(ts, cube, name, units=None):
+	'''
+	Make a 1D time-series cube based on another cube with the same time coordinate system
+
+	'''
+
+	### Define new cube
+	if (units != None): units = units
+	if (units == None): units = ''
+	long_name = name+' from '+cube.var_name
+	new_cube  = iris.cube.Cube( np.zeros(ts.shape), long_name=long_name, units=units )
+
+	### Copy time coordinates and all attributes from original cube	to new cube
+	t_coord = cube.coord(axis='t')
+	new_cube.add_dim_coord(t_coord, 0)
+
+	for coord in cube.aux_coords: 
+		if len(coord.points) == 1: data_dims=None
+		if len(coord.points) == len(t_coord.points): data_dims=0 ### Generalise this!!
+		new_cube.add_aux_coord(coord, data_dims=data_dims)
+
+	new_cube.attributes = cube.attributes
+
+	### Remove mask if present and unneeded
+	if type(ts) == np.ma.core.MaskedArray:
+		if all(ts.mask == False): ts = ts.data
+
+	### Copy time series into new cube
+	new_cube.data = ts
+	
+	return new_cube
+	
+
 # End of util.py

@@ -35,7 +35,6 @@ cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 ### Originally set cat to an empty DataFrame
 __cached_cat    = pd.DataFrame([])
 __cached_values = {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 'Frequency':['mon']}
-
 __orig_cached_values = __cached_values.copy()
 
 
@@ -270,6 +269,7 @@ def catalogue(refresh=None, complete_var_set=False, **kwargs):
 	compare_dicts          = __compare_dict(expanded_cached_values, __cached_values)
 	if (compare_dicts == 'different'): update_cached_cat = True
 
+
 	if (update_cached_cat == True):
 		print('Updating cached catalogue...') 
 		__cached_cat    = pd.read_csv(cat_file)
@@ -278,6 +278,7 @@ def catalogue(refresh=None, complete_var_set=False, **kwargs):
 		print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')
 		print(__cached_values)
 		print('')
+
 
 	if user_values != {}:
 
