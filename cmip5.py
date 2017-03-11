@@ -5,7 +5,6 @@ import os
 import numpy as np
 import pandas as pd
 import re
-import datetime
 import glob, os.path
 import iris
 import iris.coords as coords
@@ -547,9 +546,7 @@ def get_fx(model, Var):
 def get_orog(model):
 	'''
 	Get Orography for model
-
 		>>> orog = get_orog('HadCM3')
-
 	'''
 	return get_fx(model, 'orog')
 

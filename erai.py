@@ -49,10 +49,12 @@ def get_6hr_fnames(start_date, end_date, level_str):
 
 def edit_erai_attributes(cube, field, filename):
 	### Remove attributes from cube on read
-    cube.attributes.pop('history', None)
-    cube.attributes.pop('time',    None)
-    cube.attributes.pop('date',    None)
-    cube.coord('t').attributes.pop('time_origin', None)
+	cube.attributes.pop('history', None)
+	cube.attributes.pop('time',    None)
+	cube.attributes.pop('date',    None)
+	cube.attributes.pop('valid_max',    None)
+	cube.attributes.pop('valid_min',    None)
+	cube.coord('t').attributes.pop('time_origin', None)
 
 
 def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None):
@@ -63,12 +65,6 @@ def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None)
 		'as' surface variables
 		'ap' pressure level variables
 	"""
-
-	### Reference cube to standarise coordinate points/names etc
-	if frequency == '6hr': ref_nc = '/badc/ecmwf-era-interim/data/gg/as/1979/01/01/ggas197901010000.nc'
-
-	with units.suppress_errors():
-		ref_cube = iris.load_cube(ref_nc, constraints=constraints, callback=edit_erai_attributes)
 
 	### To do....
 	#
@@ -82,7 +78,7 @@ def get_cube(start_date, end_date, level_str, frequency='6hr', constraints=None)
 		cubelist = iris.load(fnames, constraints=constraints, callback=edit_erai_attributes)
 
 	### Fix cubes to all match a reference cube before we can merge
-
+	ref_cube = cubelist[0]
 	for c in cubelist: 
 		c.coord('latitude').points         = ref_cube.coord('latitude').points
 		c.coord('longitude').points        = ref_cube.coord('longitude').points

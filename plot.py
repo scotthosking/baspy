@@ -6,9 +6,7 @@ import cartopy
 
 def cplt(cube, fname=None, dpi=150, draw_features=False):
 	
-	'''
-	clever plotting :-)
-	'''
+	cube = iris.util.squeeze(cube)
 
 	### Quick Plot
 	if (fname==None):	 
