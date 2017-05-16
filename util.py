@@ -116,10 +116,10 @@ def unify_grid_coords(cubelist, cube_template):
 	grid (matching cube[0])
 	
 	Usage:
-		unify_grid_coords(cubelist, cube_template, dimensions)
+		unify_grid_coords(cubelist, cube_template)
 		
 	Example:
-		unify_grid_coords(my_cubes, my_cubes[0], [1,2])
+		unify_grid_coords(my_cubes, my_cubes[0])
 		
 	"""
 
