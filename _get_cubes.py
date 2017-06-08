@@ -7,13 +7,14 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 	split_str = re.split('/', path0)
 
 	if ('cmip5' in split_str):
-		cubes = bp.cmip5.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
+		import baspy.cmip5
+		cubes = baspy.cmip5.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
 
 	if ('happi' in split_str):
-		cubes = bp.happi.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
+		import baspy.happi
+		cubes = baspy.happi.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
 
 	return cubes
-
 
 
 def get_cube(filt_cat, constraints=None, verbose=True):
