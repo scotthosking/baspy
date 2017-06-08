@@ -72,7 +72,7 @@ def __refresh_shared_catalogue():
 	    parts.append(dir)        
 	    rows.append(parts)
 
-	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','MIPtable','RunID','Var','Version','Path'])
+	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','CMOR','RunID','Var','Version','Path'])
 
 	### save to local dir
 	df.to_csv(__shared_cat_file, index=False)
