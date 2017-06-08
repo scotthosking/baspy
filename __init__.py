@@ -30,6 +30,7 @@ __version__ = "0.5"
 
 
 get_cubes   = baspy._get_cubes.get_cubes
+get_cube    = baspy._get_cubes.get_cube
 catalogue   = baspy._catalogue.catalogue
 eg_cube     = baspy.util.eg_cube
 eg_cubelist = baspy.util.eg_cubelist
