@@ -2,8 +2,8 @@ import re
 
 def get_cubes(filt_cat, constraints=None, verbose=True):
 
-	df0       = filt_cat[0:1]
-	path0     = df0['Path'].values[0]
+	df0       = filt_cat.iloc[0]
+	path0     = df0['Path']
 	split_str = re.split('/', path0)
 
 	if ('cmip5' in split_str):
