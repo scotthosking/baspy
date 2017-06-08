@@ -202,10 +202,26 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	global __current_dataset
 	global __orig_cached_values
 
-	if dataset == None:
-		print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
-		dataset = __default_dataset
-		__current_dataset = __default_dataset
+	### First time using specified dataset
+	if (dataset != __current_dataset):
+
+		__cached_cat    = pd.DataFrame([])
+
+		if (dataset == None):
+			print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
+			dataset           = __default_dataset
+
+		if dataset == 'cmip5': 
+			__cached_values      = __cached_cmip5_values
+			__orig_cached_values = __cached_values.copy()
+
+		if dataset == 'happi': 
+			__cached_values      = __cached_happi_values
+			__orig_cached_values = __cached_values.copy()
+
+		__current_dataset = dataset
+
+
 
 	if dataset == 'cmip5': 
 		cat_fname = 'cmip5_catalogue.csv'
@@ -214,18 +230,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	if dataset == 'happi': 
 		cat_fname = 'happi_catalogue.csv'
 		if (refresh == True): bp.happi.__refresh_shared_catalogue()
-
-	### Are we requesting a dataset other than the one that is currently loaded?
-	if dataset != __current_dataset:
-		__cached_cat    = pd.DataFrame([])
-		__current_dataset = dataset
-		if dataset == 'cmip5': 
-			__cached_values      = __cached_cmip5_values
-			__orig_cached_values = __cached_values.copy()
-		if dataset == 'happi': 
-			__cached_values      = __cached_happi_values
-			__orig_cached_values = __cached_values.copy()
-
 
 	cat_file = __baspy_path+'/'+cat_fname
 
