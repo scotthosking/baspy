@@ -61,6 +61,8 @@ def callback(cube, field, filename):
 	A function which adds a "RunID" coordinate to the cube
 	"""
 
+	filename = re.split('/',filename)[-1]
+
 	### Extract the Model name from the filename
 	split_str = re.split('_',filename) # split string by delimiter
 	label = split_str[2]

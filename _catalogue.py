@@ -233,21 +233,18 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	### Set dataset specific variables
 	if dataset == 'cmip5': 
 		import baspy.cmip5
-		cat_fname = baspy.cmip5.cat_file
+		cat_file = baspy.cmip5.cat_file
 		__shared_cat_file = baspy.cmip5.__shared_cat_file
 
 	if dataset == 'happi':
 		import baspy.happi
-		cat_fname = baspy.happi.cat_file
+		cat_file = baspy.happi.cat_file
 		__shared_cat_file = baspy.happi.__shared_cat_file
 
 	### Refresh catalogue csv file
 	if (refresh == True): 
 		__refresh_shared_catalogue(dataset)
 		__cached_cat = pd.DataFrame([])
-
-
-	cat_file = __baspy_path+'/'+cat_fname
 
 	update_cached_cat = False
 
