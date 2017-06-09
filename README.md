@@ -32,7 +32,7 @@ To read in a small number of cubes:
 ```
 import baspy as bp
 cat = bp.catalogue(dataset='CMIP5', Model='HadGEM2-CC', RunID='r1i1p1', 
-					Experiment='historical', Var=['tas', 'pr'], Freuquency='mon')
+					Experiment='historical', Var=['tas', 'pr'], Frequency='mon')
 cubes = bp.get_cubes(cat)
 ```
 
@@ -42,7 +42,7 @@ To loop over many models, reading one model at a time:
 import baspy as bp
 import numpy as np
 
-cat = bp.catalogue(dataset='CMIP5', Experiment='amip', Var='tas', Freuquency='mon')
+cat = bp.catalogue(dataset='CMIP5', Experiment='amip', Var='tas', Frequency='mon')
 
 uniq_models = np.unqiue(cat['Model'])
 
