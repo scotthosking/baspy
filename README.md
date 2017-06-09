@@ -27,9 +27,25 @@ $> conda install -c scitools iris ipython
 
 ### Usage
 
-```
->>> import baspy as bp
->>> cat = bp.catalogue(dataset='CMIP5', Experiment='historical', Var=['tas', 'pr'], Freuquency='mon')
->>> cubes = bp.get_cubes(cat)
+To read in a small number of cubes:
 
+```
+import baspy as bp
+cat = bp.catalogue(dataset='CMIP5', Model='HadGEM2-CC', RunID='r1i1p1', Experiment='historical', Var=['tas', 'pr'], Freuquency='mon')
+cubes = bp.get_cubes(cat)
+```
+
+To loop over many models, reading one model at a time:
+
+```
+import baspy as bp
+import numpy as np
+
+cat = bp.catalogue(dataset='CMIP5', Experiment='amip', Var='tas', Freuquency='mon')
+
+uniq_models = np.unqiue(cat['Model'])
+
+for model in uniq_models:
+	filtered_cat = cat[ cat['Model'] == model ]
+	cubes = bp.get_cubes(filtered_cat)
 ```
