@@ -24,3 +24,12 @@ Once you have installed miniconda you can then use these commands to install iri
 ```
 $> conda install -c scitools iris ipython
 ```
+
+### Usage
+
+```
+>>> import baspy as bp
+>>> cat = bp.catalogue(dataset='CMIP5', Experiment='historical', Var=['tas', 'pr'], Freuquency='mon')
+>>> cubes = bp.get_cubes(cat)
+
+```
