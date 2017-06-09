@@ -30,6 +30,14 @@ __current_dataset = __default_dataset
 
 
 
+def __refresh_shared_catalogue(dataset):
+	if dataset == 'cmip5': 
+		import baspy.cmip5
+		bp.cmip5.__refresh_shared_catalogue()
+	if dataset == 'happi': 
+		import baspy.happi
+		bp.happi.__refresh_shared_catalogue()
+
 
 def __combine_dictionaries(keys, dict1_in, dict2_in):
 
@@ -118,22 +126,23 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 			s = ''
 			for c in columns: s = s+'_'+row[c]
 			model_run_identifiers = np.append(model_run_identifiers, s)
-		cat.loc[:,'Model_run_identifiers'] = model_run_identifiers
+		cat.loc[:,'Unique_Model_Run_id'] = model_run_identifiers
+		print("complete_var_set=True: Adding 'Unique_Model_Run_id' as a new column to the catalgoue")
 
 		### Remove (drop) all items which do not complete a full set of Variables
 		for val in vals:
 			df0    = cat[ cat['Var'] == vals[0] ]
 			df1    = cat[ cat['Var'] == val     ]
-			paths0 = np.unique( df0['Model_run_identifiers'].values ).tolist()
-			paths1 = np.unique( df1['Model_run_identifiers'].values ).tolist()
+			paths0 = np.unique( df0['Unique_Model_Run_id'].values ).tolist()
+			paths1 = np.unique( df1['Unique_Model_Run_id'].values ).tolist()
 			diff   = set(paths0).symmetric_difference(set(paths1))
 
 			for d in diff: 
-				ind = cat[ cat['Model_run_identifiers'] == d ].index
+				ind = cat[ cat['Unique_Model_Run_id'] == d ].index
 				cat = cat.drop(ind, axis=0)
 
-		### Remove temporary column 'Model_run_identifiers'
-		cat = cat.drop('Model_run_identifiers', axis=1)
+		### Remove temporary column 'Unique_Model_Run_id'
+		# cat = cat.drop('Unique_Model_Run_id', axis=1)
 
 	### Return a filtered catalogue
 	return cat
@@ -221,15 +230,22 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 
 		__current_dataset = dataset
 
-
-
+	### Set dataset specific variables
 	if dataset == 'cmip5': 
-		cat_fname = 'cmip5_catalogue.csv'
-		if (refresh == True): bp.cmip5.__refresh_shared_catalogue()
+		import baspy.cmip5
+		cat_fname = baspy.cmip5.cat_file
+		__shared_cat_file = baspy.cmip5.__shared_cat_file
 
-	if dataset == 'happi': 
-		cat_fname = 'happi_catalogue.csv'
-		if (refresh == True): bp.happi.__refresh_shared_catalogue()
+	if dataset == 'happi':
+		import baspy.happi
+		cat_fname = baspy.happi.cat_file
+		__shared_cat_file = baspy.happi.__shared_cat_file
+
+	### Refresh catalogue csv file
+	if (refresh == True): 
+		__refresh_shared_catalogue(dataset)
+		__cached_cat = pd.DataFrame([])
+
 
 	cat_file = __baspy_path+'/'+cat_fname
 
@@ -241,14 +257,14 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 		### This is the first time we have run the code, so read and cache catalogue (done below)
 		update_cached_cat = True
 
-		# ### Check to see if there is a newer version of the catalogue available
-		# if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
-		# 	print('###################################################################')
-		# 	print('Note that there is a newer version of the shared catalogue at      ')
-		# 	print(__shared_cat_file)
-		# 	print('For now you will continue to use the one in your personal directory')
-		# 	print(__baspy_path+'/.')
-		# 	print('###################################################################')
+		### Check to see if there is a newer version of the catalogue available
+		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
+			print('###################################################################')
+			print('Note that there is a newer version of the shared catalogue at      ')
+			print(__shared_cat_file)
+			print('For now you will continue to use the one in your personal directory')
+			print(__baspy_path+'/.')
+			print('###################################################################')
 
 
 	### Get user defined filter/dictionary from kwargs

@@ -12,16 +12,16 @@ import iris.coord_categorisation
 import baspy.util
 
 
-cmip5_cat_fname = 'cmip5_catalogue.csv'
+cat_fname = 'cmip5_catalogue.csv'
 
 ### Location of personal catologue file
 __baspy_path = os.path.expanduser("~/.baspy")
 if not os.path.exists(__baspy_path): 
 	os.makedirs(os.path.expanduser(__baspy_path))
-cat_file = __baspy_path+'/'+cmip5_cat_fname
+cat_file = __baspy_path+'/'+cat_fname
 
 ### If personal catologue file does not exist then copy shared catologue file
-__shared_cat_file = '/group_workspaces/jasmin/bas_climate/data/data_catalogues/'+cmip5_cat_fname
+__shared_cat_file = '/group_workspaces/jasmin/bas_climate/data/data_catalogues/'+cat_fname
 if (os.path.isfile(cat_file) == False):	
 	print("Catalogue of CMIP5 data does not exist, this may be the first time you've run this code")
 	print('Copying shared catalogue to '+__baspy_path)
@@ -331,7 +331,7 @@ def get_template_cube():
 
 
 
-def cmip5_callback(cube, field, filename):
+def callback(cube, field, filename):
 	"""
 	A function which adds a "RunID" coordinate to the cube
 	"""
@@ -416,7 +416,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 					' in '+path+' <<')
 					print(run_id, nc)
 					
-			if any([run_id not in nc, nc.endswith('.nc4')]):
+			if any([run_id not in nc, nc.endswith('.nc4')]): ### Note, this causes an issue in happi.get_cubes (generalise!!)
 				del_netcdfs.append(nc)
 				
 		### Remove netcdfs according to del_netcdfs
@@ -435,7 +435,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 			### Additional constrains (level, time)
 			if (constraints != None): con = con & constraints
 			
-			cube = iris.load(dirfilename, callback=cmip5_callback,
+			cube = iris.load(dirfilename, callback=callback,
 						constraints=con)
 
 			if (len(cube) > 1): raise ValueError('more than one cube loaded, expected only one!')
