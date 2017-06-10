@@ -8,7 +8,7 @@ import baspy.util
 
 
 cat_fname = 'happi_catalogue.csv'
-happi_dir = '/group_workspaces/jasmin/bas_climate/data/happi/data/'
+happi_dir = '/group_workspaces/jasmin/bas_climate/data/happi/'
 
 ### Location of personal catologue file
 __baspy_path = os.path.expanduser("~/.baspy")
@@ -32,7 +32,9 @@ def __refresh_shared_catalogue():
 	print("Building catalogue now...")
 
 	### Get paths for all HAPPI data
-	dirs = glob.glob(happi_dir+'/*/*/*/*/*/*/*/*/*')
+	dirs1 = glob.glob(happi_dir+'data/*/*/*/*/*/*/*/*/*')
+	dirs2 = glob.glob(happi_dir+'derived/*/*/*/*/*/*/*/*/*')
+	dirs = dirs1 + dirs2
 	dirs = filter(lambda f: os.path.isdir(f), dirs)
 
 	### write data to catalogue (.csv) using a Pandas DataFrame
