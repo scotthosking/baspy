@@ -33,10 +33,10 @@ __current_dataset = __default_dataset
 def __refresh_shared_catalogue(dataset):
 	if dataset == 'cmip5': 
 		import baspy.cmip5
-		bp.cmip5.__refresh_shared_catalogue()
+		baspy.cmip5.__refresh_shared_catalogue()
 	if dataset == 'happi': 
 		import baspy.happi
-		bp.happi.__refresh_shared_catalogue()
+		baspy.happi.__refresh_shared_catalogue()
 
 
 def __combine_dictionaries(keys, dict1_in, dict2_in):
