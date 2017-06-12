@@ -71,6 +71,6 @@ def pcolormesh(cube, draw_features=False, label=None, fname=None, dpi=150, **kwa
 	
 
 ### To test code above
-cube = iris.load_cube(iris.sample_data_path('air_temp.pp'))
-cube = contourf(cube, draw_features=True)
-plt.show()
+# cube = iris.load_cube(iris.sample_data_path('air_temp.pp'))
+# cube = contourf(cube, draw_features=True)
+# plt.show()
