@@ -11,10 +11,8 @@ def _plot_cubes(plot_type, cube, **kwargs):
 	cube = iris.util.squeeze(cube)
 	im   = iplt.contourf(cube)
 
-	user_args = kwargs.copy()
-
 	### Add features
-	if user_args['draw_features'] == True:
+	if kwargs['draw_features'] == True:
 
 		if (plot_type == 'contourf'):
 			im.ax.add_feature( cartopy.feature.BORDERS,   linestyle='--' )
@@ -30,13 +28,13 @@ def _plot_cubes(plot_type, cube, **kwargs):
 
 
 	### Save image? 
-	if (user_args['fname'] != None): plt.savefig(fname, dpi=dpi)
+	if (kwargs['fname'] != None): plt.savefig(fname, dpi=dpi)
 
 
 
 
 
-def contourf(cube, **kwargs):
+def contourf(cube, draw_features=False, label=None, fname=None, dpi=150, **kwargs):
 
 	'''
 	import matplotlib.pyplot as plt
@@ -51,15 +49,20 @@ def contourf(cube, **kwargs):
 
 	'''
 
-	_plot_cubes(contourf, cube, draw_features=False, label=None, fname=None, dpi=150)
+	_plot_cubes( 'contourf', cube, 	
+					draw_features=draw_features, label=label, 
+					fname=fname, dpi=dpi,
+					**kwargs )
 
 
-
-def pcolormesh(cube, **kwargs): 
-	_plot_cubes(pcolormesh, cube)
+def pcolormesh(cube, draw_features=False, label=None, fname=None, dpi=150, **kwargs): 
+	_plot_cubes( 'pcolormesh', cube, 
+					draw_features=draw_features, label=label, 
+					fname=fname, dpi=dpi,
+					**kwargs )
 	
 
-
+### To test code above
 # cube = iris.load_cube(iris.sample_data_path('air_temp.pp'))
-# cube = contourf(cube, draw_features=True)
+# cube = contourf(cube)
 # plt.show()
