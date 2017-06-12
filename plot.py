@@ -45,9 +45,9 @@ def contourf(cube, **kwargs):
 	plt.show()
 
 	* label: Panel labelling (default is None)
-		e.g., 		label='a' 
-				OR	label=['DJF','MAM', 'JJA', 'SON'] for a cubelist
-				OR	label=True for labelling panels sequentially from a to z
+		label='a' 
+		label=['DJF','MAM', 'JJA', 'SON'] for a cubelist
+		label=True for labelling panels sequentially from a to z
 
 	'''
 
