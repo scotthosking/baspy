@@ -18,12 +18,12 @@ def _plot_cubes(plot_type, cube, **kwargs):
 		try:
 			add_feature = im.ax.add_feature
 		except AttributeError:
-		    pass
+			pass
 
 		try:
 			add_feature = im.axes.add_feature
 		except AttributeError:
-		    pass
+			pass
 
 		add_feature( cartopy.feature.BORDERS,   linestyle='--' )
 		add_feature( cartopy.feature.RIVERS,    color='k'      )
