@@ -14,21 +14,29 @@ def _plot_cubes(plot_type, cube, **kwargs):
 	### Add features
 	if kwargs['draw_features'] == True:
 
-		if (plot_type == 'contourf'):
-			im.ax.add_feature( cartopy.feature.BORDERS,   linestyle='--' )
-			im.ax.add_feature( cartopy.feature.RIVERS,    color='k'      )
-			im.ax.add_feature( cartopy.feature.COASTLINE, linewidth=2.   )
-		if (plot_type == 'pcolormesh'):
-			im.axes.add_feature( cartopy.feature.BORDERS,   linestyle='--' )
-			im.axes.add_feature( cartopy.feature.RIVERS,    color='k'      )
-			im.axes.add_feature( cartopy.feature.COASTLINE, linewidth=2.   )
+		### Find add_feature attribute
+		try:
+			add_feature = im.ax.add_feature
+		except AttributeError:
+		    pass
 
+		try:
+			add_feature = im.axes.add_feature
+		except AttributeError:
+		    pass
+
+		add_feature( cartopy.feature.BORDERS,   linestyle='--' )
+		add_feature( cartopy.feature.RIVERS,    color='k'      )
+		add_feature( cartopy.feature.COASTLINE, linewidth=2.   )
+	
 	else:
+	
 		plt.gca().coastlines()
-
 
 	### Save image? 
 	if (kwargs['fname'] != None): plt.savefig(fname, dpi=dpi)
+
+
 
 
 
@@ -63,6 +71,6 @@ def pcolormesh(cube, draw_features=False, label=None, fname=None, dpi=150, **kwa
 	
 
 ### To test code above
-# cube = iris.load_cube(iris.sample_data_path('air_temp.pp'))
-# cube = contourf(cube)
-# plt.show()
+cube = iris.load_cube(iris.sample_data_path('air_temp.pp'))
+cube = contourf(cube, draw_features=True)
+plt.show()
