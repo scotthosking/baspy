@@ -22,7 +22,7 @@ see: http://scitools.org.uk/iris/docs/latest/installing.html
 Once you have installed miniconda you can then use these commands to install iris and ipython
 
 ```
-$> conda install -c scitools iris ipython
+$> conda install -c conda_forge iris ipython
 ```
 
 ### Usage
