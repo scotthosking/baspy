@@ -34,9 +34,11 @@ def __refresh_shared_catalogue(dataset):
 	if dataset == 'cmip5': 
 		import baspy.cmip5
 		baspy.cmip5.__refresh_shared_catalogue()
-	if dataset == 'happi': 
+	elif dataset == 'happi': 
 		import baspy.happi
 		baspy.happi.__refresh_shared_catalogue()
+	else:
+		raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
 
 
 def __combine_dictionaries(keys, dict1_in, dict2_in):
@@ -211,6 +213,11 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	global __current_dataset
 	global __orig_cached_values
 
+	### Refresh catalogue csv file
+	if (refresh == True): 
+		__refresh_shared_catalogue(dataset)
+		__cached_cat = pd.DataFrame([])
+
 	### First time using specified dataset
 	if (dataset != __current_dataset):
 
@@ -218,7 +225,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 
 		if (dataset == None):
 			print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
-			dataset           = __default_dataset
+			dataset = __default_dataset
 
 		if dataset == 'cmip5': 
 			__cached_values      = __cached_cmip5_values
@@ -240,11 +247,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 		import baspy.happi
 		cat_file = baspy.happi.cat_file
 		__shared_cat_file = baspy.happi.__shared_cat_file
-
-	### Refresh catalogue csv file
-	if (refresh == True): 
-		__refresh_shared_catalogue(dataset)
-		__cached_cat = pd.DataFrame([])
 
 	update_cached_cat = False
 
