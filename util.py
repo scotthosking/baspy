@@ -1,9 +1,6 @@
-
 import numpy as np
 import iris
 import iris.coord_categorisation
-
-cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 
 
 def cube_trend(cube, var_name=None, time_coord=None):
@@ -203,6 +200,7 @@ def eg_cube():
 	""" 
 	Load an example cube
 	"""
+	cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 	cube = iris.load_cube(cmip5_dir + 
 			'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
 			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc')
@@ -213,6 +211,7 @@ def eg_cubelist():
 	"""
 	Load an example cubelist
 	"""
+	cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 	cubelist = iris.load(
 			[cmip5_dir+'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
 			'psl/psl_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc', 
@@ -226,17 +225,18 @@ def eg_cubelist():
 
 
 
-def make_ts_cube(ts, cube, name, units=None):
+def make_ts_cube(ts, cube, rename=None, units=None):
 	'''
 	Make a 1D time-series cube based on another cube with the same time coordinate system
 
 	'''
 
-	### Define new cube
-	if (units != None): units = units
-	if (units == None): units = ''
-	long_name = name+' from '+cube.var_name
-	new_cube  = iris.cube.Cube( np.zeros(ts.shape), long_name=long_name, units=units )
+	### Setup new name, units etc (default is to keep the same)
+	if (rename != None): cube.rename(rename)
+	if (units == None):	 units=cube.units
+	long_name=cube.long_name
+
+	new_cube = iris.cube.Cube( np.zeros(ts.shape), long_name=long_name, units=units )
 
 	### Copy time coordinates and all attributes from original cube	to new cube
 	t_coord = cube.coord(axis='t')
@@ -258,5 +258,7 @@ def make_ts_cube(ts, cube, name, units=None):
 	
 	return new_cube
 	
+
+
 
 # End of util.py
