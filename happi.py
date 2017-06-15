@@ -5,6 +5,7 @@ import pandas as pd
 import iris
 import iris.coords as coords
 import baspy.util
+import numpy as np
 
 
 cat_fname = 'happi_catalogue.csv'
@@ -24,6 +25,8 @@ if (os.path.isfile(cat_file) == False):
 	import shutil
 	shutil.copy2(__shared_cat_file, cat_file)
 
+
+
 def __refresh_shared_catalogue():
 	'''
 	Rebuild the HAPPI catalogue
@@ -32,28 +35,50 @@ def __refresh_shared_catalogue():
 	print("Building catalogue now...")
 
 	### Get paths for all HAPPI data
-	dirs1 = glob.glob(happi_dir+'data/*/*/*/*/*/*/*/*/*')
-	dirs2 = glob.glob(happi_dir+'derived/*/*/*/*/*/*/*/*/*')
-	dirs = dirs1 + dirs2
-	dirs = filter(lambda f: os.path.isdir(f), dirs)
+	paths1 = glob.glob(happi_dir+'data/*/*/*/*/*/*/*/*/*')
+	paths2 = glob.glob(happi_dir+'derived/*/*/*/*/*/*/*/*/*')
+	paths  = paths1 + paths2
+	paths  = filter(lambda f: os.path.isdir(f), paths)
 
 	### write data to catalogue (.csv) using a Pandas DataFrame
 	rows = []
-	for dir in dirs:
+	for path in paths:
 
-	    parts = re.split('/', dir)[7:]
-	    # parts.pop(7)
+		parts = re.split('/', path)[7:]
 
-	    a = re.split('/', dir)
-	    dir = '/'.join(a)
+		### Make list of file names: i.e., 'file1.nc|file2.nc'
+		included_extensions = ['.nc', '.nc4', '.pp', '.grib']
+		fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in included_extensions)]
+		files_str = '|'.join(fnames)
 
-	    parts.append(dir)        
-	    rows.append(parts)
+		### Only add a row for paths where we have data files
+		if len(fnames) > 0:
 
-	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','CMOR','Version','Frequency','SubModel','Var','RunID','Path'])
+			### Get start and end dates from file names
+			start_date = np.array([])
+			end_date   = np.array([])
+			for fname in fnames:
+				fname = os.path.splitext(fname)[0] # rm extention
+				date_range = re.split('_', fname)[-1]
+				start_date = np.append( start_date, int(re.split('-', date_range)[0]) )
+				end_date   = np.append( end_date,   int(re.split('-', date_range)[1]) )
+
+			### Append parts in correct order
+			parts.append(int(np.min(start_date)))
+			parts.append(int(np.max(end_date)))
+			parts.append(path)    
+			parts.append(files_str)
+
+			### Append new row
+			rows.append(parts)
+
+	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','CMOR','Version','Frequency','SubModel','Var','RunID',
+										'StartDate', 'EndDate', 'Path','DataFiles', ])
 
 	### save to local dir
 	df.to_csv(__shared_cat_file, index=False)
+
+
 
 
 
