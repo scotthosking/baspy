@@ -9,11 +9,11 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 	if ('cmip5' in split_str):
 		import baspy.cmip5
-		cubes = baspy.cmip5.get_cubes(filt_cat, start_date=start_date, end_date=end_date, constraints=constraints, verbose=verbose)
+		cubes = baspy.cmip5.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
 
 	if ('happi' in split_str):
 		import baspy.happi
-		cubes = baspy.happi.get_cubes(filt_cat, start_date=start_date, end_date=end_date, constraints=constraints, verbose=verbose)
+		cubes = baspy.happi.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
 
 	return cubes
 
@@ -21,7 +21,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 def get_cube(filt_cat, constraints=None, verbose=True):
 
 	if (len(filt_cat.index) == 1): 
-		cube = get_cubes(filt_cat, start_date=start_date, end_date=end_date, constraints=constraints, verbose=verbose)
+		cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose)
 		cube = cube[0]
 
 	if (len(filt_cat) > 1): 
