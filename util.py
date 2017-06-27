@@ -225,15 +225,17 @@ def eg_cubelist():
 
 
 
-def make_ts_cube(ts, cube, rename=None, units=None):
+def make_ts_cube(ts, cube, rename=None, units=None, lon_lat_scalar_coords=None):
 	'''
 	Make a 1D time-series cube based on another cube with the same time coordinate system
+
+	e.g, lon_lat_scalar_coords=[10,-60]
 
 	'''
 
 	### Setup new name, units etc (default is to keep the same)
 	if (rename != None): cube.rename(rename)
-	if (units == None):	 units=cube.units
+	if (units == None): units=cube.units
 	long_name=cube.long_name
 
 	new_cube = iris.cube.Cube( np.zeros(ts.shape), long_name=long_name, units=units )
@@ -244,10 +246,18 @@ def make_ts_cube(ts, cube, rename=None, units=None):
 
 	for coord in cube.aux_coords: 
 		if len(coord.points) == 1: data_dims=None
-		if len(coord.points) == len(t_coord.points): data_dims=0 ### Generalise this!!
+		if len(coord.points) == len(t_coord.points): data_dims=0 ### Generalise this!!!!!!!!!!!!!!!!
 		new_cube.add_aux_coord(coord, data_dims=data_dims)
 
 	new_cube.attributes = cube.attributes
+
+	### Add longitude and latitude scalar coordinates (useful for time series at a location)
+	if lon_lat_scalar_coords != None:
+		import iris.coords as coords
+		lon_coord = coords.AuxCoord(lon_lat_scalar_coords[0], long_name='longitude', units='degrees')
+		lat_coord = coords.AuxCoord(lon_lat_scalar_coords[1], long_name='latitude', units='degrees')
+		new_cube.add_aux_coord(lon_coord)
+		new_cube.add_aux_coord(lat_coord)
 
 	### Remove mask if present and unneeded
 	if type(ts) == np.ma.core.MaskedArray:

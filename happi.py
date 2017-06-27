@@ -53,15 +53,7 @@ def __refresh_shared_catalogue():
 
 		### Only add a row for paths where we have data files
 		if len(fnames) > 0:
-
-			### Get start and end dates from file names
-			start_date = np.array([])
-			end_date   = np.array([])
-			for fname in fnames:
-				fname = os.path.splitext(fname)[0] # rm extention
-				date_range = re.split('_', fname)[-1]
-				start_date = np.append( start_date, int(re.split('-', date_range)[0]) )
-				end_date   = np.append( end_date,   int(re.split('-', date_range)[1]) )
+			start_date, end_date = get_cmip_file_date_ranges(fnames)
 
 			### Append parts in correct order
 			parts.append(int(np.min(start_date)))
@@ -79,7 +71,16 @@ def __refresh_shared_catalogue():
 	df.to_csv(__shared_cat_file, index=False)
 
 
-
+def get_cmip_file_date_ranges(fnames):
+	### Get start and end dates from file names
+	start_date = np.array([])
+	end_date   = np.array([])
+	for fname in list(fnames):
+		fname = os.path.splitext(fname)[0] # rm extention
+		date_range = re.split('_', fname)[-1]
+		start_date = np.append( start_date, int(re.split('-', date_range)[0]) )
+		end_date   = np.append( end_date,   int(re.split('-', date_range)[1]) )
+	return start_date, end_date
 
 
 
@@ -139,40 +140,52 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 	len_filt = len(filt_cat.index)
 
 	for i in filt_cat.index:
-		filt   = filt_cat[filt_cat.index == i]
-		path   = filt['Path'].values[0]
-		model  = filt['Model'].values[0]
-		run_id = filt['RunID'].values[0]
-		var    = filt['Var'].values[0]
-		exp    = filt['Experiment'].values[0]
+		filt    = filt_cat[filt_cat.index == i]
+		path    = filt['Path'].values[0]
+		model   = filt['Model'].values[0]
+		run_id  = filt['RunID'].values[0]
+		var     = filt['Var'].values[0]
+		exp     = filt['Experiment'].values[0]
+		netcdfs = re.split('|', filt['DataFiles'].values[0] )
 		
+		print netcdfs # TMP!!!
+
 		### Print progress to screen
 		if (verbose == True): 
 			count = count+1
 			print('['+str(count)+'/'+str(len_filt)+'] HAPPI '+model+' '+run_id+' '+exp+' '+var)
 
-		netcdfs = os.listdir(path)
-		
-		### Remove hidden files that start with '.'
-		nc2 = []
+		### Sanity check: Check that filenames represent what we requested
 		for nc in netcdfs:
-			if (nc.startswith('.') == False): nc2.append(nc)
-		netcdfs = nc2
+			if (model not in nc):  raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
+			if (var not in nc):    raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
+			if (run_id not in nc): raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
+			if (exp not in nc):    raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
 
-		### Remove files from chararray where run id not in 
-		### netcdf filenames or remove files that end with '.nc4' 
-		### (Note: EC-Earth has '*.nc4' files present)
-		del_netcdfs = []	
-		for nc in netcdfs:
+
+
+
+		### List file names that appear to be within our date range
+		# if (start_date != None) | (end_date != None):
+		# 	file_date_range = get_cmip_file_date_ranges(netcdfs)
+		# 	if (start_date == None): start_date = np.min(file_date_range[0])
+		# 	if (end_date == None):   end_date   = np.max(file_date_range[1])
+
+		# 	keep_ind1 = np.where( (end_date >= file_date_range[0])   & (end_date <= file_date_range[1])   )[0]
+		# 	keep_ind2 = np.where( (start_date >= file_date_range[0]) & (start_date <= file_date_range[1]) )[0]
+		# 	keep_ind  = np.sort(np.unique(np.append(keep_ind1,keep_ind2)))
 			
-			if (run_id not in nc):
-					print('>> WARNING: Detected misplaced files'
-					' in '+path+' <<')
-					print(run_id, nc)
-				
-		### Remove netcdfs according to del_netcdfs
-		for k in del_netcdfs: 
-			if (k in netcdfs): netcdfs.remove(k)
+		# 	if (len(keep_ind) == 0): 
+		# 		raise ValueError("No netcdf files within requested date range")
+		# 	else:
+		# 		netcdfs = netcdfs[keep_ind]
+
+		# if type(netcdfs) == str: netcdfs=[netcdfs]
+		
+		# print netcdfs # TMP!!!
+
+
+
 
 		### Read data with callback to add Experiment (Run) ID to 
 		### distinguish between ensemble memebers
@@ -180,8 +193,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		for j in netcdfs:
 			dirfilename = path+'/'+j
 			### contraint by var_name
-			con  = iris.Constraint(
-				cube_func=lambda cube: cube.var_name == var)
+			con = iris.Constraint(cube_func=lambda cube: cube.var_name == var)
 			
 			### Additional constrains (level, time)
 			if (constraints != None): con = con & constraints
@@ -194,7 +206,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 				cube = cube[0]
 			
 				### Remove attributes to enable cubes to concatenate
-				cube.attributes.clear()
+				cube.attributes.clear() ### To do - keep/unify attributes!!!
 				
 				### Create cubelist from cubes
 				cubelist1.extend([cube])
@@ -209,7 +221,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		cubelist1 = baspy.util.rm_time_overlaps(cubelist1)
 
 		### Unify lat-lon grid
-		#cubelist1 = baspy.util.util.unify_grid_coords(cubelist1, cubelist1[0])
+		#cubelist1 = baspy.util.unify_grid_coords(cubelist1, cubelist1[0])
 		
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
