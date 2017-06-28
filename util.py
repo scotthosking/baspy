@@ -106,49 +106,41 @@ def months2annual(cube):
 	return annual
 
 
-def unify_grid_coords(cubelist, cube_template):
+def unify_similar_grid_coords(cubes, cube_template=None):
 	"""
-	If cube[i].dim_coords[n] != cube[j].dim_coords[n] but you know that 
-	they are on the same grid then place all cubes on an identical 
-	grid (matching cube[0])
+	If the x or y coordinates are similar but different from a template cube then make them the same.
+	If cube_template is not specified then default to the first cube in the cubelist.
 	
 	Usage:
-		unify_grid_coords(cubelist, cube_template)
+		unify_similar_grid_coords(cubelist)
 		
 	Example:
-		unify_grid_coords(my_cubes, my_cubes[0])
+		unify_similar_grid_coords(cubes, other_cube)
 		
 	"""
 
-	if (cube_template.__class__ != iris.cube.Cube):
+	if (type(cubes) == iris.cube.Cube):
+		cubes = iris.cube.CubeList([cubes])
+
+	if (cube_template == None):
+		cube_template = cubes[0]
+
+	if (type(cube_template) != iris.cube.Cube):
 		raise ValueError('cube_template is not a cube')
-
-
-	if (cubelist.__class__ == iris.cube.CubeList):
-		n_cubes = len(cubelist)
-
-	if (cubelist.__class__ == iris.cube.Cube):
-		n_cubes = 1
 	
-	for j in ['latitude','longitude']:
-		edits = 0
-		A =  cube_template.coords(j)[0]
-		for i in range(0,n_cubes):
-			
-			if (cubelist.__class__ == iris.cube.CubeList): B =  cubelist[i].coords(j)[0]
-			if (cubelist.__class__ == iris.cube.Cube):     B =  cubelist.coords(j)[0]			
-			
-			if ((A != B) & (A.points.shape == B.points.shape)):
-				print('>>> Grid coordinates are different between cubes <<<')
-				if (np.max(np.abs(A.points - B.points)) < 0.001):
-					edits = edits + 1
-					B.points = A.points
-					B.bounds = A.bounds
-		
-		if (edits > 0): 
-			print ">>> unify_grid_coords: "+str(edits)+" edits to coords["+str(j)+"] <<<"
-		
-	return cubelist
+	if len(cubes) > 0:
+		for i, cube in enumerate(cubes):
+			for axis in ['X', 'Y']:
+				if (np.any(cube.coord(axis=axis).points != cube_template.coord(axis=axis).points) and
+						np.all(np.isclose(cube.coord(axis=axis).points, cube_template.coord(axis=axis).points))):
+						cube.coord(axis=axis).points = cube_template.coord(axis=axis).points
+						cubes[i] = cube
+				if (np.any(cube.coord(axis=axis).bounds != cube_template.coord(axis=axis).bounds) and
+						np.all(np.isclose(cube.coord(axis=axis).bounds, cube_template.coord(axis=axis).bounds))):
+						cube.coord(axis=axis).bounds = cube_template.coord(axis=axis).bounds
+						cubes[i] = cube
+
+	return cubes
 
 
 
@@ -156,29 +148,33 @@ def rm_time_overlaps(cubelist):
 	"""
 	Remove time overlaps from a cubelist
 	keeping the duplicated period from the cube that
-	comes before the two within the cubelist
+	comes first within the cubelist
 	"""	
 	if (cubelist.__class__ != iris.cube.CubeList):
-		return cubelist
+		raise ValueError('rm_time_overlaps requires a cubelist')
 	
 	if (len(cubelist) == 1): return cubelist
 	
-	### to-do: add check that all cubes are of the same var, exp etc !!!!
-	#
-	#
+	### Check that all cubes have the same var_name
+	var_names = [c.var_name for c in cubelist]
+	all_same = all(x==var_names[0] for x in var_names)
+	if all_same == False:
+		raise ValueError('cubelist contains cubes with difference var_names')
 	
 	### Unify time coordinates to identify overlaps
 	iris.util.unify_time_units(cubelist)
 	
-	### to-do: Sort cubelist by start time !!!!
-	#
-	#
+	### Sort cubelist by start time
+	cubelist.sort(key=lambda cube: cube.coord(axis='t').points[0])
+	### Tony: potentially a more robust robust solution??
+	### cubelist.sort(key=lambda cube: cube.coord(axis='t').units.num2date(cube.coord(axis='t').points[0]))
+
 
 	i = 1
 	while i < len(cubelist):
 
-		max1 = np.max(cubelist[i-1].coord('time').points)
-		min2 = np.min(cubelist[i].coord('time').points)
+		max1 = np.max(cubelist[i-1].coord(axis='t').points)
+		min2 = np.min(cubelist[i].coord(axis='t').points)
 		
 		if (min2 <= max1):
 			print('>>> WARNING: Removing temporal overlaps'
@@ -225,11 +221,12 @@ def eg_cubelist():
 
 
 
-def make_ts_cube(ts, cube, rename=None, units=None, lon_lat_scalar_coords=None):
+def make_ts_cube(ts, cube, rename=None, units=None):
 	'''
 	Make a 1D time-series cube based on another cube with the same time coordinate system
 
-	e.g, lon_lat_scalar_coords=[10,-60]
+	add_scalar_coords: 
+		see bp.util.add_scalar_coords def for more info
 
 	'''
 
@@ -251,14 +248,6 @@ def make_ts_cube(ts, cube, rename=None, units=None, lon_lat_scalar_coords=None):
 
 	new_cube.attributes = cube.attributes
 
-	### Add longitude and latitude scalar coordinates (useful for time series at a location)
-	if lon_lat_scalar_coords != None:
-		import iris.coords as coords
-		lon_coord = coords.AuxCoord(lon_lat_scalar_coords[0], long_name='longitude', units='degrees')
-		lat_coord = coords.AuxCoord(lon_lat_scalar_coords[1], long_name='latitude', units='degrees')
-		new_cube.add_aux_coord(lon_coord)
-		new_cube.add_aux_coord(lat_coord)
-
 	### Remove mask if present and unneeded
 	if type(ts) == np.ma.core.MaskedArray:
 		if all(ts.mask == False): ts = ts.data
@@ -269,6 +258,32 @@ def make_ts_cube(ts, cube, rename=None, units=None, lon_lat_scalar_coords=None):
 	return new_cube
 	
 
+def add_scalar_coords(cube, coord_dict=None):
+	'''
+	Useful for adding, e.g., longitude and latitude to a 1D time series cube at a specific location
+
+	coord_dict needs to be a dictionary of the form:
+		{'key1': ['scalar1', 'units1'], 'key2': ['scalar2', 'units2']}"
+
+	'''
+
+	if (type(coord_dict) != dict):
+		raise ValueError("coord_dict needs to be a dictionary of the form: \
+							{'key1': ['scalar1', 'units1'], 'key2': ['scalar2', 'units2']}")
+
+	import iris.coords as coords
+
+	for key, values in coord_dict.iteritems():
+
+		if (type(values) != list) | (len(values) != 2):
+			ValueError("coord_dict must of the form: {'key1': ['scalar1', 'units1'], 'key2': ['scalar2', 'units2']}")
+		
+		scalar = values[0]
+		units  = values[1]
+		new_coord = coords.AuxCoord(scalar, long_name=key, units=units)
+		cube.add_aux_coord(new_coord)
+
+	return cube
 
 
 # End of util.py

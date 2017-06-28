@@ -488,14 +488,14 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		### Remove temporal overlaps
 		cubelist1 = baspy.util.rm_time_overlaps(cubelist1)
 
-		### Unify lat-lon grid
-		#cubelist1 = baspy.util.util.unify_grid_coords(cubelist1, cubelist1[0])
+		### Unify similar lat-lon grid coord systems where slightly different
+		cubelist1 = baspy.util.unify_similar_grid_coords(cubelist1)
 		
 		### if the number of netcdf files (and cubes) >1 then 
 		### merge them together
 		cube = iris.cube.CubeList.concatenate_cube(cubelist1)
 		
-		#### Create a cubelist from cubes
+		### Extend cubelist ready to return to user
 		cubelist2.extend([cube])
 
 	return cubelist2
