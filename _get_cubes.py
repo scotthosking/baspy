@@ -1,6 +1,12 @@
 import re
+import pandas as pd
+
 
 def get_cubes(filt_cat, constraints=None, verbose=True):
+
+	### Convert Pandas Series to DataFrame
+	if type(filt_cat) == pd.core.series.Series:
+		filt_cat = pd.DataFrame([filt_cat.values], columns=filt_cat.keys() )
 
 	### Which dataset are we working with?
 	df0       = filt_cat.iloc[0]
@@ -19,6 +25,10 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 
 def get_cube(filt_cat, constraints=None, verbose=True):
+
+	### Convert Pandas Series to DataFrame
+	if type(filt_cat) == pd.core.series.Series:
+		filt_cat = pd.DataFrame([filt_cat.values], columns=filt_cat.keys() )
 
 	if (len(filt_cat.index) == 1): 
 		cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose)

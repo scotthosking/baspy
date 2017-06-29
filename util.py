@@ -111,12 +111,9 @@ def unify_similar_grid_coords(cubes, cube_template=None):
 	If the x or y coordinates are similar but different from a template cube then make them the same.
 	If cube_template is not specified then default to the first cube in the cubelist.
 	
-	Usage:
-		unify_similar_grid_coords(cubelist)
-		
-	Example:
-		unify_similar_grid_coords(cubes, other_cube)
-		
+	Examples:
+		cubelist = bp.util.unify_similar_grid_coords(cubelist)
+		cubes = bp.util.unify_similar_grid_coords(cubes, cube_template=cubes[0])
 	"""
 
 	if (type(cubes) == iris.cube.Cube):
