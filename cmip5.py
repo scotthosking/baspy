@@ -9,7 +9,7 @@ import glob, os.path
 import iris
 import iris.coords as coords
 import iris.coord_categorisation
-import baspy.util
+import baspy.util, baspy._catalogue
 
 
 cat_fname = 'cmip5_catalogue.csv'
@@ -215,111 +215,9 @@ def __compare_dict(dict1_in, dict2_in):
 
 
 def catalogue(refresh=None, complete_var_set=False, **kwargs):
-	"""
-	
-	Read whole CMIP5 catalogue for JASMIN
-	   >>> cat = cmip5_catalogue()
-
-	Read filtered CMIP5 catalogue for JASMIN
-	   >>> cat = cmip5_catalogue(Experiment=['amip','historical'], Var='tas', Frequency=['mon'])
-	   
-	complete_var_set = True: return a complete set where all Variables are available
-	   >>> cat = cmip5_catalogue(Var=['tas','psl','tasmx'], complete_var_set=True)
-
-	refresh = True: refresh the shared CMIP5 cataloge 
-					(the user can then choose to replace their personal catalogue once completed)
-					This should only be run when new data has been uploaded into the data archive, 
-					or when there has been a change to the items stored within the catalogue
-	   >>> cat = cmip5_catalogue(refresh=True)
-	   
-
-	"""
-
-	### Build a new catalogue
-	if (refresh == True): __refresh_shared_catalogue()
-
-	global __cached_cat
-	global __cached_values
-
-	update_cached_cat = False
-
-	### Read catalgoue for the first time
-	if (__cached_cat.size == 0):
-
-		### This is the first time we have run the code, so read and cache catalogue (done below)
-		update_cached_cat = True
-
-		### Check to see if there is a newer version of the catalogue available
-		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
-			print('###################################################################')
-			print('Note that there is a newer version of the shared CMIP5 catalogue at')
-			print(__shared_cat_file)
-			print('For now you will continue to use the one in your personal directory')
-			print(__baspy_path+'/.')
-			print('###################################################################')
-
-
-	### Get user defined filter/dictionary from kwargs
-	user_values = kwargs.copy()
-
-	### Update/expand cached catalogue
-	### Add any additional items from user for only those keys already defined in cached_cat (ignore other keys from user)
-	expanded_cached_values = __combine_dictionaries(__cached_values.keys(), __cached_values, user_values)
-	compare_dicts          = __compare_dict(expanded_cached_values, __cached_values)
-	if (compare_dicts == 'different'): update_cached_cat = True
-
-
-	if (update_cached_cat == True):
-		print('Updating cached catalogue...') 
-		__cached_cat    = pd.read_csv(cat_file)
-		__cached_values = expanded_cached_values.copy()
-		__cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
-		print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')
-		print(__cached_values)
-		print('')
-
-
-	if user_values != {}:
-
-		### Produce the catalogue for user
-		cat = __filter_cat_by_dictionary( __cached_cat, user_values, complete_var_set=complete_var_set )
-
-		# Some Var names are duplicated across SubModels (e.g., Var='pr')
-		# Force code to fall over if we spot more than one unique SubModel
-		# when Var has been set.
-		if 'Var' in user_values.keys():
-			for v in np.unique(cat['Var']):
-				cat_tmp = cat[ cat['Var'] == v ]
-				if (len(np.unique(cat_tmp['SubModel'])) > 1):
-					print('SubModel=', np.unique(cat_tmp['SubModel']))
-					raise ValueError(v+" maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
-
-		### We do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
-		if (len(np.unique(cat['Frequency'])) > 1):
-			print('Frequency=', np.unique(cat['Frequency']))
-			raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
-
-	else:
-
-		### If no user_values are specified then read in default/original list of cached values
-		print('No user values defined, will therefore filter catalogue using default values')
-		cat = __filter_cat_by_dictionary( __cached_cat, __orig_cached_values )
-
+	### here for backwards compatability reasons
+	cat = baspy._catalogue.catalogue(dataset='cmip5', refresh=refresh, complete_var_set=complete_var_set, **kwargs)
 	return cat
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def get_template_cube():
