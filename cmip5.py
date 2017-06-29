@@ -287,12 +287,12 @@ def catalogue(refresh=None, complete_var_set=False, **kwargs):
 		# Some Var names are duplicated across SubModels (e.g., Var='pr')
 		# Force code to fall over if we spot more than one unique SubModel
 		# when Var has been set.
-		# if 'Var' in user_values.keys():
-		# 	for v in np.unique(cat['Var']):
-		# 		cat_tmp = cat[ cat['Var'] == v ]
-		# 		if (len(np.unique(cat_tmp['SubModel'])) > 1):
-		# 			print('SubModel=', np.unique(cat_tmp['SubModel']))
-		# 			raise ValueError(v+" maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
+		if 'Var' in user_values.keys():
+			for v in np.unique(cat['Var']):
+				cat_tmp = cat[ cat['Var'] == v ]
+				if (len(np.unique(cat_tmp['SubModel'])) > 1):
+					print('SubModel=', np.unique(cat_tmp['SubModel']))
+					raise ValueError(v+" maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
 
 		### We do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
 		if (len(np.unique(cat['Frequency'])) > 1):
