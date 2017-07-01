@@ -214,7 +214,20 @@ def eg_cubelist():
 	return cubelist
 
 
+def create_ensemble_cube(cubelist, coord_labels, coord_name, units=None):
+	'''
+	e.g., For creating one cube from many ensemble members.
 
+	cube_merged = create_ensemble_cube(cubelist, [1,2,3,4], 'RunID', 'no_units')
+	'''
+	for i, cube in enumerate(cubelist):
+		new_coord = iris.coords.AuxCoord(coord_labels[i], long_name=coord_name, units=units)
+		cube.add_aux_coord(new_coord)
+		cubelist[i] = cube
+
+	new_cube = cubelist.merge_cube()
+
+	return new_cube
 
 
 
@@ -232,6 +245,7 @@ def make_ts_cube(ts, cube, rename=None, units=None):
 	if (units == None): units=cube.units
 	long_name=cube.long_name
 
+	ts = np.squeeze(ts)
 	new_cube = iris.cube.Cube( np.zeros(ts.shape), long_name=long_name, units=units )
 
 	### Copy time coordinates and all attributes from original cube	to new cube
@@ -281,6 +295,32 @@ def add_scalar_coords(cube, coord_dict=None):
 		cube.add_aux_coord(new_coord)
 
 	return cube
+
+
+def get_last_modified_time_from_http_file(url):
+	'''
+	To do:
+		* Only check http file date once per session!!!
+		* If no internet connection then set timestamp to -9999
+	'''
+	from dateutil import parser
+	import urllib2
+	from datetime import datetime
+
+	### Get info from http
+	req = urllib2.Request(url)
+	url_handle = urllib2.urlopen(req)
+	headers = url_handle.info()
+	last_modified = headers.getheader("Last-Modified")
+	dt = parser.parse(last_modified) # datetime
+
+	### Convert to timestamps
+	utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
+	timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
+
+	return timestamp
+
+
 
 
 # End of util.py

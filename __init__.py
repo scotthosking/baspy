@@ -15,22 +15,27 @@ Created by:   Scott H
 
 """
 
-# from baspy import (util,cmip5,erai,upscale)
+### BASpy version number
+__version__ = "0.6"
 
+### For sharing catalogues between users
+__catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
+__catalogues_dir = "/group_workspaces/jasmin/bas_climate/public/files/baspy/"
+
+# Import modules
 import baspy.util
 import baspy._catalogue
 import baspy._get_cubes
 
-import baspy.cmip5
-import baspy.erai
-import baspy.upscale
+import baspy.cmip5   ### these three should be removed from here 
+import baspy.erai    ### (import only when they are needed)
+import baspy.upscale ###
 
-### BASpy version number
-__version__ = "0.5"
-
-
+### Link modules under baspy (e.g., baspy.get_cubes() )
 get_cubes   = baspy._get_cubes.get_cubes
 get_cube    = baspy._get_cubes.get_cube
 catalogue   = baspy._catalogue.catalogue
 eg_cube     = baspy.util.eg_cube
 eg_cubelist = baspy.util.eg_cubelist
+
+

@@ -11,30 +11,8 @@ import iris.coords as coords
 import iris.coord_categorisation
 import baspy.util, baspy._catalogue
 
-
-cat_fname = 'cmip5_catalogue.csv'
-
-### Location of personal catologue file
-__baspy_path = os.path.expanduser("~/.baspy")
-if not os.path.exists(__baspy_path): 
-	os.makedirs(os.path.expanduser(__baspy_path))
-cat_file = __baspy_path+'/'+cat_fname
-
-### If personal catologue file does not exist then copy shared catologue file
-__shared_cat_file = '/group_workspaces/jasmin/bas_climate/data/data_catalogues/'+cat_fname
-if (os.path.isfile(cat_file) == False):	
-	print("Catalogue of CMIP5 data does not exist, this may be the first time you've run this code")
-	print('Copying shared catalogue to '+__baspy_path)
-	import shutil
-	shutil.copy2(__shared_cat_file, cat_file)
-
-### Directories
-cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
-
-### Originally set cat to an empty DataFrame
-__cached_cat    = pd.DataFrame([])
-__cached_values = {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 'Frequency':['mon']}
-__orig_cached_values = __cached_values.copy()
+### Setup catalogue file (copy over if needs be)
+copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file('cmip5')
 
 
 def __refresh_shared_catalogue():
@@ -45,6 +23,7 @@ def __refresh_shared_catalogue():
 	print("Building catalogue now... go grab a cuppa, this could take a while...")
 
 	### Get paths for all CMIP5 models and their experiments
+	cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
 	model_exp_dirs = glob.glob(cmip5_dir+'*/*/*/*')
 
 	dirs = []
@@ -75,7 +54,13 @@ def __refresh_shared_catalogue():
 	df = pd.DataFrame(rows, columns=['Centre','Model','Experiment','Frequency','SubModel','CMOR','RunID','Var','Version','Path'])
 
 	### save to local dir
-	df.to_csv(__shared_cat_file, index=False)
+	df.to_csv(cat_file, index=False)
+
+	if os.path.exists(__shared_cat_file):
+		### We have access to __shared_cat_file
+		print('Copying new catalogue to '+__shared_cat_file)
+		import shutil
+		shutil.copy2(cat_file, __shared_cat_file)
 
 
 

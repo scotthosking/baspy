@@ -12,7 +12,7 @@ import baspy.util
 __default_dataset = 'cmip5'
 
 ### Setup initial catalogue to be an empty DataFrame
-__cached_cat    = pd.DataFrame([]) 
+__cached_cat = pd.DataFrame([]) 
 
 ### Define dictionary of cached values
 __cached_values         = {} # if not recognised then set to empty dictionary
@@ -20,13 +20,78 @@ __cached_cmip5_values   = {'Experiment':['piControl','historical','rcp26','rcp45
 __cached_happi_values   = {'Experiment':['All-Hist','Plus15-Future','Plus20-Future']}
 __cached_upscale_values = {}
 
-### Location of personal catologue files
-__baspy_path = os.path.expanduser("~/.baspy")
-if not os.path.exists(__baspy_path): 
-	os.makedirs(os.path.expanduser(__baspy_path))
-
 ### Set the currently loaded dataset to equal the default
 __current_dataset = __default_dataset
+
+
+
+def setup_catalogue_file(dataset):
+
+	copied_new_cat_file = False
+
+	### 1. define filepaths
+	__baspy_path = os.path.expanduser("~/.baspy")
+	cat_fname    = dataset+'_catalogue.csv'
+	cat_file     = __baspy_path+'/'+cat_fname
+	__shared_local_cat_file = baspy.__catalogues_dir + cat_fname
+	__shared_url_cat_file   = baspy.__catalogues_url + cat_fname
+
+	### 2. Setup local baspy folder to store catalogues
+	if not os.path.exists(__baspy_path): 
+		os.makedirs(os.path.expanduser(__baspy_path))
+	
+	### 3. Do we have a catalogue file to work with?
+	get_file = False
+	if (os.path.isfile(cat_file) == False):	
+		print(cat_file+" does not exist, this may be the first time you've requested this catalogue")
+		get_file = True
+
+	### 4. Get catalogue file (if we need to)
+	if get_file == True:
+		if os.path.exists(__shared_local_cat_file):
+			### We have access to the shared catalogue file
+			print('Copying shared catalogue to '+__baspy_path)
+			import shutil
+			shutil.copy2(__shared_local_cat_file, cat_file)
+			copied_new_cat_file = True
+		else:
+			### Download file over the internet (slower)
+			print('Downloading shared catalogue to '+__baspy_path)
+			import urllib
+			urllib.urlretrieve (__shared_url_cat_file, cat_file)
+			copied_new_cat_file = True
+
+	### 5. Check whether a newer version of the catalogue is available compared to the one 
+	###			we already have
+	newer_available_location = None
+	if os.path.exists(__shared_local_cat_file):
+		if ( os.path.getmtime(__shared_local_cat_file) > os.path.getmtime(cat_file) ):
+			newer_available_location = __shared_local_cat_file
+	else:
+		from datetime import datetime
+		url_file_timestamp = baspy.util.get_last_modified_time_from_http_file(__shared_url_cat_file)
+		if ( url_file_timestamp > os.path.getmtime(cat_file) ):
+			newer_available_location = __shared_url_cat_file
+
+	if newer_available_location != None:
+		print('###################################################################')
+		print('There is a newer version of the shared catalogue at      ')
+		print(newer_available_location)
+		print('For now you will continue to use the one in your personal directory')
+		print(cat_file)
+		print('###################################################################')
+
+	### 6. If __shared_local_cat_file does not exist then set it to personal file in .baspy
+	if os.path.exists(__shared_local_cat_file) == False:
+		__shared_local_cat_file = cat_file
+
+	return copied_new_cat_file, cat_file, __shared_local_cat_file
+
+
+
+
+
+
 
 
 
@@ -184,6 +249,18 @@ def __compare_dict(dict1_in, dict2_in):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	"""
 	
@@ -212,16 +289,22 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	global __default_dataset
 	global __current_dataset
 	global __orig_cached_values
+	
+	update_cached_cat = False
 
-	### Refresh catalogue csv file
+	### Refresh catalogue csv file (i.e., re-scan dataset directories and rebuild catalogue)
 	if (refresh == True): 
 		__refresh_shared_catalogue(dataset)
-		__cached_cat = pd.DataFrame([])
+		update_cached_cat = True
+
+	### Setup catalogue (incl. copying over new files if need to)
+	copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file(dataset)
+	if (copied_new_cat_file == True): update_cached_cat=Ture
 
 	### First time using specified dataset
 	if (dataset != __current_dataset):
 
-		__cached_cat    = pd.DataFrame([])
+		update_cached_cat = True
 
 		if (dataset == None):
 			print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
@@ -237,34 +320,9 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 
 		__current_dataset = dataset
 
-	### Set dataset specific variables
-	if dataset == 'cmip5': 
-		import baspy.cmip5
-		cat_file = baspy.cmip5.cat_file
-		__shared_cat_file = baspy.cmip5.__shared_cat_file
-
-	if dataset == 'happi':
-		import baspy.happi
-		cat_file = baspy.happi.cat_file
-		__shared_cat_file = baspy.happi.__shared_cat_file
-
-	update_cached_cat = False
-
 	### Read catalgoue for the first time
-	if (__cached_cat.size == 0):
-
-		### This is the first time we have run the code, so read and cache catalogue (done below)
+	if (__cached_cat.size == 0):		
 		update_cached_cat = True
-
-		### Check to see if there is a newer version of the catalogue available
-		if ( os.path.getctime(__shared_cat_file) > os.path.getctime(cat_file) ):
-			print('###################################################################')
-			print('Note that there is a newer version of the shared catalogue at      ')
-			print(__shared_cat_file)
-			print('For now you will continue to use the one in your personal directory')
-			print(__baspy_path+'/.')
-			print('###################################################################')
-
 
 	### Get user defined filter/dictionary from kwargs
 	user_values = kwargs.copy()

@@ -7,25 +7,8 @@ import iris.coords as coords
 import baspy.util
 import numpy as np
 
-
-cat_fname = 'happi_catalogue.csv'
-happi_dir = '/group_workspaces/jasmin/bas_climate/data/happi/'
-
-### Location of personal catologue file
-__baspy_path = os.path.expanduser("~/.baspy")
-if not os.path.exists(__baspy_path): 
-	os.makedirs(os.path.expanduser(__baspy_path))
-cat_file = __baspy_path+'/'+cat_fname
-
-### If personal catologue file does not exist then copy shared catologue file
-__shared_cat_file = '/group_workspaces/jasmin/bas_climate/data/data_catalogues/'+cat_fname
-if (os.path.isfile(cat_file) == False):	
-	print("Catalogue of HAPPI data does not exist, this may be the first time you've run this code")
-	print('Copying shared catalogue to '+__baspy_path)
-	import shutil
-	shutil.copy2(__shared_cat_file, cat_file)
-
-
+### Setup catalogue file (copy over if needs be)
+copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file('happi')
 
 def __refresh_shared_catalogue():
 	'''
@@ -35,6 +18,7 @@ def __refresh_shared_catalogue():
 	print("Building catalogue now...")
 
 	### Get paths for all HAPPI data
+	happi_dir = '/group_workspaces/jasmin/bas_climate/data/happi/'
 	paths1 = glob.glob(happi_dir+'data/*/*/*/*/*/*/*/*/*')
 	paths2 = glob.glob(happi_dir+'derived/*/*/*/*/*/*/*/*/*')
 	paths  = paths1 + paths2
@@ -68,7 +52,13 @@ def __refresh_shared_catalogue():
 										'StartDate', 'EndDate', 'Path','DataFiles', ])
 
 	### save to local dir
-	df.to_csv(__shared_cat_file, index=False)
+	df.to_csv(cat_file, index=False)
+
+	if os.path.exists(__shared_cat_file):
+		### We have access to __shared_cat_file
+		print('Copying new catalogue to '+__shared_cat_file)
+		import shutil
+		shutil.copy2(cat_file, __shared_cat_file)
 
 
 def get_cmip_file_date_ranges(fnames):
