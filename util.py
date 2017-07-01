@@ -189,29 +189,38 @@ def rm_time_overlaps(cubelist):
 	return cubelist
 
 
-def eg_cube():
-	""" 
-	Load an example cube
-	"""
-	cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
-	cube = iris.load_cube(cmip5_dir + 
-			'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
-			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc')
-	return cube
-
-
 def eg_cubelist():
 	"""
 	Load an example cubelist
 	"""
-	cmip5_dir = '/badc/cmip5/data/cmip5/output1/'
-	cubelist = iris.load(
-			[cmip5_dir+'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
-			'psl/psl_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc', 
-			cmip5_dir +'MOHC/HadGEM2-A/amip/mon/atmos/Amon/r1i1p1/latest/'
-			'tas/tas_Amon_HadGEM2-A_amip_r1i1p1_197809-200811.nc']
-			)
+	from baspy import __baspy_path
+	import os
+	import warnings
+
+	url = "https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc"
+	nc_file = __baspy_path+'/sample_data/sresa1b_ncar_ccsm3-example.nc'
+
+	if (os.path.isfile(nc_file) == False):
+		import urllib
+		print('Downloading example netcdf file: '+url)
+		urllib.urlretrieve (url, nc_file)
+
+	### Load file, suppressing any warnings
+	with warnings.catch_warnings():
+		warnings.simplefilter('ignore')
+		cubelist = iris.load(nc_file, ['air_temperature', 'eastward_wind', 'precipitation_flux'])
+
 	return cubelist
+
+
+def eg_cube():
+	""" 
+	Load an example cube
+		cube = bp.eg_cube()
+	"""
+	cube = eg_cubelist()
+	return cube[0]
+
 
 
 def create_ensemble_cube(cubelist, coord_labels, coord_name, units=None):
@@ -314,7 +323,7 @@ def get_last_modified_time_from_http_file(url):
 	last_modified = headers.getheader("Last-Modified")
 	dt = parser.parse(last_modified) # datetime
 
-	### Convert to timestamps
+	### Convert to timestamps (python 2)
 	utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
 	timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
 

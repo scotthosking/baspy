@@ -15,6 +15,9 @@ Created by:   Scott H
 
 """
 
+import os
+import iris
+
 ### BASpy version number
 __version__ = "0.6"
 
@@ -22,14 +25,18 @@ __version__ = "0.6"
 __catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
 __catalogues_dir = "/group_workspaces/jasmin/bas_climate/public/files/baspy/"
 
+### Place to store catalogues and example data
+__baspy_path = os.path.expanduser("~/.baspy")
+if not os.path.exists(__baspy_path): 
+	os.makedirs(os.path.expanduser(__baspy_path))
+
 # Import modules
 import baspy.util
 import baspy._catalogue
 import baspy._get_cubes
 
-import baspy.cmip5   ### these three should be removed from here 
+import baspy.upscale ### these should be removed from here 
 import baspy.erai    ### (import only when they are needed)
-import baspy.upscale ###
 
 ### Link modules under baspy (e.g., baspy.get_cubes() )
 get_cubes   = baspy._get_cubes.get_cubes

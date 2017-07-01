@@ -10,6 +10,7 @@ import numpy as np
 ### Setup catalogue file (copy over if needs be)
 copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file('happi')
 
+
 def __refresh_shared_catalogue():
 	'''
 	Rebuild the HAPPI catalogue
@@ -59,6 +60,7 @@ def __refresh_shared_catalogue():
 		print('Copying new catalogue to '+__shared_cat_file)
 		import shutil
 		shutil.copy2(cat_file, __shared_cat_file)
+
 
 
 def get_cmip_file_date_ranges(fnames):
@@ -147,13 +149,8 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 		### Sanity check: Check that filenames represent what we requested
 		for nc in netcdfs:
-			if (model not in nc):  raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
-			if (var not in nc):    raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
-			if (run_id not in nc): raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
-			if (exp not in nc):    raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
-
-
-
+			if (model not in nc) | (var not in nc) | (run_id not in nc) | (exp not in nc):
+				raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
 
 		### List file names that appear to be within our date range
 		# if (start_date != None) | (end_date != None):
@@ -173,8 +170,6 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		# if type(netcdfs) == str: netcdfs=[netcdfs]
 		
 		# print netcdfs # TMP!!!
-
-
 
 
 		### Read data with callback to add Experiment (Run) ID to 
@@ -200,8 +195,6 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 				
 				### Create cubelist from cubes
 				cubelist1.extend([cube])
-
-
 
 		### Change reference time of cubes so times match in order to 
 		### encourage cubes to concatenate

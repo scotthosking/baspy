@@ -34,7 +34,7 @@ def setup_catalogue_file(dataset):
 	copied_new_cat_file = False
 
 	### 1. define filepaths
-	__baspy_path = os.path.expanduser("~/.baspy")
+	__baspy_path = baspy.__baspy_path
 	cat_fname    = dataset+'_catalogue.csv'
 	cat_file     = __baspy_path+'/'+cat_fname
 	__shared_local_cat_file = baspy.__catalogues_dir + cat_fname
