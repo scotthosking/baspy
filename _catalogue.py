@@ -26,6 +26,10 @@ __current_dataset = __default_dataset
 
 
 def setup_catalogue_file(dataset):
+	'''
+	Define locations of catalogue files, + copy or download if newer files
+	available (compared to personal files in ~/.baspy)
+	'''
 
 	copied_new_cat_file = False
 
@@ -292,15 +296,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	
 	update_cached_cat = False
 
-	### Refresh catalogue csv file (i.e., re-scan dataset directories and rebuild catalogue)
-	if (refresh == True): 
-		__refresh_shared_catalogue(dataset)
-		update_cached_cat = True
-
-	### Setup catalogue (incl. copying over new files if need to)
-	copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file(dataset)
-	if (copied_new_cat_file == True): update_cached_cat=Ture
-
 	### First time using specified dataset
 	if (dataset != __current_dataset):
 
@@ -319,6 +314,15 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 			__orig_cached_values = __cached_values.copy()
 
 		__current_dataset = dataset
+
+	### Refresh catalogue csv file (i.e., re-scan dataset directories and rebuild catalogue)
+	if (refresh == True): 
+		__refresh_shared_catalogue(dataset)
+		update_cached_cat = True
+
+	### Setup catalogue (incl. copying over new files if need to)
+	copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file(dataset)
+	if (copied_new_cat_file == True): update_cached_cat=True
 
 	### Read catalgoue for the first time
 	if (__cached_cat.size == 0):		
