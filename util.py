@@ -311,25 +311,26 @@ def add_scalar_coords(cube, coord_dict=None):
 
 
 def get_last_modified_time_from_http_file(url):
-	'''
-	To do:
-		* Only check http file date once per session!!!
-		* If no internet connection then set timestamp to -9999
-	'''
-	from dateutil import parser
+
 	import urllib2
 	from datetime import datetime
+	from dateutil import parser
 
-	### Get info from http
-	req = urllib2.Request(url)
-	url_handle = urllib2.urlopen(req)
-	headers = url_handle.info()
-	last_modified = headers.getheader("Last-Modified")
-	dt = parser.parse(last_modified) # datetime
+	try:
+		### Get info from http
+		req = urllib2.Request(url)
+		url_handle = urllib2.urlopen(req)
+		headers = url_handle.info()
+		last_modified = headers.getheader("Last-Modified")
+		dt = parser.parse(last_modified) # datetime
 
-	### Convert to timestamps (python 2)
-	utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
-	timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
+		### Convert to timestamps (python 2)
+		utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
+		timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
+
+	except urllib2.URLError as err:
+		print('WARNING: can not access '+url)
+		timestamp = -9999.
 
 	return timestamp
 
