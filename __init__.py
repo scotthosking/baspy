@@ -21,14 +21,14 @@ import iris
 ### BASpy version number
 __version__ = "0.6"
 
-### For sharing catalogues between users
-__catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
-__catalogues_dir = "/group_workspaces/jasmin/bas_climate/public/files/baspy/"
-
 ### Place to store catalogues and example data
 __baspy_path = os.path.expanduser("~/.baspy")
 if not os.path.exists(__baspy_path): 
 	os.makedirs(os.path.expanduser(__baspy_path))
+
+### For sharing catalogues between users
+__catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
+__catalogues_dir = "/group_workspaces/jasmin/bas_climate/public/files/baspy/"
 
 # Import modules
 import baspy.util

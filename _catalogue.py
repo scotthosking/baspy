@@ -296,23 +296,24 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	
 	update_cached_cat = False
 
+	### Ensure we have a dataset specified - use default if none specified by user
+	if (dataset == None):
+		print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
+		dataset = __default_dataset
+
+	### Define cached values for requested catalogue
+	if dataset == 'cmip5': 
+		__cached_values = __cached_cmip5_values		
+	elif dataset == 'happi': 
+		__cached_values = __cached_happi_values
+	else:
+		raise ValueError(dataset+': dataset not recognised')
+
+	__orig_cached_values = __cached_values.copy()
+
 	### First time using specified dataset
 	if (dataset != __current_dataset):
-
 		update_cached_cat = True
-
-		if (dataset == None):
-			print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
-			dataset = __default_dataset
-
-		if dataset == 'cmip5': 
-			__cached_values      = __cached_cmip5_values
-			__orig_cached_values = __cached_values.copy()
-
-		if dataset == 'happi': 
-			__cached_values      = __cached_happi_values
-			__orig_cached_values = __cached_values.copy()
-
 		__current_dataset = dataset
 
 	### Refresh catalogue csv file (i.e., re-scan dataset directories and rebuild catalogue)
