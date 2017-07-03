@@ -7,6 +7,7 @@ import iris
 import iris.coords as coords
 import iris.coord_categorisation
 import baspy.util
+import warnings
 
 ### Set default dataset
 __default_dataset = 'cmip5'
@@ -78,12 +79,7 @@ def setup_catalogue_file(dataset):
 			newer_available_location = __shared_url_cat_file
 
 	if newer_available_location != None:
-		print('###################################################################')
-		print('There is a newer version of the shared catalogue at      ')
-		print(newer_available_location)
-		print('For now you will continue to use the one in your personal directory')
-		print(cat_file)
-		print('###################################################################')
+		warnings.warn('Using catalogue '+cat_file+'. Note that a newer version is available at '+newer_available_location)
 
 	### 6. If __shared_local_cat_file does not exist then set it to personal file in .baspy
 	if os.path.exists(__shared_local_cat_file) == False:
@@ -198,7 +194,7 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 			for c in columns: s = s+'_'+row[c]
 			model_run_identifiers = np.append(model_run_identifiers, s)
 		cat.loc[:,'Unique_Model_Run_id'] = model_run_identifiers
-		print("complete_var_set=True: Adding 'Unique_Model_Run_id' as a new column to the catalgoue")
+		print("complete_var_set=True: Adding 'Unique_Model_Run_id' as a new column to the catalogue")
 
 		### Remove (drop) all items which do not complete a full set of Variables
 		for val in vals:
@@ -284,7 +280,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	   >>> cat = bp.catalogue(dataset='cmip5', refresh=True)
 	   
 	List of catalogued datasets available:
-		cmip5, happi, upscale
+		cmip5, happi
 
 	"""
 
@@ -298,7 +294,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 
 	### Ensure we have a dataset specified - use default if none specified by user
 	if (dataset == None):
-		print("Warning: dataset not specified, defaulting to dataset='"+__default_dataset+"'")
+		print("Warning: dataset not specified, defaulting to: dataset='"+__default_dataset+"'")
 		dataset = __default_dataset
 
 	### Define cached values for requested catalogue
