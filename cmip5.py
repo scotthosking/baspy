@@ -321,8 +321,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 			### Additional constrains (level, time)
 			if (constraints != None): con = con & constraints
 			
-			cube = iris.load(dirfilename, callback=callback,
-						constraints=con)
+			cube = iris.load(dirfilename, callback=callback, constraints=con)
 
 			if (len(cube) > 1): raise ValueError('more than one cube loaded, expected only one!')
 

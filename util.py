@@ -2,6 +2,84 @@ import numpy as np
 import iris
 import iris.coord_categorisation
 
+'''
+1. General python utilities (For numpy, scipy, pandas etc)
+
+'''
+
+def haversine(lon1, lat1, lon2, lat2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians 
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    return c * r
+
+
+def filter(input_signal, win):
+	# Linear Filter
+	# (2*win)+1  is the size of the window that determines the values that influence 
+	# the filtered result, centred over the current measurement
+	from scipy import ndimage
+	kernel = np.lib.pad(np.linspace(1,3,win), (0,win-1), 'reflect') 
+	kernel = np.divide(kernel,np.sum(kernel)) # normalise
+	output_signal = ndimage.convolve(input_signal, kernel) 
+	return output_signal
+
+
+def get_last_modified_time_from_http_file(url):
+
+	import urllib2
+	from datetime import datetime
+	from dateutil import parser
+
+	try:
+		### Get info from http
+		req = urllib2.Request(url)
+		url_handle = urllib2.urlopen(req)
+		headers = url_handle.info()
+		last_modified = headers.getheader("Last-Modified")
+		dt = parser.parse(last_modified) # datetime
+
+		### Convert to timestamps (python 2)
+		utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
+		timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
+
+	except urllib2.URLError as err:
+		print('WARNING: can not access '+url)
+		timestamp = -9999.
+
+	return timestamp
+
+
+
+'''
+2. Iris specific utilities
+'''
+
+def cube_regrid(cube, template_cube):
+	lats, lons = template_cube.coord(axis='y').points, template_cube.coord(axis='x').points
+	x_coord, y_coord = cube.coord(axis='x').name(), cube.coord(axis='y').name()
+	cube = cube.interpolate( [(y_coord, lats),(x_coord, lons)], iris.analysis.Linear() )
+	return cube
+
+def area_weighted_mean(cube):
+	weights = iris.analysis.cartography.area_weights(cube)
+	ts = cube.collapsed(['latitude','longitude'], iris.analysis.MEAN, weights=weights)
+
+	### Remove mask if present and unneeded
+	if type(ts.data) == np.ma.core.MaskedArray:
+		if all(ts.data.mask == False): ts.data = ts.data.data
+
+	return ts
 
 def cube_trend(cube, var_name=None, time_coord=None):
 
@@ -231,7 +309,7 @@ def create_ensemble_cube(cubelist, coord_labels, coord_name, units=None):
 	'''
 	e.g., For creating one cube from many ensemble members.
 
-	cube_merged = create_ensemble_cube(cubelist, [1,2,3,4], 'RunID', 'no_units')
+	cube_merged = create_ensemble_cube(cubelist, [1,2,3,4], 'RunID')
 	'''
 	for i, cube in enumerate(cubelist):
 		new_coord = iris.coords.AuxCoord(coord_labels[i], long_name=coord_name, units=units)
@@ -310,29 +388,6 @@ def add_scalar_coords(cube, coord_dict=None):
 	return cube
 
 
-def get_last_modified_time_from_http_file(url):
-
-	import urllib2
-	from datetime import datetime
-	from dateutil import parser
-
-	try:
-		### Get info from http
-		req = urllib2.Request(url)
-		url_handle = urllib2.urlopen(req)
-		headers = url_handle.info()
-		last_modified = headers.getheader("Last-Modified")
-		dt = parser.parse(last_modified) # datetime
-
-		### Convert to timestamps (python 2)
-		utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
-		timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
-
-	except urllib2.URLError as err:
-		print('WARNING: can not access '+url)
-		timestamp = -9999.
-
-	return timestamp
 
 
 
