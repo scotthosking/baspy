@@ -24,9 +24,9 @@ def haversine(lon1, lat1, lon2, lat2):
     return c * r
 
 
-def filter(input_signal, win):
-	# Linear Filter
-	# (2*win)+1  is the size of the window that determines the values that influence 
+def lpfilter(input_signal, win):
+	# Low-pass linear Filter
+	# (2*win)+1 is the size of the window that determines the values that influence 
 	# the filtered result, centred over the current measurement
 	from scipy import ndimage
 	kernel = np.lib.pad(np.linspace(1,3,win), (0,win-1), 'reflect') 

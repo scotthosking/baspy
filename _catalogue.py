@@ -184,32 +184,25 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
 		### Create a new column in catalogue creating strings of unique Model-Run-identifiers
 		### i.e., a list of strings with all the useful info in it, e.g., '_MIROC_MIROC5_historical_Amon_v2_mon_atmos_r1i1p1'
-		columns = cat.columns.tolist() # list all columns
-		columns.remove('Var')  # remove Var and Path columns
-		columns.remove('Path') 
-
-		model_run_identifiers = np.array([])
-		for index, row in cat.iterrows():
-			s = ''
-			for c in columns: s = s+'_'+row[c]
-			model_run_identifiers = np.append(model_run_identifiers, s)
-		cat.loc[:,'Unique_Model_Run_id'] = model_run_identifiers
-		print("complete_var_set=True: Adding 'Unique_Model_Run_id' as a new column to the catalogue")
+		print("complete_var_set=True: Adding 'Unique_Model_Run' as a new column to the catalogue")
+		cat['Unique_Model_Run'] = cat['Centre'] +'_'+ cat['Model'] +'_'+ \
+									cat['RunID'].astype(str) +'_'+ cat['Experiment'] +'_'+ \
+									cat['CMOR'] +'_'+ cat['SubModel']
 
 		### Remove (drop) all items which do not complete a full set of Variables
 		for val in vals:
 			df0    = cat[ cat['Var'] == vals[0] ]
 			df1    = cat[ cat['Var'] == val     ]
-			paths0 = np.unique( df0['Unique_Model_Run_id'].values ).tolist()
-			paths1 = np.unique( df1['Unique_Model_Run_id'].values ).tolist()
+			paths0 = np.unique( df0['Unique_Model_Run'].values ).tolist()
+			paths1 = np.unique( df1['Unique_Model_Run'].values ).tolist()
 			diff   = set(paths0).symmetric_difference(set(paths1))
 
 			for d in diff: 
-				ind = cat[ cat['Unique_Model_Run_id'] == d ].index
+				ind = cat[ cat['Unique_Model_Run'] == d ].index
 				cat = cat.drop(ind, axis=0)
 
-		### Remove temporary column 'Unique_Model_Run_id'
-		# cat = cat.drop('Unique_Model_Run_id', axis=1)
+		### Remove temporary column 'Unique_Model_Run'
+		# cat = cat.drop('Unique_Model_Run', axis=1)
 
 	### Return a filtered catalogue
 	return cat
