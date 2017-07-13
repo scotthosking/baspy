@@ -81,37 +81,28 @@ def callback(cube, field, filename):
 	A function which adds a "RunID" coordinate to the cube
 	"""
 
-	filename = re.split('/',filename)[-1]
+	filename  = re.split('/',filename)[-1]
+	split_str = re.split('_',filename)
 
 	### Extract the Model name from the filename
-	split_str = re.split('_',filename) # split string by delimiter
-	label = split_str[2]
-	new_coord = coords.AuxCoord(label, long_name='Model', units='no_unit')
+	new_coord = coords.AuxCoord(split_str[2], long_name='Model', units='no_unit')
 	cube.add_aux_coord(new_coord)
 
 	### Extract the Experiment name from the filename
-	split_str = re.split('_',filename) # split string by delimiter
-	label = split_str[3]
-	new_coord = coords.AuxCoord(label, long_name='Experiment', units='no_unit')
+	new_coord = coords.AuxCoord(split_str[3], long_name='Experiment', units='no_unit')
 	cube.add_aux_coord(new_coord)
 
 	### Extract the RunID name from the filename
-	split_str = re.split('_',filename) # split string by delimiter
-	label = split_str[6]
-	new_coord = coords.AuxCoord(label, long_name='RunID', units='no_unit')
+	new_coord = coords.AuxCoord(split_str[6], long_name='RunID', units='no_unit')
 	cube.add_aux_coord(new_coord)
 
 	### Add additional time coordinate categorisations
 	if (len(cube.coords(axis='t')) > 0):
-
 		time_name = cube.coord(axis='t').var_name
-
 		iris.coord_categorisation.add_year(cube, time_name, name='year')
 		iris.coord_categorisation.add_month_number(cube, time_name, name='month')
-
-		### Add season
 		seasons = ['djf', 'mam', 'jja', 'son']
-		iris.coord_categorisation.add_season(cube, time_name,      name='clim_season', seasons=seasons)
+		iris.coord_categorisation.add_season(cube, time_name, name='clim_season', seasons=seasons)
 		iris.coord_categorisation.add_season_year(cube, time_name, name='season_year', seasons=seasons)
 
 

@@ -12,6 +12,8 @@ def haversine(lon1, lat1, lon2, lat2):
     Calculate the great circle distance between two points 
     on the earth (specified in decimal degrees)
     """
+    from math import radians, cos, sin, asin, sqrt
+    
     # convert decimal degrees to radians 
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
 
@@ -304,15 +306,27 @@ def eg_cube():
 	return cube[0]
 
 
+def remove_aux_coord(cube, coord_name):
+	'''
+	Remove auxillary coord from cube if already exists (otherwise ignore/do nothing)
+	'''
+	aux_coords = [aux_coord.long_name for aux_coord in cube.aux_coords]
+	if coord_name in aux_coords: 
+		cube.remove_coord(coord_name)
+	return cube
 
-def create_ensemble_cube(cubelist, coord_labels, coord_name, units=None):
+
+def create_ensemble_cube(cubelist, coord_labels, long_name=None, units=None):
 	'''
 	e.g., For creating one cube from many ensemble members.
 
 	cube_merged = create_ensemble_cube(cubelist, [1,2,3,4], 'RunID')
+
+	use if cubelist.merge_cube() does not work
 	'''
 	for i, cube in enumerate(cubelist):
-		new_coord = iris.coords.AuxCoord(coord_labels[i], long_name=coord_name, units=units)
+		cube = remove_aux_coord(cube, long_name)
+		new_coord = iris.coords.AuxCoord(coord_labels[i], long_name=long_name, units=units)
 		cube.add_aux_coord(new_coord)
 		cubelist[i] = cube
 

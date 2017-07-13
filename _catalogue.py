@@ -185,9 +185,7 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 		### Create a new column in catalogue creating strings of unique Model-Run-identifiers
 		### i.e., a list of strings with all the useful info in it, e.g., '_MIROC_MIROC5_historical_Amon_v2_mon_atmos_r1i1p1'
 		print("complete_var_set=True: Adding 'Unique_Model_Run' as a new column to the catalogue")
-		cat['Unique_Model_Run'] = cat['Centre'] +'_'+ cat['Model'] +'_'+ \
-									cat['RunID'].astype(str) +'_'+ cat['Experiment'] +'_'+ \
-									cat['CMOR'] +'_'+ cat['SubModel']
+		cat['Unique_Model_Run'] = cat['Centre']+'_'+cat['Model']+'_'+cat['RunID'].astype(str)+'_'+cat['Experiment']
 
 		### Remove (drop) all items which do not complete a full set of Variables
 		for val in vals:
