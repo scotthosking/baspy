@@ -118,7 +118,9 @@ def _plot_cubes(plot_type, cubes, fig_num=1, **kwargs):
 			# 'upper left'   : 2,
 			# 'lower left'   : 3,
 			# 'lower right'  : 4,
-			plt.gca().add_artist(AnchoredText(labels[i], loc=2, borderpad=0.0, prop=dict(size=8.5) )) ### not working???
+			plt.gca().add_artist(AnchoredText(labels[i], 
+												loc=2, borderpad=0.0, 
+												prop=dict(size=8.5) ))
 
 	### Save image? 
 	fname = kwargs['fname'] 
@@ -150,8 +152,9 @@ def contourf(cubes, draw_features=False, labels=False,
 	You can specify some aspects of the subplot of a cube as follows:
 		cube.attributes.update({ 'Difference': True, 'cbar_range': [-1.,1.] })
 
-	shared_levels=[0,7]
-	shared_levels=True
+	Force all panels to use shared contour levels unless specified otherwise in cube.attributes
+		shared_levels=[0,7]
+		shared_levels=True
 
 	'''
 
