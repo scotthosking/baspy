@@ -34,6 +34,7 @@ def himalayas(cube):
 	return cube
 
 
+
 '''
 Countries
 '''
@@ -53,6 +54,17 @@ def spain(cube):
 def egypt(cube):
 	cube = cube.intersection( longitude=(22, 39), latitude=(20, 34) )
 	return cube
+
+
+
+'''
+Sub-regions
+'''
+
+def central_england(cube):
+	cube = cube.intersection( longitude=(-3.5, 0.), latitude=(51.5, 53.5) )
+	return cube
+
 
 
 '''

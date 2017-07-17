@@ -5,26 +5,61 @@ import cartopy
 import numpy as np
 from matplotlib.offsetbox import AnchoredText
 
-def auto_define_subplot_layout(npanels):
+'''
+To do:
+	* Specifiy nrows & ncols labels
+
+'''
+
+
+def auto_define_subplot_layout(npanels, fix_ncols=False, fix_nrows=False):
 	'''
 	ncols, nrows = auto_define_subplot_layout(7)
 	'''
 
+	### Initialise values (update below)
 	ncols, nrows = 1, 1
 
-	while npanels > (ncols * nrows):
-		if (ncols == nrows):  
-			ncols = ncols + 1
-		else:
+	### If ncols AND nrows ARE specified by user
+	if (fix_ncols != False) & (fix_nrows != False):
+		return fix_ncols, fix_nrows
+
+	### If ncols AND nrows ARE NOT specified by user
+	if (fix_ncols == False) & (fix_nrows == False):
+		while npanels > (ncols * nrows):
+			if (ncols == nrows):  
+				ncols = ncols + 1
+			else:
+				nrows = nrows+1
+		return ncols, nrows
+
+	### If only ncols is specified by user
+	if (fix_ncols != False) & (fix_nrows == False):
+		while npanels > (fix_ncols * nrows):
 			nrows = nrows+1
+		return fix_ncols, nrows
 
-	return ncols, nrows
+	### If only nrows specified by user
+	if (fix_ncols == False) & (fix_nrows != False):
+		while npanels > (ncols * fix_nrows):
+			ncols = ncols + 1
+		return ncols, fix_nrows
+
+	### Should not get this far
+	raise ValueError('Something has gone wrong in defining the subplot layout')
 
 
-def draw_box( west,east,south,north, transform=None ):
+
+
+def draw_box( region, transform=None ):
 	'''
 	Draw box around a region on a map
+
+	region = [west,east,south,north]
 	'''
+
+	west, east, south, north = region
+
 	if transform == None:
 		import cartopy.crs as ccrs
 		transform = ccrs.PlateCarree()
@@ -40,7 +75,7 @@ def draw_box( west,east,south,north, transform=None ):
 def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=1, 
 				show_coastlines=True, show_rivers=False, show_borders=False,
 				suptitle=None, show_titles=True, hide_colbars=False, labels=False,
-				draw_box=False,	plot_type='contourf', **kwargs):
+				draw_box=False,	plot_type='contourf', fix_ncols=False, fix_nrows=False,	**kwargs):
 
 	'''
 	import matplotlib.pyplot as plt
@@ -62,9 +97,6 @@ def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=
 
 	'''
 
-	### set figure title
-	if suptitle != None: plt.suptitle(suptitle)
-
 	### convert cube or list of cubes to a cubelist
 	if type(cubes) == iris.cube.Cube: cubes = iris.cube.CubeList([cubes])
 	if type(cubes) == list: cubes = iris.cube.CubeList(cubes)
@@ -79,8 +111,8 @@ def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=
 
 	### Decide on the subplot grid layout
 	ncubes = len(cubes)
-	if (ncubes >= 30): raise ValueError('Soft limit: too many cubes to plot at once')
-	ncols, nrows = auto_define_subplot_layout(ncubes)
+	if (ncubes > 60): raise ValueError('Soft limit reached: too many cubes to plot at once')
+	ncols, nrows = auto_define_subplot_layout(ncubes, fix_ncols=fix_ncols, fix_nrows=fix_nrows)
 
 	### From the grid layout, decide on figure size (width, height)
 	if figsize == None:
@@ -88,11 +120,16 @@ def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=
 		### width can fit with height limitations
 		fig_height = 8
 		fig_ratio  = float(nrows) / float(ncols)
-		fig_width  = int(fig_height / fig_ratio)
+		fig_width  = int(np.round(fig_height / fig_ratio))
 		figsize    = (fig_width,fig_height)
+		print('Setting: figsize=',figsize)
 
-	print('Setting: figsize=',figsize)
+	### Setting up figure
+	plt.close(fig_num) # close if existing fig_num exists 
 	plt.figure( figsize=figsize, num=fig_num )
+
+	### set figure title
+	if suptitle != None: plt.suptitle(suptitle)
 
 	### labelling
 	if labels == True: labels = list('abcdefghijklmnopqrstuvwxyz')
@@ -187,10 +224,8 @@ def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=
 		### Panel Labelling
 		if (labels != False):
 			# 1='upper right', 2='upper left' 3='lower left', 4='lower right'
-			plt.gca().add_artist(AnchoredText(labels[i], 
-												loc=2, borderpad=0.0, 
-												prop=dict(size=8.5) ))
+			plt.gca().add_artist(AnchoredText(labels[i], loc=2, borderpad=0.0, 
+									prop=dict(size=8.5) ))
 
 	### Save image
-	if (fname != None): 
-		plt.savefig(fname, dpi=dpi)
+	if (fname != None): plt.savefig(fname, dpi=dpi)
