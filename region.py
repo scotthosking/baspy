@@ -2,6 +2,8 @@ import iris
 
 ### To do, refactor so that we can also return coords for plot extents etc
 
+
+
 def mid_latitudes(cube):
 	### to leave off the poles from plots
 	cube = cube.intersection( latitude=(-60, 78) )
@@ -31,6 +33,11 @@ def himalayas(cube):
 	cube = cube.intersection( longitude=(60, 100), latitude=(15, 45) )
 	return cube
 
+
+'''
+Countries
+'''
+
 def uk(cube):
 	cube = cube.intersection( longitude=(-11, 2), latitude=(48, 60) )
 	return cube
@@ -45,4 +52,14 @@ def spain(cube):
 
 def egypt(cube):
 	cube = cube.intersection( longitude=(22, 39), latitude=(20, 34) )
+	return cube
+
+
+'''
+Wind Farm Sites
+'''
+
+def dogger_bank(cube):
+	### 54.43N, 2.46E (https://en.wikipedia.org/wiki/Dogger_Bank)
+	cube = cube.intersection( longitude=(0.3, 5.5), latitude=(54.0, 56.0) )
 	return cube

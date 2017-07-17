@@ -272,6 +272,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 	for i in filt_cat.index:
 		filt   = filt_cat[filt_cat.index == i]
 		path   = filt['Path'].values[0]
+		centre = filt['Centre'].values[0]
 		model  = filt['Model'].values[0]
 		run_id = filt['RunID'].values[0]
 		var    = filt['Var'].values[0]
@@ -280,7 +281,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		### Print progress to screen
 		if (verbose == True): 
 			count = count+1
-			print('['+str(count)+'/'+str(len_filt)+'] CMIP5 '+model+' '+run_id+' '+exp+' '+var)
+			print('['+str(count)+'/'+str(len_filt)+'] CMIP5 '+centre+' '+model+' '+run_id+' '+exp+' '+var)
 
 		netcdfs = os.listdir(path)
 		
