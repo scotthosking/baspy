@@ -7,10 +7,23 @@ from matplotlib.offsetbox import AnchoredText
 
 '''
 To do:
-	* Specifiy nrows & ncols labels
-
+	* Specifiy nrow & ncol labels
+	* shifted (non-centred) colour-scale
 '''
 
+
+def _add_source(name):
+	### bottom left corner of figure
+	plt.annotate(name, xy=(0.01,0.01), xycoords='figure fraction', 
+					color='Grey', ha='left', size='small')
+
+def _add_author(name=None):
+	### bottom right corner of figure
+	if name == None:
+		import pwd, os
+		name = pwd.getpwuid(os.getuid())[4]
+	plt.annotate(name, xy=(0.99,0.01), xycoords='figure fraction', 
+					color='Grey', ha='right', size='small')
 
 def auto_define_subplot_layout(npanels, fix_ncols=False, fix_nrows=False):
 	'''
@@ -72,10 +85,22 @@ def draw_box( region, transform=None ):
 
 
 
-def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=1, 
-				show_coastlines=True, show_rivers=False, show_borders=False,
-				suptitle=None, show_titles=True, hide_colbars=False, labels=False,
-				draw_box=False,	plot_type='contourf', fix_ncols=False, fix_nrows=False,	**kwargs):
+
+
+
+
+
+'''
+Main definition
+'''
+
+def maps(cubes, plot_type='contourf', 
+			fname=None, dpi=150, figsize=None, fig_num=1, tight_layout=False,
+			fix_ncols=False, fix_nrows=False,
+			shared_levels=False, hide_colbars=False,
+			show_coastlines=True, show_rivers=False, show_borders=False,
+			suptitle=None, show_titles=True, labels=False, add_author=False, add_source=False,
+			draw_box=False,	**kwargs):
 
 	'''
 	import matplotlib.pyplot as plt
@@ -226,6 +251,15 @@ def maps(cubes, fname=None, dpi=150, figsize=None, shared_levels=False, fig_num=
 			# 1='upper right', 2='upper left' 3='lower left', 4='lower right'
 			plt.gca().add_artist(AnchoredText(labels[i], loc=2, borderpad=0.0, 
 									prop=dict(size=8.5) ))
+
+
+	### Add text on Figure
+	if add_author == True: _add_author()
+	if type(add_author) == str: _add_author(add_author)
+	if type(add_source) == str: _add_source(add_source)
+
+	### Tight layout (reduce white-space) - can cause problems
+	if tight_layout == True: plt.tight_layout()
 
 	### Save image
 	if (fname != None): plt.savefig(fname, dpi=dpi)
