@@ -34,7 +34,7 @@ def __refresh_shared_catalogue():
 		### Make list of file names: i.e., 'file1.nc|file2.nc'
 		included_extensions = ['.nc', '.nc4', '.pp', '.grib']
 		fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in included_extensions)]
-		files_str = '|'.join(fnames)
+		files_str = ';'.join(fnames)
 
 		### Only add a row for paths where we have data files
 		if len(fnames) > 0:
@@ -130,7 +130,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 		run_id  = filt['RunID'].values[0]
 		var     = filt['Var'].values[0]
 		exp     = filt['Experiment'].values[0]
-		netcdfs = re.split('|', filt['DataFiles'].values[0] )
+		netcdfs = re.split(';', filt['DataFiles'].values[0] )
 		
 		print netcdfs # TMP!!!
 

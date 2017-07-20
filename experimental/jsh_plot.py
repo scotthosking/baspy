@@ -64,7 +64,7 @@ def auto_define_subplot_layout(npanels, fix_ncols=False, fix_nrows=False):
 
 
 
-def draw_box( region, transform=None ):
+def draw_regional_box( region, transform=None ):
 	'''
 	Draw box around a region on a map
 
@@ -87,9 +87,6 @@ def draw_box( region, transform=None ):
 
 
 
-
-
-
 '''
 Main definition
 '''
@@ -98,7 +95,7 @@ def maps(cubes, plot_type='contourf',
 			fname=None, dpi=150, figsize=None, fig_num=1, tight_layout=False,
 			fix_ncols=False, fix_nrows=False,
 			shared_levels=False, hide_colbars=False,
-			show_coastlines=True, show_rivers=False, show_borders=False,
+			show_coastlines=True, show_rivers=False, show_borders=False, show_ocean=None, region_mask=None,
 			suptitle=None, show_titles=True, labels=False, add_author=False, add_source=False,
 			draw_box=False,	**kwargs):
 
@@ -143,10 +140,18 @@ def maps(cubes, plot_type='contourf',
 	if figsize == None:
 		### Fix height as VDUs are usually widescreen
 		### width can fit with height limitations
-		fig_height = 8
+		
 		fig_ratio  = float(nrows) / float(ncols)
-		fig_width  = int(np.round(fig_height / fig_ratio))
-		figsize    = (fig_width,fig_height)
+
+		fig_height = 8.
+		fig_width  = round( (fig_height / fig_ratio), 1) # 1 decimal place
+
+		if fig_width > 15.:
+			### Too wide!! constrain width and adjust height (keeping same ratio)
+			fig_width  = 15.
+			fig_height = round( (fig_ratio * fig_width), 1)
+
+		figsize = (fig_width,fig_height)
 		print('Setting: figsize=',figsize)
 
 	### Setting up figure
@@ -182,6 +187,13 @@ def maps(cubes, plot_type='contourf',
 		cmap = 'Reds'
 		extend_cbar = 'neither'
 
+		### Region mask
+		if region_mask != None:
+			from baspy.util import region_mask as _region_mask
+			c = _region_mask(c, region_mask) ### is it better to run this once for all cubes???
+			if (show_ocean == None): show_ocean = True
+			
+
 		### Difference plot
 		if 'Difference' in c.attributes.keys():
 			if c.attributes['Difference'] == True:
@@ -216,6 +228,8 @@ def maps(cubes, plot_type='contourf',
 			add_feature( cartopy.feature.BORDERS, linestyle='-', alpha=0.4 )
 		if show_coastlines == True:
 			add_feature( cartopy.feature.COASTLINE, linewidth=0.7 ) # plt.gca().coastlines()
+		if show_ocean == True:
+			add_feature(cartopy.feature.OCEAN, edgecolor='k', facecolor='LightGrey')
 		
 
 
@@ -251,6 +265,13 @@ def maps(cubes, plot_type='contourf',
 			# 1='upper right', 2='upper left' 3='lower left', 4='lower right'
 			plt.gca().add_artist(AnchoredText(labels[i], loc=2, borderpad=0.0, 
 									prop=dict(size=8.5) ))
+
+		### Draw box around region
+		if draw_box != False:
+			if len(draw_box) == 4:
+				draw_regional_box(draw_box)
+			else:
+				raise ValueError()
 
 
 	### Add text on Figure

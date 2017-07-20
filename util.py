@@ -403,6 +403,64 @@ def add_scalar_coords(cube, coord_dict=None):
 
 
 
+def region_mask(cube, region_name):
+
+	# mask cube to country
+	import cartopy.io.shapereader as shpreader
+	import itertools
+	from iris.analysis.geometry import geometry_area_weights
+	import numpy.ma as ma
+
+	### Guess bounds if currently not specified
+	if cube.coord('latitude').bounds == None:  cube.coord('latitude').guess_bounds()
+	if cube.coord('longitude').bounds == None: cube.coord('longitude').guess_bounds()
+	 
+	# get countries (resolution = 10m, 50m, 110m )
+	shpfilename = shpreader.natural_earth(category='cultural',name='admin_0_countries',resolution='110m')
+	reader = shpreader.Reader(shpfilename)
+
+	# list available attributes
+	all_countries = reader.records()
+	country = next(all_countries)
+	# print(country.attributes.keys())
+
+	# get all values of an attribute
+	key = 'name_long'
+	values = set()
+	all_countries = reader.records()
+	for country in all_countries: values.add( country.attributes[key] )
+	# print( key+': '+ ', '.join(values) )
+
+	# extract countries matching criteria - is there an easier way???
+	country_crit = lambda country: country.attributes['name_long'] == region_name  ## e.g., 'China'
+	# country_crit = lambda country: country.attributes['continent'] == 'Asia'
+	# country_crit = lambda country: country.attributes['region_un'] == 'Asia'
+	# country_crit = lambda country: country.attributes['subregion'] == 'Eastern Asia'
+
+	all_countries = reader.records()
+	countries = itertools.ifilter(country_crit, all_countries)
+
+	# work out area weights of single field's intersection with selected countries
+	# !!! need to make generic (get first field from cube)
+
+	country = next(countries)
+	print( 'Getting field intersection area with '+country.attributes['name_long'] )
+	area_weights = geometry_area_weights(cube, country.geometry)
+
+	for country in countries:
+	    print( 'Getting field intersection area with '+country.attributes['name_long'] )
+	    area_weights += geometry_area_weights(cube, country.geometry)
+
+	# create a mask from the area weights
+	mask = np.where(area_weights > 0, False, True)
+
+	masked_cube = cube.copy()
+
+	# NB: this combines the mask and the data's existing mask as required
+	masked_cube.data = ma.array(masked_cube.data, mask=mask)
+
+	return masked_cube
+
 
 
 
