@@ -1,19 +1,13 @@
 import os
 import numpy as np
-import pandas as pd
-import re
-import glob, os.path
-import iris
-import iris.coords as coords
-import iris.coord_categorisation
-import baspy.util
 import warnings
+
 
 ### Set default dataset
 __default_dataset = 'cmip5'
 
 ### Setup initial catalogue to be an empty DataFrame
-__cached_cat = pd.DataFrame([]) 
+__cached_cat = None
 
 ### Define dictionary of cached values
 __cached_values         = {} # if not recognised then set to empty dictionary
@@ -32,14 +26,16 @@ def setup_catalogue_file(dataset):
 	available (compared to personal files in ~/.baspy)
 	'''
 
+	from baspy.util import get_last_modified_time_from_http_file
+	
 	copied_new_cat_file = False
 
 	### 1. define filepaths
-	__baspy_path = baspy.__baspy_path
+	from baspy import __baspy_path, __catalogues_dir, __catalogues_url
 	cat_fname    = dataset+'_catalogue.csv'
 	cat_file     = __baspy_path+'/'+cat_fname
-	__shared_local_cat_file = baspy.__catalogues_dir + cat_fname
-	__shared_url_cat_file   = baspy.__catalogues_url + cat_fname
+	__shared_local_cat_file = __catalogues_dir + cat_fname
+	__shared_url_cat_file   = __catalogues_url + cat_fname
 
 	### 2. Setup local baspy folder to store catalogues
 	if not os.path.exists(__baspy_path): 
@@ -74,7 +70,7 @@ def setup_catalogue_file(dataset):
 			newer_available_location = __shared_local_cat_file
 	else:
 		from datetime import datetime
-		url_file_timestamp = baspy.util.get_last_modified_time_from_http_file(__shared_url_cat_file)
+		url_file_timestamp = get_last_modified_time_from_http_file(__shared_url_cat_file)
 		if ( url_file_timestamp > os.path.getmtime(cat_file) ):
 			newer_available_location = __shared_url_cat_file
 
@@ -309,11 +305,11 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 		update_cached_cat = True
 
 	### Setup catalogue (incl. copying over new files if need to)
-	copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file(dataset)
+	copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
 	if (copied_new_cat_file == True): update_cached_cat=True
 
 	### Read catalgoue for the first time
-	if (__cached_cat.size == 0):		
+	if (__cached_cat == None):		
 		update_cached_cat = True
 
 	### Get user defined filter/dictionary from kwargs
@@ -327,8 +323,9 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 
 
 	if (update_cached_cat == True):
-		print('Updating cached catalogue...') 
-		__cached_cat    = pd.read_csv(cat_file)
+		print('Updating cached catalogue...')
+		from pandas import read_csv
+		__cached_cat    = read_csv(cat_file)
 		__cached_values = expanded_cached_values.copy()
 		__cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
 		print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')

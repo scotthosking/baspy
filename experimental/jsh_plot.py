@@ -113,7 +113,7 @@ def maps(cubes, plot_type='contourf',
             shared_levels=False, hide_colbars=False,
             show_coastlines=True, show_rivers=False, show_borders=False, show_ocean=None, region_mask=None,
             suptitle=None, show_titles=True, labels=False, add_author=False, add_source=False,
-            draw_box=False, add_markers=None, **kwargs):
+            draw_box=False, add_markers=None):
 
     '''
     import matplotlib.pyplot as plt
@@ -242,8 +242,8 @@ def maps(cubes, plot_type='contourf',
 
 
         ### Add features (coastlines, rivers and borders)
-        if plot_type == 'contourf': add_feature = im.ax.add_feature
-        if plot_type == 'pcolormesh':add_feature = im.axes.add_feature
+        if plot_type == 'contourf':   add_feature = im.ax.add_feature
+        if plot_type == 'pcolormesh': add_feature = im.axes.add_feature
 
         if show_rivers == True:
             add_feature( cartopy.feature.RIVERS )
