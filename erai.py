@@ -15,7 +15,7 @@ if not os.path.exists(baspy_path):
 	os.makedirs(os.path.expanduser(baspy_path))
 
 
-def get_6hr_fnames(start_date, end_date, var_name, months='all'):
+def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
 	"""
 
 	Get /Path/filenames for ERA-Interim files within date range
@@ -33,8 +33,9 @@ def get_6hr_fnames(start_date, end_date, var_name, months='all'):
 
 	start_datetime = parser.parse(start_date)
 	end_datetime   = parser.parse(end_date)
-	print(start_datetime)
-	print(end_datetime)
+	if verbose == True:
+		print(start_datetime)
+		print(end_datetime)
 	
 	filenames = [] # create an empty list, ready to create list of *.nc filenames
 	date = start_datetime
@@ -83,7 +84,7 @@ def edit_erai_attributes(cube, field, filename):
 	cube.coord('t').attributes.pop('time_origin', None)
 
 
-def get_cube(start_date, end_date, var_name, months='all', frequency='6hr', constraints=None):
+def get_cube(start_date, end_date, var_name, months='all', frequency='6hr', constraints=None, verbose=True):
 
 	"""
 
@@ -103,7 +104,7 @@ def get_cube(start_date, end_date, var_name, months='all', frequency='6hr', cons
 	#
 	# change default frequency to monthly
 
-	if frequency == '6hr': fnames = get_6hr_fnames(start_date, end_date, var_name, months=months)
+	if frequency == '6hr': fnames = get_6hr_fnames(start_date, end_date, var_name, months=months, verbose=verbose)
 	
 	con = iris.Constraint(cube_func=lambda cube: cube.var_name == var_name)
 	

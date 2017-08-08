@@ -7,7 +7,7 @@ import warnings
 __default_dataset = 'cmip5'
 
 ### Setup initial catalogue to be an empty DataFrame
-__cached_cat = None
+__cached_cat = []
 
 ### Define dictionary of cached values
 __cached_values         = {} # if not recognised then set to empty dictionary
@@ -309,7 +309,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, **kwargs):
 	if (copied_new_cat_file == True): update_cached_cat=True
 
 	### Read catalgoue for the first time
-	if (__cached_cat == None):		
+	if (type(__cached_cat) == list):	
 		update_cached_cat = True
 
 	### Get user defined filter/dictionary from kwargs

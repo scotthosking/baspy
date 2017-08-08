@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import iris.plot as iplt
 import iris
 import cartopy
+import cartopy.feature as cfe
+import cartopy.crs as ccrs
 import numpy as np
 from matplotlib.offsetbox import AnchoredText
 
@@ -75,7 +77,6 @@ def draw_regional_box( region, transform=None ):
     west, east, south, north = region
 
     if transform == None:
-        import cartopy.crs as ccrs
         transform = ccrs.PlateCarree()
 
     plt.plot([west, west], [south,north], 'k-', transform=transform, linewidth=0.7)
@@ -85,22 +86,20 @@ def draw_regional_box( region, transform=None ):
         plt.plot([i,i+1], [north,north], 'k-', transform=transform, linewidth=0.7)
 
 
-def plot_markers(lons, lats):
+def plot_markers(lons, lats, marker='o', transform=None):
     
-    import cartopy.crs as ccrs
+    if (type(lons) == int) | (type(lons) == float): lons = np.array([lons])
+    if (type(lats) == int) | (type(lats) == float): lats = np.array([lats])
 
-    # Add locations
     if len(lons) != len(lats):
         raise ValueError('lons and lats are different lengths')
 
+    if transform == None:
+        transform = ccrs.PlateCarree()
+
     for lon, lat in zip(lons, lats):
-        # plt.plot(lon, lat, color='k', marker='x', markersize=4.0)
-        plt.plot(lon, lat, 'o', color='k', ms=7, mec='w', mew=2., mfc='none')
-        plt.plot(lon, lat, 'o', color='k', ms=7, mfc='none')
-        # plt.scatter( lon, lat, s=100, marker='x', edgecolor='w', linewidth='1', facecolor='k', transform=ccrs.PlateCarree() )
-        # at_x, at_y = plt.projection.transform_point( lon, lat, src_crs=ccrs.PlateCarree() )
-        # plt.annotate(stations[i], xy=(at_x, at_y), xytext=(h_offsets[i],v_offsets[i]), textcoords='offset points',
-        #     color=colours[i], ha=alignments[i], va='center', size=7)
+        plt.plot(lon, lat, marker, color='k', ms=7, mec='w', mew=2., mfc='none', transform=transform)
+        plt.plot(lon, lat, marker, color='k', ms=7, mfc='none', transform=transform)
 
 
 '''
@@ -109,11 +108,13 @@ Main definition
 
 def maps(cubes, plot_type='contourf', 
             fname=None, dpi=150, figsize=None, fig_num=1, tight_layout=False,
-            fix_ncols=False, fix_nrows=False,
-            shared_levels=False, hide_colbars=False,
-            show_coastlines=True, show_rivers=False, show_borders=False, show_ocean=None, region_mask=None,
+            fix_ncols=False, fix_nrows=False, 
+            shared_levels=False, hide_colbars=False, shared_colbar=False, shared_cbar_label=None,
+            show_coastlines=True, show_rivers=False, show_borders=False, show_ocean=None, show_iceshelves=False, 
+            region_mask=None,
             suptitle=None, show_titles=True, labels=False, add_author=False, add_source=False,
-            draw_box=False, add_markers=None):
+            draw_box=False, add_markers=None, marker_style='o',
+            map_projection=None, set_extent=None):
 
     '''
     import matplotlib.pyplot as plt
@@ -179,7 +180,7 @@ def maps(cubes, plot_type='contourf',
 
     ### Setting up figure
     plt.close(fig_num) # close if existing fig_num exists 
-    plt.figure( figsize=figsize, num=fig_num )
+    fig = plt.figure( figsize=figsize, num=fig_num )
 
     ### set figure title
     if suptitle != None: plt.suptitle(suptitle)
@@ -195,7 +196,10 @@ def maps(cubes, plot_type='contourf',
     ##################################
     for i, c in enumerate(cubes):
 
-        plt.subplot(nrows, ncols, i+1)
+        ax = plt.subplot(nrows, ncols, i+1, projection=map_projection)
+
+        if set_extent != None:
+            ax.set_extent(set_extent, ccrs.PlateCarree())
 
         ### ensure these are 2D cubes (if they can be)
         c  = iris.util.squeeze(c)
@@ -220,9 +224,12 @@ def maps(cubes, plot_type='contourf',
         ### Difference plot
         if 'Difference' in c.attributes.keys():
             if c.attributes['Difference'] == True:
-                cmap='RdBu_r'
                 max_val = np.max([ np.abs(np.min(c.data)), np.abs(np.max(c.data)) ])
                 min_val = max_val * -1.
+
+        if np.abs(min_val) == np.abs(max_val):
+            cmap='RdBu_r'
+            extend_cbar = 'both'
 
         ### Overwrite cbar min/max within user data
         if 'cbar_range' in c.attributes.keys(): 
@@ -249,11 +256,18 @@ def maps(cubes, plot_type='contourf',
             add_feature( cartopy.feature.RIVERS )
         if show_borders == True:
             add_feature( cartopy.feature.BORDERS, linestyle='-', alpha=0.4 )
-        if show_coastlines == True:
+        if (show_coastlines == True) & (show_iceshelves == False):
             add_feature( cartopy.feature.COASTLINE, linewidth=0.7 ) # plt.gca().coastlines()
         if show_ocean == True:
             add_feature( cartopy.feature.OCEAN, edgecolor='k', facecolor='LightGrey' )
-        
+        if show_iceshelves == True:
+            add_feature(cfe.NaturalEarthFeature('physical', 'antarctic_ice_shelves_polys', '50m',
+                                                            edgecolor='k', facecolor='none', linewidth=0.2 ) )
+            add_feature(cfe.NaturalEarthFeature('physical', 'coastline', '50m', 
+                                                            edgecolor='k', facecolor='none', linewidth=0.4) )
+            add_feature(cfe.NaturalEarthFeature('physical', 'antarctic_ice_shelves_lines', '50m',
+                                                            edgecolor='k', facecolor='none', linewidth=0.4 ) )
+
 
 
 
@@ -268,7 +282,7 @@ def maps(cubes, plot_type='contourf',
         if 'units_label' in c.attributes.keys():
             units_label = c.attributes['units_label']
 
-        if hide_colbar == False:
+        if (hide_colbar == False) | (shared_colbar == False):
             cbar = plt.colorbar(im, orientation='horizontal')
             cbar.set_label(units_label, size='small')
             cbar.ax.tick_params(labelsize=8)
@@ -301,8 +315,20 @@ def maps(cubes, plot_type='contourf',
         ### Add markers
         if add_markers != None:
         	lons, lats = add_markers  
-	        plot_markers(lons, lats)
+	        plot_markers(lons, lats, marker=marker_style)
 
+        ### Colour bar positioning for shared colourbar (shared_colbar)
+        left_tmp, bottom, width, height = plt.gca().get_position().bounds
+        if i == 0: left_positions = np.array([])
+        left_positions = np.append(left_positions,left_tmp)
+
+    ### Shared colorbar
+    if shared_colbar == True: ### TO DO: only add when all plots have matching units + levels !!!!
+        width = np.max(left_positions) - np.min(left_positions) + width
+        colorbar_axes = fig.add_axes([np.min(left_positions), bottom/1.5, width, 0.025])   
+        cbar = plt.colorbar(im, colorbar_axes, orientation='horizontal', format='%2.1f')
+        cbar.ax.tick_params(labelsize=8) 
+        cbar.set_label(shared_cbar_label)
 
     ### Add text on Figure
     if add_author == True: _add_author()
