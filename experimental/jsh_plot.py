@@ -5,13 +5,13 @@ import cartopy
 import cartopy.feature as cfe
 import cartopy.crs as ccrs
 import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.offsetbox import AnchoredText
+from matplotlib import cm
 
 '''
 To do:
-    * Specifiy nrow & ncol labels
     * shifted (non-centred) colour-scale
-    * Add markers at lat/lon locations
 '''
 
 
@@ -30,38 +30,38 @@ def _add_author(name=None):
                     color='Grey', ha='right', size='small')
 
 
-def auto_define_subplot_layout(npanels, fix_ncols=False, fix_nrows=False):
+def auto_define_subplot_layout(npanels, fix_ncolumns=False, fix_nrows=False):
     '''
-    ncols, nrows = auto_define_subplot_layout(7)
+    ncolumns, nrows = auto_define_subplot_layout(7)
     '''
 
     ### Initialise values (update below)
-    ncols, nrows = 1, 1
+    ncolumns, nrows = 1, 1
 
-    ### If ncols AND nrows ARE specified by user
-    if (fix_ncols != False) & (fix_nrows != False):
-        return fix_ncols, fix_nrows
+    ### If ncolumns AND nrows ARE specified by user
+    if (fix_ncolumns != False) & (fix_nrows != False):
+        return fix_ncolumns, fix_nrows
 
-    ### If ncols AND nrows ARE NOT specified by user
-    if (fix_ncols == False) & (fix_nrows == False):
-        while npanels > (ncols * nrows):
-            if (ncols == nrows):  
-                ncols = ncols + 1
+    ### If ncolumns AND nrows ARE NOT specified by user
+    if (fix_ncolumns == False) & (fix_nrows == False):
+        while npanels > (ncolumns * nrows):
+            if (ncolumns == nrows):  
+                ncolumns = ncolumns + 1
             else:
                 nrows = nrows+1
-        return ncols, nrows
+        return ncolumns, nrows
 
-    ### If only ncols is specified by user
-    if (fix_ncols != False) & (fix_nrows == False):
-        while npanels > (fix_ncols * nrows):
+    ### If only ncolumns is specified by user
+    if (fix_ncolumns != False) & (fix_nrows == False):
+        while npanels > (fix_ncolumns * nrows):
             nrows = nrows+1
-        return fix_ncols, nrows
+        return fix_ncolumns, nrows
 
     ### If only nrows specified by user
-    if (fix_ncols == False) & (fix_nrows != False):
-        while npanels > (ncols * fix_nrows):
-            ncols = ncols + 1
-        return ncols, fix_nrows
+    if (fix_ncolumns == False) & (fix_nrows != False):
+        while npanels > (ncolumns * fix_nrows):
+            ncolumns = ncolumns + 1
+        return ncolumns, fix_nrows
 
     ### Should not get this far
     raise ValueError('Something has gone wrong in defining the subplot layout')
@@ -86,7 +86,7 @@ def draw_regional_box( region, transform=None ):
         plt.plot([i,i+1], [north,north], 'k-', transform=transform, linewidth=0.7)
 
 
-def plot_markers(lons, lats, marker='o', transform=None):
+def plot_markers(lons, lats, marker='k*', transform=None):
     
     if (type(lons) == int) | (type(lons) == float): lons = np.array([lons])
     if (type(lats) == int) | (type(lats) == float): lats = np.array([lats])
@@ -98,8 +98,45 @@ def plot_markers(lons, lats, marker='o', transform=None):
         transform = ccrs.PlateCarree()
 
     for lon, lat in zip(lons, lats):
-        plt.plot(lon, lat, marker, color='k', ms=7, mec='w', mew=2., mfc='none', transform=transform)
-        plt.plot(lon, lat, marker, color='k', ms=7, mfc='none', transform=transform)
+        plt.plot(lon, lat, marker, ms=7, mec='w', mew=2., mfc='none', transform=transform)
+        plt.plot(lon, lat, marker, ms=7, mfc='none', transform=transform)
+
+
+
+
+def cmap_centre_to_white(cmap, nlevs):
+
+    ### Get 255 colors from cmap
+    cmap255 = cm.get_cmap(cmap, 255) 
+    vals    = cmap255(np.arange(255))
+
+    ### number of different colours within colorscale/colourbar
+    n_contours = nlevs + 1 
+    n_points_within_1contour = np.round(255. / n_contours)
+
+    ### mid-point is 128 (Sanity check: 127 + 1 + 127 = 255)
+    ### reset to white, using zero indexing midpoint = index(127), i.e., 128-1
+    if n_contours % 2 == 0:
+        ### n_contours is even
+        lower_bound = int(127 - n_points_within_1contour)
+        upper_bound = int(127 + n_points_within_1contour)
+    else:
+        ### n_contours is odd
+        lower_bound = int(127 - np.round(n_points_within_1contour/2.))
+        upper_bound = int(127 + np.round(n_points_within_1contour/2.))
+
+    vals[lower_bound:upper_bound+1] = [1, 1, 1, 1] ### set to white
+
+    ### create new cmap
+    new_cmap = LinearSegmentedColormap.from_list(cmap+"_with_white_centre", vals)
+
+    return new_cmap
+
+
+
+
+
+
 
 
 '''
@@ -107,13 +144,15 @@ Main definition
 '''
 
 def maps(cubes, plot_type='contourf', 
+            cube_p_values=None, p_value_level=0.05, p_value_contour_color='k',
             fname=None, dpi=150, figsize=None, fig_num=1, tight_layout=False,
-            fix_ncols=False, fix_nrows=False, 
-            shared_levels=False, hide_colbars=False, shared_colbar=False, shared_cbar_label=None,
+            fix_ncolumns=False, fix_nrows=False, 
+            shared_levels=False, hide_colbars=False, shared_colbar=False, shared_cbar_label=None, n_contour_levs=11,
             show_coastlines=True, show_rivers=False, show_borders=False, show_ocean=None, show_iceshelves=False, 
             region_mask=None,
-            suptitle=None, show_titles=True, labels=False, add_author=False, add_source=False,
-            draw_box=False, add_markers=None, marker_style='o',
+            suptitle=None, show_titles=True, labels=False, column_labels=None, row_labels=None,
+            add_author=False, add_source=False,
+            draw_box=False, add_markers=None,
             map_projection=None, set_extent=None):
 
     '''
@@ -151,14 +190,14 @@ def maps(cubes, plot_type='contourf',
     ### Decide on the subplot grid layout
     ncubes = len(cubes)
     if (ncubes > 60): raise ValueError('Soft limit reached: too many cubes to plot at once')
-    ncols, nrows = auto_define_subplot_layout(ncubes, fix_ncols=fix_ncols, fix_nrows=fix_nrows)
+    ncolumns, nrows = auto_define_subplot_layout(ncubes, fix_ncolumns=fix_ncolumns, fix_nrows=fix_nrows)
 
     ### From the grid layout, decide on figure size (width, height)
     if figsize == None:
         ### Fix height as VDUs are usually widescreen
         ### width can fit with height limitations
         
-        fig_ratio  = float(nrows) / float(ncols)
+        fig_ratio  = float(nrows) / float(ncolumns)
 
         fig_height = nrows * 4.2
         fig_width  = round( (fig_height / fig_ratio), 1) # 1 decimal place
@@ -173,6 +212,9 @@ def maps(cubes, plot_type='contourf',
             fig_height  = 12.
             fig_width = round( (fig_height / fig_ratio), 1)
 
+        ### increase height to accommodate colourbar
+        if (shared_cbar_label != None):
+            fig_height  = fig_height * 1.25
 
 
         figsize = (fig_width,fig_height)
@@ -188,7 +230,8 @@ def maps(cubes, plot_type='contourf',
     ### labelling
     if labels == True: labels = list('abcdefghijklmnopqrstuvwxyz')
 
-
+    if column_labels != None: column_label_iterator = iter(column_labels)
+    if row_labels    != None: row_label_iterator    = iter(row_labels)
 
     ##################################
     ### Loop through the cubes, 
@@ -196,7 +239,7 @@ def maps(cubes, plot_type='contourf',
     ##################################
     for i, c in enumerate(cubes):
 
-        ax = plt.subplot(nrows, ncols, i+1, projection=map_projection)
+        ax = plt.subplot(nrows, ncolumns, i+1, projection=map_projection)
 
         if set_extent != None:
             ax.set_extent(set_extent, ccrs.PlateCarree())
@@ -228,7 +271,7 @@ def maps(cubes, plot_type='contourf',
                 min_val = max_val * -1.
 
         if np.abs(min_val) == np.abs(max_val):
-            cmap='RdBu_r'
+            cmap = cmap_centre_to_white('RdBu_r', n_contour_levs)
             extend_cbar = 'both'
 
         ### Overwrite cbar min/max within user data
@@ -239,7 +282,7 @@ def maps(cubes, plot_type='contourf',
         if 'cbar_extend' in c.attributes.keys(): 
             extend_cbar = c.attributes['cbar_extend']
 
-        levels = np.linspace(min_val, max_val, 11)
+        levels = np.linspace(min_val, max_val, n_contour_levs)
 
         ### plot data
         if plot_type == 'contourf':
@@ -247,6 +290,9 @@ def maps(cubes, plot_type='contourf',
         if plot_type == 'pcolormesh':
             im = iplt.pcolormesh(c, levels, cmap=cmap, extend=extend_cbar)
 
+        ### Plot p-values
+        if cube_p_values != None:
+            iplt.contour(cube_p_values[i], [0,p_value_level], colors=p_value_contour_color)
 
         ### Add features (coastlines, rivers and borders)
         if plot_type == 'contourf':   add_feature = im.ax.add_feature
@@ -261,12 +307,12 @@ def maps(cubes, plot_type='contourf',
         if show_ocean == True:
             add_feature( cartopy.feature.OCEAN, edgecolor='k', facecolor='LightGrey' )
         if show_iceshelves == True:
-            add_feature(cfe.NaturalEarthFeature('physical', 'antarctic_ice_shelves_polys', '50m',
-                                                            edgecolor='k', facecolor='none', linewidth=0.2 ) )
+            # add_feature(cfe.NaturalEarthFeature('physical', 'antarctic_ice_shelves_polys', '50m',
+            #                                                 edgecolor='k', facecolor='none', linewidth=0.2 ) )
             add_feature(cfe.NaturalEarthFeature('physical', 'coastline', '50m', 
-                                                            edgecolor='k', facecolor='none', linewidth=0.4) )
+                                                            edgecolor='k', facecolor='none', linewidth=0.2) )
             add_feature(cfe.NaturalEarthFeature('physical', 'antarctic_ice_shelves_lines', '50m',
-                                                            edgecolor='k', facecolor='none', linewidth=0.4 ) )
+                                                            edgecolor='k', facecolor='none', linewidth=0.2 ) )
 
 
 
@@ -305,6 +351,14 @@ def maps(cubes, plot_type='contourf',
             plt.gca().add_artist(AnchoredText(labels[i], loc=2, borderpad=0.0, 
                                     prop=dict(size=8.5) ))
 
+        ### Row & Column labelling
+        if (column_labels != None) & (ax.is_first_row()): 
+            col_label = next(column_label_iterator)
+            ax.annotate(str(col_label), xy=(0.5,1.1), xycoords='axes fraction', size=10, ha='center')
+        if (row_labels != None) & (ax.is_first_col()):
+            row_label = next(row_label_iterator)
+            ax.annotate(str(row_label), xy=(-0.1,0.5), xycoords='axes fraction', size=10, ha='right')
+
         ### Draw box around region
         if draw_box != False:
             if len(draw_box) == 4:
@@ -314,8 +368,12 @@ def maps(cubes, plot_type='contourf',
 
         ### Add markers
         if add_markers != None:
-        	lons, lats = add_markers  
-	        plot_markers(lons, lats, marker=marker_style)
+            if len(add_markers) == 2: 
+                lons, lats = add_markers
+                marker = 'k*'
+            if len(add_markers) == 3:
+                lons, lats, marker = add_markers
+            plot_markers(lons, lats, marker=marker)
 
         ### Colour bar positioning for shared colourbar (shared_colbar)
         left_tmp, bottom, width, height = plt.gca().get_position().bounds

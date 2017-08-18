@@ -68,9 +68,8 @@ def get_last_modified_time_from_http_file(url):
 '''
 
 def cube_regrid(cube, template_cube):
-	lats, lons = template_cube.coord(axis='y').points, template_cube.coord(axis='x').points
-	x_coord, y_coord = cube.coord(axis='x').name(), cube.coord(axis='y').name()
-	cube = cube.interpolate( [(y_coord, lats),(x_coord, lons)], iris.analysis.Linear() )
+	### see http://scitools.org.uk/iris/docs/latest/iris/iris/cube.html#iris.cube.Cube.regrid
+	cube = cube.regrid( template_cube, iris.analysis.Linear() )
 	return cube
 
 def area_weighted_mean(cube):
