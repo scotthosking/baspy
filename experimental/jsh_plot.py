@@ -143,7 +143,7 @@ def cmap_centre_to_white(cmap, nlevs):
 Main definition
 '''
 
-def maps(cubes, plot_type='contourf', 
+def maps(cubes, plot_type='contourf', force_cmap=None,
             cube_p_values=None, p_value_level=0.05, p_value_contour_color='k',
             fname=None, dpi=150, figsize=None, fig_num=1, tight_layout=False,
             fix_ncolumns=False, fix_nrows=False, 
@@ -283,12 +283,13 @@ def maps(cubes, plot_type='contourf',
             extend_cbar = c.attributes['cbar_extend']
 
         levels = np.linspace(min_val, max_val, n_contour_levs)
+        if force_cmap != None: cmap = force_cmap
 
         ### plot data
         if plot_type == 'contourf':
             im = iplt.contourf(c, levels, cmap=cmap, extend=extend_cbar)
         if plot_type == 'pcolormesh':
-            im = iplt.pcolormesh(c, levels, cmap=cmap, extend=extend_cbar)
+            im = iplt.pcolormesh(c, cmap=cmap, vmin=min_val, vmax=max_val)
 
         ### Plot p-values
         if cube_p_values != None:
