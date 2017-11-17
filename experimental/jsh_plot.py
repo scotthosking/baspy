@@ -188,6 +188,11 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
         shared_levels=[0,7]
         shared_levels=True
 
+    To plot a polarstereo plot add option:
+        map_projection=ccrs.SouthPolarStereo()
+    You can also set the plot extent as follows:
+        set_extent=[-180, 180, -90, -30]
+
     '''
 
     ### convert cube or list of cubes to a cubelist
@@ -244,6 +249,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
     if suptitle != None: plt.suptitle(suptitle)
 
     ### labelling
+<<<<<<< HEAD
     if (ncubes == 1) & (labels == None): labels = False
     if (ncubes > 1)  & (labels == None): labels = True
     if labels == True:
@@ -258,6 +264,17 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
         row_label_iterator = iter(row_labels)
         if (len(row_labels) != nrows):
             raise ValueError('incorrect number of row labels')
+=======
+    if labels == True: labels = list('abcdefghijklmnopqrstuvwxyz')
+    if column_labels != None: column_label_iterator = iter(column_labels)
+    if row_labels    != None: row_label_iterator    = iter(row_labels)
+>>>>>>> 84fed12841a390d5b5face7ee3cd862b00d660a1
+
+    ### Projections
+    if ( map_projection == ccrs.SouthPolarStereo() ) & ( set_extent == None ): 
+        set_extent=[-180, 180, -90, -45]
+    if ( map_projection == ccrs.NorthPolarStereo() ) & ( set_extent == None ): 
+        set_extent=[-180, 180, 45, 90]
 
     ##################################
     ### Loop through the cubes, 
