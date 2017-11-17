@@ -15,6 +15,10 @@ def europe(cube):
 	cube = cube.intersection( longitude=(-11.25, 33.75), latitude=(35.1, 72.5) )
 	return cube
 
+def noth_atlantic_europe(cube):
+	cube = cube.intersection( longitude=(-50., 33.75), latitude=(25.0, 72.5) )
+	return cube
+
 def nh(cube):
 	cube = cube.intersection( latitude=(0, 90) )
 	return cube

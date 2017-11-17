@@ -10,6 +10,7 @@ import iris
 import iris.coords as coords
 import iris.coord_categorisation
 import baspy.util, baspy._catalogue
+import cf_units
 
 ### Setup catalogue file (copy over if needs be)
 copied_new_cat_file, cat_file, __shared_cat_file = baspy._catalogue.setup_catalogue_file('cmip5')
@@ -346,7 +347,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 					for time_coord in cube.coords():
 						if time_coord.units.is_time_reference():
 							if time_coord.units.calendar == u'gregorian':
-								time_coord.units = iris.unit.Unit(time_coord.units.origin, u'standard')
+								time_coord.units = cf_units.Unit(time_coord.units.origin, u'standard')
 
 			# promote auxiliary time coordinates to dimension coordinates
 			for cube in cubelist1:

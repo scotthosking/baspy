@@ -133,7 +133,21 @@ def cmap_centre_to_white(cmap, nlevs):
     return new_cmap
 
 
+def draw_lat_lon_axes(ax):
 
+    import matplotlib.ticker as mticker
+    from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=0.7, color='k', alpha=0.5, linestyle='--')
+    gl.xlabels_top = False
+    gl.ylabels_left = False
+    # gl.xlines = False
+    # gl.xlocator = mticker.FixedLocator([-180, -45, 0, 45, 180])
+    gl.xformatter = LONGITUDE_FORMATTER
+    gl.yformatter = LATITUDE_FORMATTER
+    gl.xlabel_style = {'size': 6, 'color': 'k'}
+    gl.ylabel_style = {'size': 6, 'color': 'k'}
 
 
 
@@ -146,14 +160,15 @@ Main definition
 def maps(cubes, plot_type='contourf', force_cmap=None,
             cube_p_values=None, p_value_level=0.05, p_value_contour_color='k',
             fname=None, dpi=150, figsize=None, fig_num=1, tight_layout=False,
-            fix_ncolumns=False, fix_nrows=False, 
+            fix_ncolumns=False, fix_nrows=False, order_subplots_across_columns=False,
             shared_levels=False, hide_colbars=False, shared_colbar=False, shared_cbar_label=None, n_contour_levs=11,
-            show_coastlines=True, show_rivers=False, show_borders=False, show_ocean=None, show_iceshelves=False, 
+            show_coastlines=True, show_rivers=False, show_borders=False, mask_ocean=None, show_iceshelves=False, 
             region_mask=None,
-            suptitle=None, show_titles=True, labels=False, column_labels=None, row_labels=None,
+            suptitle=None, show_titles=True, labels=None, label_axes=True,
+            column_labels=None, row_labels=None, column_label_fontsize=10, row_label_fontsize=10,
             add_author=False, add_source=False,
             draw_box=False, add_markers=None,
-            map_projection=None, set_extent=None):
+            map_projection=ccrs.PlateCarree(), set_extent=None):
 
     '''
     import matplotlib.pyplot as plt
@@ -213,12 +228,13 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
             fig_width = round( (fig_height / fig_ratio), 1)
 
         ### increase height to accommodate colourbar
-        if (shared_cbar_label != None):
-            fig_height  = fig_height * 1.25
+        # if (shared_colbar != False):
+        #     fig_height = fig_height * 1.25
 
 
         figsize = (fig_width,fig_height)
-        print('Setting: figsize=',figsize)
+    
+    print('Setting: figsize=',figsize)
 
     ### Setting up figure
     plt.close(fig_num) # close if existing fig_num exists 
@@ -228,18 +244,44 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
     if suptitle != None: plt.suptitle(suptitle)
 
     ### labelling
-    if labels == True: labels = list('abcdefghijklmnopqrstuvwxyz')
+    if (ncubes == 1) & (labels == None): labels = False
+    if (ncubes > 1)  & (labels == None): labels = True
+    if labels == True:
+        labels = list('abcdefghijklmnopqrstuvwxyz')
 
-    if column_labels != None: column_label_iterator = iter(column_labels)
-    if row_labels    != None: row_label_iterator    = iter(row_labels)
+    if column_labels != None: 
+        column_label_iterator = iter(column_labels)
+        if (len(column_labels) != ncolumns):
+            raise ValueError('incorrect number of column labels')
+
+    if row_labels    != None: 
+        row_label_iterator = iter(row_labels)
+        if (len(row_labels) != nrows):
+            raise ValueError('incorrect number of row labels')
 
     ##################################
     ### Loop through the cubes, 
     ### plotting one subplot at a time
     ##################################
+
+    ### How should we order the plotting of subplots?
+    ### default is left-to-right, row-by-row
+    panel_indices = np.arange(1, (nrows*ncolumns)+1)
+    panel_indices = panel_indices.reshape( (nrows,ncolumns) )
+    if (order_subplots_across_columns == True):
+        panel_indices = panel_indices.T
+    panel_indices = panel_indices.ravel()
+
+    ### identify first row and first column
+    first_column_indices = [r*ncolumns for r in range(nrows)]
+    first_row_indices    = [r for r in range(ncolumns)]
+
     for i, c in enumerate(cubes):
 
-        ax = plt.subplot(nrows, ncolumns, i+1, projection=map_projection)
+        ax = plt.subplot(nrows, ncolumns, panel_indices[i], projection=map_projection)
+
+        if label_axes == True:
+            draw_lat_lon_axes(ax)
 
         if set_extent != None:
             ax.set_extent(set_extent, ccrs.PlateCarree())
@@ -261,7 +303,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
         if region_mask != None:
             from baspy.util import region_mask as _region_mask
             c = _region_mask(c, region_mask) ### is it better to run this once for all cubes???
-            if (show_ocean == None): show_ocean = True
+            if (mask_ocean == None): mask_ocean = True
             
 
         ### Difference plot
@@ -271,7 +313,8 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
                 min_val = max_val * -1.
 
         if np.abs(min_val) == np.abs(max_val):
-            cmap = cmap_centre_to_white('RdBu_r', n_contour_levs)
+            cmap = 'RdBu_r'
+            # cmap = cmap_centre_to_white('RdBu_r', n_contour_levs)
             extend_cbar = 'both'
 
         ### Overwrite cbar min/max within user data
@@ -284,6 +327,10 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
 
         levels = np.linspace(min_val, max_val, n_contour_levs)
         if force_cmap != None: cmap = force_cmap
+
+        ### cmap specified for panel
+        if 'cmap' in c.attributes.keys():
+            cmap = c.attributes['cmap']
 
         ### plot data
         if plot_type == 'contourf':
@@ -305,7 +352,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
             add_feature( cartopy.feature.BORDERS, linestyle='-', alpha=0.4 )
         if (show_coastlines == True) & (show_iceshelves == False):
             add_feature( cartopy.feature.COASTLINE, linewidth=0.7 ) # plt.gca().coastlines()
-        if show_ocean == True:
+        if mask_ocean == True:
             add_feature( cartopy.feature.OCEAN, edgecolor='k', facecolor='LightGrey' )
         if show_iceshelves == True:
             # add_feature(cfe.NaturalEarthFeature('physical', 'antarctic_ice_shelves_polys', '50m',
@@ -353,12 +400,16 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
                                     prop=dict(size=8.5) ))
 
         ### Row & Column labelling
-        if (column_labels != None) & (ax.is_first_row()): 
+        is_first_column, is_first_row = False, False
+        if i in first_column_indices: is_first_column = True
+        if i in first_row_indices:    is_first_row    = True
+
+        if (column_labels != None) & (is_first_row): 
             col_label = next(column_label_iterator)
-            ax.annotate(str(col_label), xy=(0.5,1.1), xycoords='axes fraction', size=10, ha='center')
-        if (row_labels != None) & (ax.is_first_col()):
+            plt.annotate(str(col_label), xy=(0.5,1.12), xycoords='axes fraction', size=column_label_fontsize, ha='center', va='center')
+        if (row_labels != None) & (is_first_column):
             row_label = next(row_label_iterator)
-            ax.annotate(str(row_label), xy=(-0.1,0.5), xycoords='axes fraction', size=10, ha='right')
+            plt.annotate(str(row_label), xy=(-0.1,0.5), xycoords='axes fraction', size=row_label_fontsize, ha='right', va='center')
 
         ### Draw box around region
         if draw_box != False:
@@ -394,7 +445,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
     if type(add_author) == str: _add_author(add_author)
     if type(add_source) == str: _add_source(add_source)
 
-    ### Tight layout (reduce white-space) - can cause problems
+    ### Tight layout (reduce white-space) - can cause problems!!
     if tight_layout == True: plt.tight_layout()
 
     ### Save image
