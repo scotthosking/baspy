@@ -249,7 +249,6 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
     if suptitle != None: plt.suptitle(suptitle)
 
     ### labelling
-<<<<<<< HEAD
     if (ncubes == 1) & (labels == None): labels = False
     if (ncubes > 1)  & (labels == None): labels = True
     if labels == True:
@@ -264,11 +263,10 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
         row_label_iterator = iter(row_labels)
         if (len(row_labels) != nrows):
             raise ValueError('incorrect number of row labels')
-=======
+            
     if labels == True: labels = list('abcdefghijklmnopqrstuvwxyz')
     if column_labels != None: column_label_iterator = iter(column_labels)
     if row_labels    != None: row_label_iterator    = iter(row_labels)
->>>>>>> 84fed12841a390d5b5face7ee3cd862b00d660a1
 
     ### Projections
     if ( map_projection == ccrs.SouthPolarStereo() ) & ( set_extent == None ): 
