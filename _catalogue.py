@@ -312,7 +312,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     if read_everything == True:
         from pandas import read_csv
         cat = read_csv(cat_file)
-        print ">> Read whole catalogue, any filtering has been ignored <<"
+        print(">> Read whole catalogue, any filtering has been ignored <<")
         return cat
 
     ### Read catalgoue for the first time

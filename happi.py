@@ -133,7 +133,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
         freq    = filt['Frequency'].values[0]
         netcdfs = re.split(';', filt['DataFiles'].values[0] )
         
-        print netcdfs # TMP!!!
+        print(netcdfs) # TMP!!!
 
         ### Print progress to screen
         if (verbose == True): 
