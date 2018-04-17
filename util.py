@@ -145,20 +145,14 @@ def months2seasons(cube, seasons=None):
     season_years = cube.coord('season_year').points
     ntimes       = len(cube.coord('time').points)
 
-    # keep_ind = np.zeros((0), dtype=np.int)
-    # for i in range(0,ntimes):
-    #    ind = np.where( (clim_seasons == clim_seasons[i]) & (season_years == season_years[i]) )[0]
-    #    n_months_in_season = len(clim_seasons[i]) # length of string, usually 3 (e.g. 'djfm'=4)
-    #    if (len(ind) == n_months_in_season): keep_ind = np.append(keep_ind,i)
-    # cube = cube[keep_ind]
-
-    full_season_cubes = iris.cube.CubeList()
-    for i in range(0, ntimes):
-                    single_season_cube = cube.extract(iris.Constraint(year=years[i]))
-                    n_months_in_season = len(clim_seasons[i]) # length of string, usually 3 (e.g. 'djfm'=4)
-                    if len(single_season_cube.coord(axis='t').points) == n_months_in_season:
-                                    full_season_cubes.append(single_season_cube)
-    cube = full_season_cubes.concatenate_cube()
+    keep_ind = np.zeros((0), dtype=np.int)
+    for i in range(0,ntimes):
+       ind = np.where( (clim_seasons == clim_seasons[i]) & (season_years == season_years[i]) )[0]
+       n_months_in_season = len(clim_seasons[i]) # length of string, usually 3 (e.g. 'djfm'=4)
+       if (len(ind) == n_months_in_season): keep_ind = np.append(keep_ind,i)
+    time_axis = cube.coord_dims(cube.coord(axis='t'))[0]
+    cube_slice = ((slice(None),) * time_axis + (keep_ind,) + (slice(None),) * (len(cube.shape) - time_axis - 1))
+    cube = cube[cube_slice]
 
     seasons = cube.aggregated_by(['clim_season', 'season_year'], iris.analysis.MEAN)
     return seasons
@@ -182,22 +176,14 @@ def months2annual(cube):
     years = cube.coord('year').points
     ntimes = len(cube.coord('time').points)
 
-    # keep_ind = np.zeros((0), dtype=np.int)
-    # for i in range(0,ntimes):
-    #    ind = np.where( (years == years[i]) )[0]
-    #    n_months_in_year = 12
-    #    if (len(ind) == n_months_in_year): keep_ind = np.append(keep_ind,i)
-    # time_axis = cube.coord_dims(cube.coord(axis='t'))[0]
-    # cube_slice = ((slice(None),) * time_axis + (keep_ind,) + (slice(None),) * (len(cube.shape) - time_axis - 1))
-    # cube = cube[cube_slice]
-
-    full_year_cubes = iris.cube.CubeList()
-    for i in range(0, ntimes):
-                    single_year_cube = cube.extract(iris.Constraint(year=years[i]))
-                    n_months_in_year = 12
-                    if len(single_year_cube.coord(axis='t').points) == n_months_in_year:
-                                    full_year_cubes.append(single_year_cube)
-    cube = full_year_cubes.concatenate_cube()
+    keep_ind = np.zeros((0), dtype=np.int)
+    for i in range(0,ntimes):
+       ind = np.where( (years == years[i]) )[0]
+       n_months_in_year = 12
+       if (len(ind) == n_months_in_year): keep_ind = np.append(keep_ind,i)
+    time_axis = cube.coord_dims(cube.coord(axis='t'))[0]
+    cube_slice = ((slice(None),) * time_axis + (keep_ind,) + (slice(None),) * (len(cube.shape) - time_axis - 1))
+    cube = cube[cube_slice]
 
     annual = cube.aggregated_by(['year'], iris.analysis.MEAN)
     return annual
