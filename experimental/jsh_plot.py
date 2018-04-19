@@ -98,8 +98,8 @@ def plot_markers(lons, lats, marker='k*', transform=None):
         transform = ccrs.PlateCarree()
 
     for lon, lat in zip(lons, lats):
-        plt.plot(lon, lat, marker, ms=7, mec='w', mew=2., mfc='none', transform=transform)
-        plt.plot(lon, lat, marker, ms=7, mfc='none', transform=transform)
+        #plt.plot(lon, lat, marker, ms=7, mec='w', mew=2., mfc='k', transform=transform)
+        plt.plot(lon, lat, marker, ms=7, color='k', transform=transform)
 
 
 
