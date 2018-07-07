@@ -16,7 +16,7 @@ if not os.path.exists(baspy_path):
 	os.makedirs(os.path.expanduser(baspy_path))
 
 ### Directories
-upscale_dir = '/group_workspaces/jasmin/upscale'
+upscale_dir = '/group_workspaces/jasmin4/upscale'
 
 
 

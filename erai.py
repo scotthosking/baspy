@@ -44,8 +44,8 @@ def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
 
 	### Get level_str from var_name
 	level_str = None
-	df_as = pd.read_csv('/group_workspaces/jasmin/bas_climate/data/ecmwf/era-interim/era-interim_6hrly_surface_vars.csv')
-	df_ap = pd.read_csv('/group_workspaces/jasmin/bas_climate/data/ecmwf/era-interim/era-interim_6hrly_pressure_lev_vars.csv')
+	df_as = pd.read_csv('/group_workspaces/jasmin4/bas_climate/data/ecmwf/era-interim/era-interim_6hrly_surface_vars.csv')
+	df_ap = pd.read_csv('/group_workspaces/jasmin4/bas_climate/data/ecmwf/era-interim/era-interim_6hrly_pressure_lev_vars.csv')
 	if var_name in df_as['surface_vars'].values:      level_str = 'as'
 	if var_name in df_ap['pressure_lev_vars'].values: level_str = 'ap'
 	if level_str == None: 

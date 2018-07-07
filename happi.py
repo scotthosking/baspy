@@ -19,7 +19,7 @@ def __refresh_shared_catalogue():
     print("Building catalogue now...")
 
     ### Get paths for all HAPPI data
-    happi_dir = '/group_workspaces/jasmin/bas_climate/data/happi/'
+    happi_dir = '/group_workspaces/jasmin4/bas_climate/data/happi/'
     paths1 = glob.glob(happi_dir+'data/*/*/*/*/*/*/*/*/*')
     paths2 = glob.glob(happi_dir+'derived/*/*/*/*/*/*/*/*/*')
     paths  = paths1 + paths2
