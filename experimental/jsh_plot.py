@@ -351,7 +351,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
         if plot_type == 'contourf':
             im = iplt.contourf(c, levels, cmap=cmap, extend=extend_cbar)
         if plot_type == 'pcolormesh':
-            im = iplt.pcolormesh(c, cmap=cmap, vmin=min_val, vmax=max_val)
+            im = iplt.pcolormesh(c, cmap=cmap, vmin=min_val, vmax=max_val) #, edgecolors='w', linewidths=0.3)
 
         ### Plot p-values
         if cube_p_values != None:
