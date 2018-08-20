@@ -2,7 +2,7 @@ import re
 from pandas.core.series import Series
 from pandas import DataFrame
 
-def get_cubes(filt_cat, constraints=None, verbose=True):
+def get_cubes(filt_cat, constraints=None, verbose=True, interpolate_lats_lons=False):
 
 	### Convert Pandas Series to DataFrame
 	if type(filt_cat) == Series:
@@ -15,23 +15,26 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 	if ('cmip5' in split_str):
 		import baspy.cmip5
-		cubes = baspy.cmip5.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
+		cubes = baspy.cmip5.get_cubes(filt_cat, constraints=constraints, verbose=verbose,
+										interpolate_lats_lons=interpolate_lats_lons)
 
 	if ('happi' in split_str):
 		import baspy.happi
-		cubes = baspy.happi.get_cubes(filt_cat, constraints=constraints, verbose=verbose)
+		cubes = baspy.happi.get_cubes(filt_cat, constraints=constraints, verbose=verbose,
+										interpolate_lats_lons=interpolate_lats_lons)
 
 	return cubes
 
 
-def get_cube(filt_cat, constraints=None, verbose=True):
+def get_cube(filt_cat, constraints=None, verbose=True, interpolate_lats_lons=False):
 
 	### Convert Pandas Series to DataFrame
 	if type(filt_cat) == Series:
 		filt_cat = DataFrame([filt_cat.values], columns=filt_cat.keys() )
 
 	if (len(filt_cat.index) == 1): 
-		cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose)
+		cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose, 
+							interpolate_lats_lons=interpolate_lats_lons)
 		cube = cube[0]
 
 	if (len(filt_cat) > 1): 

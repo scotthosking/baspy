@@ -256,7 +256,7 @@ def callback(cube, field, filename):
 
 
 
-def get_cubes(filt_cat, constraints=None, verbose=True):
+def get_cubes(filt_cat, constraints=None, verbose=True, interpolate_lats_lons=False):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
 
@@ -329,6 +329,10 @@ def get_cubes(filt_cat, constraints=None, verbose=True):
 
 			if ( (type(cube) == iris.cube.CubeList) & (len(cube) == 1) ):	
 				cube = cube[0]
+
+				if interpolate_lats_lons != False:
+					### interpolate_lats_lons = [('latitude', YYY), ('longitude', XXX)]
+					cube = cube.interpolate( interpolate_lats_lons, iris.analysis.Linear() )
 			
 				### Remove attributes to enable cubes to concatenate
 				cube.attributes.clear()
