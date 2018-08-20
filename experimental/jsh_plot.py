@@ -254,19 +254,20 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
     if labels == True:
         labels = list('abcdefghijklmnopqrstuvwxyz')
 
-    if column_labels != None: 
+    NoneType = type(None)
+    if type(column_labels) != NoneType: 
         column_label_iterator = iter(column_labels)
         if (len(column_labels) != ncolumns):
             raise ValueError('incorrect number of column labels')
 
-    if row_labels    != None: 
+    if type(row_labels)    != NoneType: 
         row_label_iterator = iter(row_labels)
         if (len(row_labels) != nrows):
             raise ValueError('incorrect number of row labels')
             
     if labels == True: labels = list('abcdefghijklmnopqrstuvwxyz')
-    if column_labels != None: column_label_iterator = iter(column_labels)
-    if row_labels    != None: row_label_iterator    = iter(row_labels)
+    # if column_labels != None: column_label_iterator = iter(column_labels)
+    # if row_labels    != None: row_label_iterator    = iter(row_labels)
 
     ### Projections
     if ( map_projection == ccrs.SouthPolarStereo() ) & ( set_extent == None ): 
@@ -419,10 +420,10 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
         if i in first_column_indices: is_first_column = True
         if i in first_row_indices:    is_first_row    = True
 
-        if (column_labels != None) & (is_first_row): 
+        if (type(column_labels) != NoneType) & (is_first_row): 
             col_label = next(column_label_iterator)
             plt.annotate(str(col_label), xy=(0.5,1.12), xycoords='axes fraction', size=column_label_fontsize, ha='center', va='center')
-        if (row_labels != None) & (is_first_column):
+        if (type(row_labels) != NoneType) & (is_first_column):
             row_label = next(row_label_iterator)
             plt.annotate(str(row_label), xy=(-0.1,0.5), xycoords='axes fraction', size=row_label_fontsize, ha='right', va='center')
 
