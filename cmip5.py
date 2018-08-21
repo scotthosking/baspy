@@ -256,7 +256,7 @@ def callback(cube, field, filename):
 
 
 
-def get_cubes(filt_cat, constraints=None, verbose=True, interpolate_lats_lons=False):
+def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
 	"""
 	Use filtered catalogue of CMIP5 data and return a CubeList
 
