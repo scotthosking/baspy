@@ -10,7 +10,7 @@ To extract a region:
 ###############################
 ### Pre-defined named locations
 ###############################
-class city:
+class City:
     london = { 'lon':0.739,   'lat':51.3026 }
     mumbai = { 'lon':72.4933, 'lat':18.5830 }
 
