@@ -1,85 +1,75 @@
-import iris
-
-'''
-To do,
-	* refactor so that we can also return coords for plot extents etc
 '''
 
-
-def mid_latitudes(cube):
-	### to leave off the poles from plots
-	cube = cube.intersection( latitude=(-60, 78) )
-	return cube
-
-def europe(cube):
-	cube = cube.intersection( longitude=(-11.25, 33.75), latitude=(35.1, 72.5) )
-	return cube
-
-def noth_atlantic_europe(cube):
-	cube = cube.intersection( longitude=(-50., 33.75), latitude=(25.0, 72.5) )
-	return cube
-
-def nh(cube):
-	cube = cube.intersection( latitude=(0, 90) )
-	return cube
-
-def sh(cube):
-	cube = cube.intersection( latitude=(-90, 0) )
-	return cube
-
-def arctic_circle(cube):
-	cube = cube.intersection( latitude=(66, 90) )
-	return cube
-
-def antarctic_60_90S(cube):
-	cube = cube.intersection( latitude=(-90, -60) )
-	return cube
-
-def himalayas(cube):
-	cube = cube.intersection( longitude=(60, 100), latitude=(15, 45) )
-	return cube
-
-
+To extract a region:
+>>> bounds = bp.region.china
+>>> cube   = bp.region.extract(cube, bounds)
 
 '''
-Countries
-'''
-
-def uk(cube):
-	cube = cube.intersection( longitude=(-11, 2), latitude=(48, 60) )
-	return cube
-
-def france(cube):
-	cube = cube.intersection( longitude=(-5, 9), latitude=(41, 52) )
-	return cube
-
-def spain(cube):
-	cube = cube.intersection( longitude=(-11, 6), latitude=(35, 45) )
-	return cube
-
-def egypt(cube):
-	cube = cube.intersection( longitude=(22, 39), latitude=(20, 34) )
-	return cube
-
-def china(cube):
-	cube = cube.intersection( longitude=(72,135), latitude=(20,55) )
-	return cube
-
-'''
-Sub-regions
-'''
-
-def central_england(cube):
-	cube = cube.intersection( longitude=(-3.5, 0.), latitude=(51.5, 53.5) )
-	return cube
 
 
+###############################
+### Pre-defined named locations
+###############################
+class city:
+    london = { 'lon':0.739,   'lat':51.3026 }
+    mumbai = { 'lon':72.4933, 'lat':18.5830 }
 
-'''
-Wind Farm Sites
-'''
 
-def dogger_bank(cube):
-	### 54.43N, 2.46E (https://en.wikipedia.org/wiki/Dogger_Bank)
-	cube = cube.intersection( longitude=(0.3, 5.5), latitude=(54.0, 56.0) )
-	return cube
+###############################
+### Pre-defined regional bounds
+###############################
+
+nh               = {'lat_bnds':(0, 90)   }
+sh               = {'lat_bnds':(-90, 0)  }
+arctic_circle    = {'lat_bnds':(66, 90)  }
+antarctic_60_90S = {'lat_bnds':(-90, -60)}
+mid_latitudes    = {'lat_bnds':(-60, 78) } # to leave off the poles from plots
+
+class Continent: 
+    europe               = {'lon_bnds':(-11.25, 33.75), 'lat_bnds':(35.1, 72.5) }
+    noth_atlantic_europe = {'lon_bnds':(-50., 33.75),   'lat_bnds':(25.0, 72.5) }
+
+class Country:
+    uk     = {'lon_bnds':(-11, 2), 'lat_bnds':(48, 60) }
+    france = {'lon_bnds':(-5, 9),  'lat_bnds':(41, 52) }
+    spain  = {'lon_bnds':(-11, 6), 'lat_bnds':(35, 45) }
+    egypt  = {'lon_bnds':(22, 39), 'lat_bnds':(20, 34) }
+    china  = {'lon_bnds':(72,135), 'lat_bnds':(20,55)  }
+
+class Sub_regions:
+    central_england = {'lon_bnds':(-3.5, 0.), 'lat_bnds':(51.5, 53.5) }
+    himalayas       = {'lon_bnds':(60, 100),       'lat_bnds':(15, 45)     }
+
+
+###############################
+### Definitions
+###############################
+
+def extract(cube, bounds):
+
+    '''
+    Extract region using pre-defined lat/lon bounds
+
+    >>> bounds = bp.region.china
+    >>> cube   = bp.region.extract(cube, bounds)
+    '''
+
+    keys = bounds.keys()
+
+    if ('lon_bnds' in keys) | ('lat_bnds' in keys):
+
+        if ('lon_bnds' in keys) & ('lat_bnds' in keys):
+            cube = cube.intersection( longitude=bounds['lon_bnds'], latitude=bounds['lat_bnds'] )
+
+        if ('lon_bnds' in keys) & ('lat_bnds' not in keys):
+            cube = cube.intersection( longitude=bounds['lon_bnds'] )
+
+        if ('lon_bnds' not in keys) & ('lat_bnds' in keys):
+            cube = cube.intersection( latitude=bounds['lat_bnds'] )
+
+    else:
+
+        raise ValueError('Need to define lon_bnds and/or lat_bnds')
+
+    return cube
+

@@ -19,7 +19,7 @@ import os
 import iris
 
 ### BASpy version number
-__version__ = "0.6"
+__version__ = "0.7"
 
 ### Place to store catalogues and example data
 __baspy_path = os.path.expanduser("~/.baspy")
@@ -28,17 +28,15 @@ if not os.path.exists(__baspy_path):
 
 ### For sharing catalogues between users
 __catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
-__catalogues_dir = "/group_workspaces/jasmin/bas_climate/public/files/baspy/"
+__catalogues_dir = "/group_workspaces/jasmin4/bas_climate/public/files/baspy/"
 
 # Import modules
 import baspy.util
 import baspy._catalogue
 import baspy._get_cubes
+import baspy.erai
 
-import baspy.upscale ### these should be removed from here 
-import baspy.erai    ### (import only when they are needed)
-
-### Link modules under baspy (e.g., baspy.get_cubes() )
+### Link modules for easier access (e.g., baspy.get_cubes() )
 get_cubes   = baspy._get_cubes.get_cubes
 get_cube    = baspy._get_cubes.get_cube
 catalogue   = baspy._catalogue.catalogue
