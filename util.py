@@ -62,10 +62,49 @@ def get_last_modified_time_from_http_file(url):
     return timestamp
 
 
+def nearest_neighbour(items,my_value):
+    '''
+    Find the nearest_neighbour
+
+    >>> nearest_neighbour(lats, 10.2)
+    
+    '''
+    nearest   = min(items, key=lambda x: abs(x - my_value))
+    timedelta = abs(nearest - my_value)
+    return nearest
+
+
+def cumulative_rolling_window(arr,n):
+    '''
+    see https://stackoverflow.com/questions/12709853/python-running-cumulative-sum-with-a-given-window
+    '''
+    b = arr.cumsum()
+    b[n:] = b[n:] - b[:-n]
+    return b    
+
+
+
+
+
 
 '''
 2. Iris specific utilities
 '''
+
+### Convert units
+class convert_units:
+    def mm_day(cube):
+        if (cube.units == 'kg m-2 s-1'):
+            cube = cube * 86400.
+            cube.units = 'mm day-1'
+        else:
+            raise ValueError('can not convert cube to mm day-1')
+        return cube
+
+
+
+
+
 
 def cube_regrid(cube, template_cube):
     ### see http://scitools.org.uk/iris/docs/latest/iris/iris/cube.html#iris.cube.Cube.regrid
@@ -81,6 +120,10 @@ def area_weighted_mean(cube):
         if all(ts.data.mask == False): ts.data = ts.data.data
 
     return ts
+
+
+
+
 
 def cube_trend(cube, var_name=None, time_coord=None):
 
