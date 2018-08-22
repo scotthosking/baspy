@@ -1,7 +1,7 @@
 """
-BASpy is essentially a collection of tools useful for working with
+BASpy is essentially a collection of tools for working with
 large climate model data. For the most part it is a wrapper around the 
-Python package "Iris" although my plan is to do more with Xarray
+Python package "Iris" although the plan is to do more with Xarray.
 
 Iris 
 ------
@@ -25,12 +25,10 @@ Contributors: Tom Bracegirdle, Tony Phillips
 
 # Import modules
 import os
-import iris
-
-import baspy.util
 import baspy._catalogue
-import baspy.iris._get_cubes
-import baspy.iris.erai
+import baspy.util
+import baspy._iris._get_cubes
+import baspy._iris.erai
 
 
 ### BASpy version number
@@ -55,9 +53,8 @@ __catalogues_dir = "/group_workspaces/jasmin4/bas_climate/public/files/baspy/"
 catalogue   = baspy._catalogue.catalogue
 
 ### Iris specific
-eg_cube     = baspy.iris.util.eg_cube
-eg_cubelist = baspy.iris.util.eg_cubelist
-get_cubes   = baspy.iris._get_cubes.get_cubes
-get_cube    = baspy.iris._get_cubes.get_cube
-baspy.erai  = baspy.iris.erai
-
+eg_cube     = baspy._iris.util.eg_cube
+eg_cubelist = baspy._iris.util.eg_cubelist
+get_cubes   = baspy._iris._get_cubes.get_cubes
+get_cube    = baspy._iris._get_cubes.get_cube
+baspy.erai  = baspy._iris.erai

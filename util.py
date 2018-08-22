@@ -1,5 +1,5 @@
 import numpy as np
-from bp.iris.util import *
+from baspy._iris.util import *
 
 
 '''

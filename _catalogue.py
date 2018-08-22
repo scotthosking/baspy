@@ -93,11 +93,11 @@ def setup_catalogue_file(dataset):
 
 def __refresh_shared_catalogue(dataset):
     if dataset == 'cmip5': 
-        import baspy.cmip5
-        baspy.cmip5.__refresh_shared_catalogue()
+        import baspy._iris.cmip5
+        baspy._iris.cmip5.__refresh_shared_catalogue()
     elif dataset == 'happi': 
-        import baspy.happi
-        baspy.happi.__refresh_shared_catalogue()
+        import baspy._iris.happi
+        baspy._iris.happi.__refresh_shared_catalogue()
     else:
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
 
