@@ -75,31 +75,33 @@ df = tas.to_dataframe()
 #########################
 
 var_name = 'tas'
-units    = 'degrees_C'
 
 ### New grid
-lons_new = np.linspace(0., 5.5, 10)
-lats_new = np.linspace(0., 5.5, 10)
+lons_new     = np.linspace(0., 5.5, 10)
+lats_new     = np.linspace(0., 5.5, 10)
+nlons, nlats = len(lons_new), len(lats_new)
 
-### Original data
-lons = ds.lon.values
-lats = ds.lat.values
-z    = ds.variables[var][0,:,:].values
+### Original grid
+lons = ds[var_name].lon.values
+lats = ds[var_name].lat.values
 
 ### Extract region to reduce CPU time
-lat_bnds, lon_bnds = [lats[0], lats[-1]], [lons[0], lons[-1]]
+lat_bnds, lon_bnds = [lats_new[0], lats_new[-1]], [lons_new[0], lons_new[-1]]
 lat_inds = np.where((lats > lat_bnds[0]) & (lats < lat_bnds[1]))[0]
 lon_inds = np.where((lons > lon_bnds[0]) & (lons < lon_bnds[1]))[0]
 extracted_ds = ds.sel(lat=slice(*lat_bnds), lon=slice(*lon_bnds))
 
 ### Resampled data
-interp_func = interpolate.interp2d(x, y, z, kind='linear')
-znew = interp_func(xnew, ynew)
+znew = np.zeros( (ntime, nlons, nlats) )
+for t in range(0,XXX):
+    z    = ds[var_name][t,:,:].values
+    interp_func = interpolate.interp2d(lons, lats, z, kind='linear')
+    znew[t,:,:] = interp_func(xnew, ynew) # Transpose (t,y,x)??
 
 ### Create a DataArray
 ds1 = xr.DataArray(znew, dims=('latitude', 'longitude'), 
-                         coords={'latitude': ynew, 'longitude': xnew},
-                         name=var_name, attrs={'units': units} )
+                         coords={'latitude': lats_new, 'longitude': lons_new},
+                         name=var_name, attrs={'units': ds[var_name].units} )
 
 ### Write to iris cube
 cube = ds1.to_iris()
