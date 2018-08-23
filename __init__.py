@@ -59,12 +59,13 @@ __modules = sys.modules # must come before import baspy.util
 
 ### General Libraries
 import baspy.util
+import baspy.region
 import baspy._catalogue
 catalogue = baspy._catalogue.catalogue
 
 ### Set up wrappers for iris, xarray etc
 if 'iris' in __modules:
-    import baspy._iris as IRIS
+    import baspy.IRIS as IRIS
     eg_cube     = IRIS.util.eg_cube
     eg_cubelist = IRIS.util.eg_cubelist
     get_cubes   = IRIS.get_cubes.get_cubes
@@ -72,4 +73,4 @@ if 'iris' in __modules:
     erai        = IRIS.erai
 
 if 'xarray' in __modules:
-    import baspy._xarray as XR
+    import baspy.XARRAY as XR

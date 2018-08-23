@@ -1,7 +1,7 @@
 '''
 
 To extract a region:
->>> bounds = bp.region.china
+>>> bounds = bp.region.Country.china
 >>> cube   = bp.region.extract(cube, bounds)
 
 '''
@@ -41,35 +41,30 @@ class Sub_regions:
     himalayas       = {'lon_bnds':(60, 100),  'lat_bnds':(15, 45)     }
 
 
+
+
 ###############################
 ### Definitions
 ###############################
 
-def extract(cube, bounds):
+def extract(data, bounds):
 
     '''
     Extract region using pre-defined lat/lon bounds
 
-    >>> bounds = bp.region.china
-    >>> cube   = bp.region.extract(cube, bounds)
+    >>> bounds = bp.region.Country.china
+    >>> data   = bp.region.extract(data, bounds)
+
+    where 'data' can be either an iris.cube or a xarray.DataArray
     '''
 
-    keys = bounds.keys()
+    if 'iris' in str(type(data)):
+        from baspy.IRIS.util import extract_region
+        data = extract_region(data, bounds)
 
-    if ('lon_bnds' in keys) | ('lat_bnds' in keys):
+    if 'xarray' in str(type(data)):
+        from baspy.XARRAY.util import extract_region
+        data = extract_region(data, bounds)
 
-        if ('lon_bnds' in keys) & ('lat_bnds' in keys):
-            cube = cube.intersection( longitude=bounds['lon_bnds'], latitude=bounds['lat_bnds'] )
-
-        if ('lon_bnds' in keys) & ('lat_bnds' not in keys):
-            cube = cube.intersection( longitude=bounds['lon_bnds'] )
-
-        if ('lon_bnds' not in keys) & ('lat_bnds' in keys):
-            cube = cube.intersection( latitude=bounds['lat_bnds'] )
-
-    else:
-
-        raise ValueError('Need to define lon_bnds and/or lat_bnds')
-
-    return cube
+    return data
 

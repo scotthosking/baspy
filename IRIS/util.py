@@ -39,6 +39,36 @@ def area_weighted_mean(cube):
 
 
 
+def extract_region(cube, bounds):
+
+    '''
+    Extract region using pre-defined lat/lon bounds
+
+    >>> bounds = bp.region.Country.china
+    >>> cube   = bp.region.extract(cube, bounds)
+    '''
+
+    keys = bounds.keys()
+
+    if ('lon_bnds' in keys) | ('lat_bnds' in keys):
+
+        if ('lon_bnds' in keys) & ('lat_bnds' in keys):
+            cube = cube.intersection( longitude=bounds['lon_bnds'], latitude=bounds['lat_bnds'] )
+
+        if ('lon_bnds' in keys) & ('lat_bnds' not in keys):
+            cube = cube.intersection( longitude=bounds['lon_bnds'] )
+
+        if ('lon_bnds' not in keys) & ('lat_bnds' in keys):
+            cube = cube.intersection( latitude=bounds['lat_bnds'] )
+
+    else:
+
+        raise ValueError('Need to define lon_bnds and/or lat_bnds')
+
+    return cube
+
+
+
 
 
 def cube_trend(cube, var_name=None, time_coord=None):

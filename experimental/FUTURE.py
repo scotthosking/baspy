@@ -3,8 +3,8 @@ import baspy as bp
 import xarray as xr
 
 '''
-Wishlist for baspy v2 (should we start a new github repo?):
-    * based on Xarray rather than iris
+Wishlist for baspy v2:
+    * include capability to use Xarray in addition to Iris
     * add start and end dates to the data catalogues
     * automatically select nc files to read based on date range
     * check lat/lon dims all match between nc files then use concat_dim=time in open_mfdataset 
