@@ -8,7 +8,7 @@ Iris
 Homepage:  http://scitools.org.uk/iris/
 Reference: http://scitools.org.uk/iris/docs/latest/iris/iris.html
 Code:      https://github.com/SciTools/iris
-Forums:	   https://groups.google.com/forum/#!forum/scitools-iris
+Forums:    https://groups.google.com/forum/#!forum/scitools-iris
 
 
 Xarray
@@ -23,13 +23,7 @@ Contributors: Tom Bracegirdle, Tony Phillips
 
 """
 
-# Import modules
-import os
-import baspy._catalogue
-import baspy.util
-import baspy._iris._get_cubes
-import baspy._iris.erai
-
+import os, sys
 
 ### BASpy version number
 __version__ = "0.9"
@@ -44,17 +38,38 @@ __catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/
 __catalogues_dir = "/group_workspaces/jasmin4/bas_climate/public/files/baspy/"
 
 
-##################################
-### Create shortcuts for easier access 
-###   e.g., baspy.get_cubes()
-##################################
+###############
+### Setup BASpy
+###############
 
-### General
-catalogue   = baspy._catalogue.catalogue
+### Optional Libraries
+try:
+    import iris
+except ImportError:
+    # Iris is not installed
+    pass
 
-### Iris specific
-eg_cube     = baspy._iris.util.eg_cube
-eg_cubelist = baspy._iris.util.eg_cubelist
-get_cubes   = baspy._iris._get_cubes.get_cubes
-get_cube    = baspy._iris._get_cubes.get_cube
-baspy.erai  = baspy._iris.erai
+try:
+    import xarray
+except ImportError:
+    # Xarray is not installed
+    pass
+
+__modules = sys.modules # must come before import baspy.util
+
+### General Libraries
+import baspy.util
+import baspy._catalogue
+catalogue = baspy._catalogue.catalogue
+
+### Set up wrappers for iris, xarray etc
+if 'iris' in __modules:
+    import baspy._iris as IRIS
+    eg_cube     = IRIS.util.eg_cube
+    eg_cubelist = IRIS.util.eg_cubelist
+    get_cubes   = IRIS.get_cubes.get_cubes
+    get_cube    = IRIS.get_cubes.get_cube
+    erai        = IRIS.erai
+
+if 'xarray' in __modules:
+    import baspy._xarray as XR

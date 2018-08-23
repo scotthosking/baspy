@@ -38,7 +38,7 @@ class Country:
 
 class Sub_regions:
     central_england = {'lon_bnds':(-3.5, 0.), 'lat_bnds':(51.5, 53.5) }
-    himalayas       = {'lon_bnds':(60, 100),       'lat_bnds':(15, 45)     }
+    himalayas       = {'lon_bnds':(60, 100),  'lat_bnds':(15, 45)     }
 
 
 ###############################

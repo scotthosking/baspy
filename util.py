@@ -1,9 +1,9 @@
 import numpy as np
-from baspy._iris.util import *
-
+from baspy import __modules
+if 'iris' in __modules: from baspy._iris.util import *
 
 '''
-1. General python utilities (For numpy, scipy, pandas etc)
+General python utilities (For numpy, scipy, pandas etc)
 
 '''
 
