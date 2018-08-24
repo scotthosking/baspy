@@ -58,10 +58,10 @@ except ImportError:
 __modules = sys.modules # must come before import baspy.util
 
 ### General Libraries
-import baspy.util
-import baspy.region
-import baspy._catalogue
-catalogue = baspy._catalogue.catalogue
+import util
+import region
+import _catalogue
+catalogue = _catalogue.catalogue
 
 ### Set up wrappers for iris, xarray etc
 if 'iris' in __modules:

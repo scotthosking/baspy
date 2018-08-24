@@ -1,24 +1,34 @@
-import os
 import numpy as np
 import warnings
+import glob, re, os
+import pandas as pd
+import iris
+import iris.coords as coords
+import util
 
 
-### Set default dataset
-__default_dataset = 'cmip5'
+### Setup catalogue file (copy over if needs be)
+copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
+
+
+##################
+### Global values
+##################
 
 ### Setup initial catalogue to be an empty DataFrame
 __cached_cat = []
 
-### Define dictionary of cached values
-__cached_values         = {} # if not recognised then set to empty dictionary
-__cached_cmip5_values   = {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 'Frequency':['mon']}
-__cached_happi_values   = {'Experiment':['All-Hist','Plus15-Future','Plus20-Future']}
-__cached_upscale_values = {}
+### If CachedExperiments not defined then set to empty dictionary
+__cached_values = {}
 
 ### Set the currently loaded dataset to equal the default
 __current_dataset = __default_dataset
 
 
+
+##################
+### Definitions
+##################
 
 def setup_catalogue_file(dataset):
     '''
@@ -90,16 +100,89 @@ def setup_catalogue_file(dataset):
 
 
 
-
 def __refresh_shared_catalogue(dataset):
-    if dataset == 'cmip5': 
-        import baspy._iris.cmip5
-        baspy._iris.cmip5.__refresh_shared_catalogue()
-    elif dataset == 'happi': 
-        import baspy._iris.happi
-        baspy._iris.happi.__refresh_shared_catalogue()
-    else:
+    '''
+    Rebuild the catalogue
+    '''
+
+    if dataset not in dataset_dictionaries.keys():
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
+
+    dataset_dict   = dataset_dictionaries[dataset]
+    root           = dataset_dict['Root']
+    DirStructure   = dataset_dict['DirStructure'].split('/')
+    InclExtensions = dataset_dict['InclExtensions']
+
+    ### Get paths for data   
+    filewalk = ''
+    for D in DirStructure:
+        if D.startswith('!'):
+            ### fix directory to string after '!'
+            filewalk = filewalk + '/' + D[1:]
+        else:
+            filewalk = filewalk + '/*'
+
+    print("Building catalogue now...")
+    paths = glob.glob(root+filewalk)
+    paths = filter(lambda f: os.path.isdir(f), paths)
+
+
+    ### write data to catalogue (.csv) using a Pandas DataFrame
+    rows = []
+    n_root_levels = len(dataset_dict['Root'].split('/')) + 1
+    for path in paths:
+
+        parts = re.split('/', path)[n_root_levels:]
+
+        ### Make list of file names: i.e., 'file1.nc|file2.nc'
+        fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in InclExtensions)]
+        files_str = ';'.join(fnames)
+
+        ### Only add a row for paths where we have data files
+        if len(fnames) > 0:
+            start_date, end_date = get_file_date_ranges(fnames, dataset_dict['FilenameStructure'])
+
+            ### Append parts in correct order
+            parts.append(int(np.min(start_date)))
+            parts.append(int(np.max(end_date)))
+            parts.append(path)    
+            parts.append(files_str)
+
+            ### Append new row
+            rows.append(parts)
+
+    df = pd.DataFrame(rows, columns=DirStructure + ['StartDate', 'EndDate', 'Path','DataFiles'])
+
+    ### save to local dir
+    df.to_csv(cat_file, index=False)
+
+    if os.path.exists(__shared_cat_file):
+        ### We have access to __shared_cat_file
+        print('Copying new catalogue to '+__shared_cat_file)
+        import shutil
+        shutil.copy2(cat_file, __shared_cat_file)
+
+
+def get_file_date_ranges(fnames, filename_structure):
+    ### Get start and end dates from file names
+    start_date = np.array([])
+    end_date   = np.array([])
+    for fname in list(fnames):
+        fname = os.path.splitext(fname)[0] # rm extention
+        date_range = re.split('_', fname)[-1]
+        start_date = np.append( start_date, int(re.split('-', date_range)[0]) )
+        end_date   = np.append( end_date,   int(re.split('-', date_range)[1]) )
+    return start_date, end_date
+
+
+
+
+
+
+
+
+
+
 
 
 def __combine_dictionaries(keys, dict1_in, dict2_in):
@@ -285,12 +368,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         dataset = __default_dataset
 
     ### Define cached values for requested catalogue
-    if dataset == 'cmip5': 
-        __cached_values = __cached_cmip5_values        
-    elif dataset == 'happi': 
-        __cached_values = __cached_happi_values
-    else:
-        raise ValueError(dataset+': dataset not recognised')
+    __cached_values = dataset_dictionaries[dataset]['Cached']        
 
     __orig_cached_values = __cached_values.copy()
 
