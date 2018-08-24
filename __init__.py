@@ -65,12 +65,13 @@ catalogue = baspy._catalogue.catalogue
 
 ### Set up wrappers for iris, xarray etc
 if 'iris' in __modules:
-    import baspy.IRIS as IRIS
-    eg_cube     = IRIS.util.eg_cube
-    eg_cubelist = IRIS.util.eg_cubelist
-    get_cubes   = IRIS.get_cubes.get_cubes
-    get_cube    = IRIS.get_cubes.get_cube
-    erai        = IRIS.erai
+    import baspy._iris as _iris
+    eg_cube     = _iris.util.eg_cube
+    eg_cubelist = _iris.util.eg_cubelist
+    get_cubes   = _iris.get_cubes.get_cubes
+    get_cube    = _iris.get_cubes.get_cube
+    erai        = _iris.erai
 
 if 'xarray' in __modules:
-    import baspy.XARRAY as XR
+    import baspy._xarray as XR
+

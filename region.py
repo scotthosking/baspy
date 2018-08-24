@@ -59,11 +59,11 @@ def extract(data, bounds):
     '''
 
     if 'iris' in str(type(data)):
-        from baspy.IRIS.util import extract_region
+        from baspy._iris.util import extract_region
         data = extract_region(data, bounds)
 
     if 'xarray' in str(type(data)):
-        from baspy.XARRAY.util import extract_region
+        from baspy._xarray.util import extract_region
         data = extract_region(data, bounds)
 
     return data

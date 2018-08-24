@@ -2,7 +2,7 @@ import numpy as np
 
 ### Import Iris utils
 from baspy import __modules
-if 'iris' in __modules: from baspy.IRIS.util import *
+if 'iris' in __modules: from baspy._iris.util import *
 
 '''
 General python utilities (For numpy, scipy, pandas etc)
