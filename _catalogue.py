@@ -5,11 +5,7 @@ import pandas as pd
 import iris
 import iris.coords as coords
 import util
-
-
-### Setup catalogue file (copy over if needs be)
-copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
-
+from datasets import dataset_dictionaries
 
 ##################
 ### Global values
@@ -22,8 +18,8 @@ __cached_cat = []
 __cached_values = {}
 
 ### Set the currently loaded dataset to equal the default
+from datasets import __default_dataset
 __current_dataset = __default_dataset
-
 
 
 ##################
@@ -105,6 +101,9 @@ def __refresh_shared_catalogue(dataset):
     Rebuild the catalogue
     '''
 
+    ### Setup catalogue file (copy over if needs be)
+    copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
+
     if dataset not in dataset_dictionaries.keys():
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
 
@@ -129,7 +128,7 @@ def __refresh_shared_catalogue(dataset):
 
     ### write data to catalogue (.csv) using a Pandas DataFrame
     rows = []
-    n_root_levels = len(dataset_dict['Root'].split('/')) + 1
+    n_root_levels = len(dataset_dict['Root'].split('/'))
     for path in paths:
 
         parts = re.split('/', path)[n_root_levels:]
@@ -163,24 +162,20 @@ def __refresh_shared_catalogue(dataset):
         shutil.copy2(cat_file, __shared_cat_file)
 
 
+
+
+
 def get_file_date_ranges(fnames, filename_structure):
     ### Get start and end dates from file names
+    ind = np.where(filename_structure.split('_') == 'StartDate-EndDate')[0]
     start_date = np.array([])
     end_date   = np.array([])
     for fname in list(fnames):
         fname = os.path.splitext(fname)[0] # rm extention
-        date_range = re.split('_', fname)[-1]
+        date_range = re.split('_', fname)[ind]
         start_date = np.append( start_date, int(re.split('-', date_range)[0]) )
         end_date   = np.append( end_date,   int(re.split('-', date_range)[1]) )
     return start_date, end_date
-
-
-
-
-
-
-
-
 
 
 
@@ -316,8 +311,6 @@ def __compare_dict(dict1_in, dict2_in):
         if dict1[key] != dict2[key]: compare_dicts = 'different'
 
     return compare_dicts
-
-
 
 
 
