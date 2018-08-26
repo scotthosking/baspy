@@ -1,8 +1,18 @@
 # baspy
 
-baspy is a python package, and a set of wrappers around Iris (http://scitools.org.uk/iris/).
+baspy is a python package, and a set of wrappers around Iris (http://scitools.org.uk/iris/) and (over time) also Xarray.
 
-### Setup and import package
+### 1. Install Python, Iris using conda
+
+see: http://scitools.org.uk/iris/docs/latest/installing.html
+
+Once you have installed miniconda you can then use these commands to install iris and ipython
+
+```
+$> conda install -c conda_forge iris ipython
+```
+
+### 2. Setup and import package
 
 Setup your PYTHONPATH to point to your directory of python scripts.  Then download (or git clone) baspy python package.
 
@@ -15,17 +25,11 @@ $> ipython
 >>> import baspy as bp
 ```
 
-### Install Python, Iris using conda
+### 3. Define the directory and filename structures of your local datasets
 
-see: http://scitools.org.uk/iris/docs/latest/installing.html
+see and edit datasets.py
 
-Once you have installed miniconda you can then use these commands to install iris and ipython
-
-```
-$> conda install -c conda_forge iris ipython
-```
-
-### Usage
+### 4. Usage
 
 To read in a small number of cubes:
 
