@@ -224,7 +224,7 @@ def get_cmip5_template_cube():
     '''
     Get a cube to use as a CMIP5 template
     '''
-    cat  = catalogue(Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
+    cat  = catalogue(dataset='cmip5', Model='CMCC-CM',Experiment='historical',Var='tas',Frequency='mon')
     con  = iris.Constraint(cube_func=lambda cube: cube.var_name == 'tas') & iris.Constraint(year=2000) & iris.Constraint(month=1)
     cube = get_cubes(cat.iloc[[0]], constraints=con)
     return cube[0]

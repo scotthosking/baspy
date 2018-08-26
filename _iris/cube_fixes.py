@@ -39,7 +39,7 @@ def fix_cubelist_before_concat(cubelist, dataset, model, freq):
                     if time_coord.units.is_time_reference():
                         time_coord.long_name = None
 
-            for c in cubelist: c.attributes.clear()
+            for cube in cubelist: cube.attributes.clear()
 
             print('>> Applied '+model+' fixes <<')
 
@@ -54,17 +54,17 @@ def fix_cubelist_before_concat(cubelist, dataset, model, freq):
         ### fix for HAPPI MIROC monthly data to allow cubes to concatenate (e.g., All-Hist, ua, run001)
         ### --- Make this more generic for all models !!!!
         if (model == 'MIROC5') & (freq == 'mon'):
-            for c in cubelist:
-                coords = [dc.long_name for dc in c.dim_coords]
+            for cube in cubelist:
+                coords = [dim_coords.standard_name for dim_coords in cube.dim_coords]
                 for axis in coords:
-                    if c.coord(axis).points.dtype == 'float64':
-                        c.coord(axis).points  = c.coord(axis).points.astype('float32')
+                    if cube.coord(axis).points.dtype == 'float64':
+                        cube.coord(axis).points  = cube.coord(axis).points.astype('float32')
                 for axis in ['time','latitude','longitude']:
-                       if c.coord(axis).bounds.dtype == 'float64':
-                        c.coord(axis).bounds  = c.coord(axis).bounds.astype('float32')
-                if c.coord('time').units != cubelist[0].coord('time').units:
-                    ### note that we have already unified time coords above.
-                    c.coord('time').units = cubelist[0].coord('time').units
+                       if cube.coord(axis).bounds.dtype == 'float64':
+                        cube.coord(axis).bounds  = cube.coord(axis).bounds.astype('float32')
+                if cube.coord('time').units != cubelist[0].coord('time').units:
+                    ### note that we have already unified time coords before applying fix.
+                    cube.coord('time').units = cubelist[0].coord('time').units
 
             print('>> Applied '+model+' fixes <<')
 
