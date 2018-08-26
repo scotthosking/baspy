@@ -167,7 +167,7 @@ def __refresh_shared_catalogue(dataset):
 
 def get_file_date_ranges(fnames, filename_structure):
     ### Get start and end dates from file names
-    ind = np.where(filename_structure.split('_') == 'StartDate-EndDate')[0]
+    ind = filename_structure.split('_').index('StartDate-EndDate')
     start_date = np.array([])
     end_date   = np.array([])
     for fname in list(fnames):
