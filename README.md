@@ -29,6 +29,8 @@ $> ipython
 
 see and edit datasets.py
 
+Once you have setup this all the loading of files becomes transparent
+
 ### 4. Usage
 
 To read in a small number of cubes:
