@@ -121,7 +121,7 @@ def __refresh_shared_catalogue(dataset):
         else:
             filewalk = filewalk + '/*'
 
-    print("Building catalogue now...")
+    print('Building '+dataset+' catalogue now...')
     paths = glob.glob(root+filewalk)
     paths = filter(lambda f: os.path.isdir(f), paths)
 
@@ -133,17 +133,24 @@ def __refresh_shared_catalogue(dataset):
 
         parts = re.split('/', path)[n_root_levels:]
 
-        ### Make list of file names: i.e., 'file1.nc|file2.nc'
+        # relative_path = '/'.join(parts)
+
+        ### Make list of file names: i.e., 'file1.nc;file2.nc'
         fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in InclExtensions)]
+        for fn in fnames:
+            if len(fn.split('.')) != 2:
+                print('Ignoring '+path+'/'+fn)
+                fnames.pop( fnames.index(fn) )
         files_str = ';'.join(fnames)
+
 
         ### Only add a row for paths where we have data files
         if len(fnames) > 0:
             start_date, end_date = get_file_date_ranges(fnames, dataset_dict['FilenameStructure'])
 
             ### Append parts in correct order
-            parts.append(int(np.min(start_date)))
-            parts.append(int(np.max(end_date)))
+            parts.append(int(np.nanmin(start_date)))
+            parts.append(int(np.nanmax(end_date)))
             parts.append(path)    
             parts.append(files_str)
 
@@ -154,6 +161,13 @@ def __refresh_shared_catalogue(dataset):
 
     ### save to local dir
     df.to_csv(cat_file, index=False)
+
+    ### Add Root directory as header (Python v2)
+    # with file(cat_file, 'r') as original: file_data = original.read()
+    # with file(cat_file, 'w') as modified: modified.write("# Root="+root+"\n" + file_data)
+    ### Python 3
+    # with open(cat_file, 'r') as original: file_data = original.read()
+    # with open(cat_file, 'w') as modified: modified.write("# Root="+root+"\n" + file_data)
 
     if os.path.exists(__shared_cat_file):
         ### We have access to __shared_cat_file
@@ -168,14 +182,49 @@ def __refresh_shared_catalogue(dataset):
 def get_file_date_ranges(fnames, filename_structure):
     ### Get start and end dates from file names
     ind = filename_structure.split('_').index('StartDate-EndDate')
-    start_date = np.array([])
-    end_date   = np.array([])
+    start_dates, end_dates = np.array([]), np.array([])
+
     for fname in list(fnames):
+
         fname = os.path.splitext(fname)[0] # rm extention
-        date_range = re.split('_', fname)[ind]
-        start_date = np.append( start_date, int(re.split('-', date_range)[0]) )
-        end_date   = np.append( end_date,   int(re.split('-', date_range)[1]) )
-    return start_date, end_date
+
+        ### Is this file time-varying?
+        if '_fx_' in fname:
+            ### Fixed variable (e.g., land-mask)
+            start_date, end_date = 0, 0
+
+        else:
+            ### Time-varying (e.g., temperature)
+            date_str = fname.split('_')[ind].split('-')
+
+            ### Interpreting the dates
+            if len(date_str) == 2:
+                ### e.g.,'19900101-20000101'
+                start_date, end_date = int(date_str[0]), int(date_str[1])
+
+            elif (len(date_str) == 3):
+                if (date_str[2] == 'clim'):
+                    ### e.g.,'186001-187912-clim'
+                    ### see /badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/piControl/mon/atmos/Amon/r1i1p1/latest/pfull
+                    start_date, end_date = int(date_str[0]+'01'), int(date_str[1]+'31')
+                else:
+                    print('Cannot identify dates '+fname)
+
+            elif (len(date_str) == 1) & (int(date_str[0]) >= 1800) & (int(date_str[0]) <= 2300):
+                ### e.g., '1990'
+                ### see /badc/cmip5/data/cmip5/output1/ICHEC/EC-EARTH/amip/subhr/atmos/cfSites/r3i1p1/latest/ccb
+                start_date, end_date = int(date_str[0]), int(date_str[0])
+
+            else:
+                ### Can't define date
+                ###### To do: if no date_range then get from ncdump? !!
+                print('Cannot identify dates '+fname)
+                start_date, end_date = np.nan, np.nan
+
+        start_dates = np.append( start_dates, start_date )
+        end_dates   = np.append( end_dates,   end_date )   
+
+    return start_dates, end_dates
 
 
 
