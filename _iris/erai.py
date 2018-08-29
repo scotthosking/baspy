@@ -9,8 +9,8 @@ from baspy import __baspy_path
 root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf'
 
 ### Create folder for storing data
-if not os.path.exists__(baspy_path):
-	os.makedirs(os.path.expanduser(baspy_path))
+if not os.path.exists(__baspy_path):
+	os.makedirs(os.path.expanduser(__baspy_path))
 
 def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
 	"""
