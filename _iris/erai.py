@@ -1,19 +1,16 @@
-#!/usr/bin/python
-# Filename: erai.py
-
 import os
 import numpy as np
 import datetime
 import os.path
 import cf_units as units
 import iris
+from baspy import __baspy_path
 
+root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf'
 
 ### Create folder for storing data
-baspy_path = os.path.expanduser("~/.baspy")
-if not os.path.exists(baspy_path):
+if not os.path.exists__(baspy_path):
 	os.makedirs(os.path.expanduser(baspy_path))
-
 
 def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
 	"""
@@ -44,8 +41,8 @@ def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
 
 	### Get level_str from var_name
 	level_str = None
-	df_as = pd.read_csv('/group_workspaces/jasmin4/bas_climate/data/ecmwf/era-interim/era-interim_6hrly_surface_vars.csv')
-	df_ap = pd.read_csv('/group_workspaces/jasmin4/bas_climate/data/ecmwf/era-interim/era-interim_6hrly_pressure_lev_vars.csv')
+	df_as = pd.read_csv(root+'/era-interim/era-interim_6hrly_surface_vars.csv')
+	df_ap = pd.read_csv(root+'/era-interim/era-interim_6hrly_pressure_lev_vars.csv')
 	if var_name in df_as['surface_vars'].values:      level_str = 'as'
 	if var_name in df_ap['pressure_lev_vars'].values: level_str = 'ap'
 	if level_str == None: 
@@ -62,7 +59,7 @@ def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
 		minute   = str("{:0>2d}".format(date.minute))
 		date_str = ''.join([yr,mon,day,hr,minute])
 		
-		file = '/badc/ecmwf-era-interim/data/gg/'+level_str+'/'+yr+'/'+mon+'/'+day+'/gg'+level_str+''+date_str+'.nc'
+		file=root+'/era-interim/6hr/gg/'+level_str+'/'+yr+'/'+mon+'/'+day+'/gg'+level_str+''+date_str+'.nc'
 		
 		if int(mon) in months:
 			filenames.append(file)
@@ -104,7 +101,8 @@ def get_cube(start_date, end_date, var_name, months='all', frequency='6hr', cons
 	#
 	# change default frequency to monthly
 
-	if frequency == '6hr': fnames = get_6hr_fnames(start_date, end_date, var_name, months=months, verbose=verbose)
+	if frequency == '6hr': 
+		fnames = get_6hr_fnames(start_date, end_date, var_name, months=months, verbose=verbose)
 	
 	con = iris.Constraint(cube_func=lambda cube: cube.var_name == var_name)
 	
@@ -137,9 +135,6 @@ def get_cube(start_date, end_date, var_name, months='all', frequency='6hr', cons
 
 def get_land_mask():
 	with units.suppress_errors():
-		cube = iris.load_cube('/group_workspaces/jasmin/bas_climate/data/ecmwf1/era-interim/erai_invariant.nc', 'land_binary_mask')
+		cube = iris.load_cube(root+'/era-interim/erai_invariant.nc', 'land_binary_mask')
 	return cube
 
-
-
-# End of erai.py

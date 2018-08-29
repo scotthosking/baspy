@@ -11,9 +11,9 @@ To extract a region:
 ### Pre-defined named locations
 ###############################
 class City:
-    london = { 'lon':0.739,   'lat':51.3026 }
-    mumbai = { 'lon':72.4933, 'lat':18.5830 }
-
+    london    = { 'lon':0.739,    'lat':51.3026 }
+    mumbai    = { 'lon':72.4933,  'lat':18.5830 }
+    chongqing = { 'lon':106.3400, 'lat':28.3330 }
 
 ###############################
 ### Pre-defined regional bounds
