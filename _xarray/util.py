@@ -49,8 +49,8 @@ def extract_nearest_neighbour(ds, coord):
     from baspy.util import nearest_neighbour
     lats = ds.variables['lat'][:] 
     lons = ds.variables['lon'][:]
-    lat_ind = nearest_neighbour(lats, coord['lat']).values
-    lon_ind = nearest_neighbour(lons, coord['lon']).values
-    extracted_ds = ds.sel(lat=lat_ind, lon=lon_ind)
+    nearest_lat  = nearest_neighbour(lats, coord['lat']).values
+    nearest_lon  = nearest_neighbour(lons, coord['lon']).values
+    extracted_ds = ds.sel(lat=nearest_lat, lon=nearest_lon)
     return ds
 
