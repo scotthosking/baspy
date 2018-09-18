@@ -8,14 +8,13 @@ Iris specific utilities
 '''
 
 ### Convert units
-class convert_units:
-    def mm_day(cube):
-        if (cube.units == 'kg m-2 s-1'):
-            cube = cube * 86400.
-            cube.units = 'mm day-1'
-        else:
-            raise ValueError('can not convert cube to mm day-1')
-        return cube
+def convert_units_mm_day(cube):
+    if (cube.units == 'kg m-2 s-1'):
+        cube = cube * 86400.
+        cube.units = 'mm day-1'
+    else:
+        raise ValueError('can not convert cube to mm day-1')
+    return cube
 
 
 

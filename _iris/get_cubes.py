@@ -66,7 +66,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
     for dataset in datasets:
         if dataset in filt_cat['Path'].values[0]:
             __current_dataset = dataset
-    dataset_dict = dataset_dictionaries[__current_dataset]
+    dataset_dict  = dataset_dictionaries[__current_dataset]
     DirStructure  = dataset_dict['DirStructure'].split('/')
     n_root_levels = len(dataset_dict['Root'].split('/'))
 
@@ -192,7 +192,7 @@ def get_cube(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         filt_cat = DataFrame([filt_cat.values], columns=filt_cat.keys() )
     
     if (len(filt_cat.index) == 1): 
-        cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose, 
+        cube = get_cubes(filt_cat, constraints=constraints, verbose=verbose, \
                         nearest_lat_lon=nearest_lat_lon)
         cube = cube[0]
 
