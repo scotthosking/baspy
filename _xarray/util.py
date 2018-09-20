@@ -2,10 +2,9 @@ import xarray as xr
 import numpy as np
 
 
-
-def eg_DataArray():
+def eg_Dataset():
     """
-    Load an example cubelist
+    Load an example Xarray Dataset
     """
     from baspy import __baspy_path
     import os
@@ -27,6 +26,10 @@ def eg_DataArray():
     ds = xr.open_dataset(nc_file)
 
     return ds
+
+
+def eg_DataArray():
+    return eg_Dataset().tas
 
 
 def extract_region(ds, bounds):

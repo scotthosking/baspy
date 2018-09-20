@@ -2,10 +2,7 @@ import numpy as np
 import warnings
 import glob, re, os
 import pandas as pd
-import iris
-import iris.coords as coords
-import util
-from datasets import dataset_dictionaries
+from .datasets import dataset_dictionaries, __default_dataset
 
 ##################
 ### Global values
@@ -18,7 +15,6 @@ __cached_cat = []
 __cached_values = {}
 
 ### Set the currently loaded dataset to equal the default
-from datasets import __default_dataset
 __current_dataset = __default_dataset
 
 
@@ -32,7 +28,7 @@ def setup_catalogue_file(dataset):
     available (compared to personal files in ~/.baspy)
     '''
 
-    from baspy.util import get_last_modified_time_from_http_file
+    from .util import get_last_modified_time_from_http_file
     
     copied_new_cat_file = False
 

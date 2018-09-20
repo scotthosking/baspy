@@ -58,14 +58,14 @@ except ImportError:
 __modules = sys.modules # must come before import baspy.util
 
 ### General Libraries
-import util
-import region
-import _catalogue
+from . import util
+from . import region
+from . import _catalogue
 catalogue = _catalogue.catalogue
 
 ### Set up wrappers for iris, xarray etc
 if 'iris' in __modules:
-    import baspy._iris as _iris
+    from . import _iris
     eg_cube     = _iris.util.eg_cube
     eg_cubelist = _iris.util.eg_cubelist
     get_cubes   = _iris.get_cubes.get_cubes
@@ -73,5 +73,5 @@ if 'iris' in __modules:
     erai        = _iris.erai
 
 if 'xarray' in __modules:
-    import baspy._xarray as XR
+    from . import _xarray as XR
 
