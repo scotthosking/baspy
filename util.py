@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 ### Import Iris utils
 from baspy import __modules
@@ -41,23 +42,24 @@ def lpfilter(input_signal, win):
 
 def get_last_modified_time_from_http_file(url):
 
-    import urllib2
+    from six.moves import urllib
     from datetime import datetime
     from dateutil import parser
 
     try:
         ### Get info from http
-        req = urllib2.Request(url)
-        url_handle = urllib2.urlopen(req)
+        req = urllib.request.Request(url)
+        url_handle = urllib.request.urlopen(req)
         headers = url_handle.info()
-        last_modified = headers.getheader("Last-Modified")
+
+        last_modified = headers['last-modified']
         dt = parser.parse(last_modified) # datetime
 
-        ### Convert to timestamps (python 2)
+        ### Convert to timestamps
         utc_naive  = dt.replace(tzinfo=None) - dt.utcoffset()
         timestamp = (utc_naive - datetime(1970, 1, 1)).total_seconds()
 
-    except urllib2.URLError as err:
+    except urllib.error.URLError as err:
         print('WARNING: can not access '+url)
         timestamp = -9999.
 
@@ -71,8 +73,8 @@ def nearest_neighbour(items,my_value):
     >>> nearest_neighbour(lats, 10.2)
     
     '''
-    nearest   = min(items, key=lambda x: abs(x - my_value))
-    timedelta = abs(nearest - my_value)
+    nearest = min(items, key=lambda x: abs(x - my_value))
+    # delta   = abs(nearest - my_value)
     return nearest
 
 

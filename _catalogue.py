@@ -332,7 +332,9 @@ def __compare_dict(dict1_in, dict2_in):
     dict1 = dict1_in.copy()
     dict2 = dict2_in.copy()
     compare_dicts = 'same'
-    uniq_keys = list( set(dict1.keys() + dict2.keys()) )
+    
+    # uniq_keys = list( set(dict1.keys() + dict2.keys() ) )    # python2 only
+    uniq_keys = list( set(dict1.keys()) | set(dict2.keys()) )  # python2+3
 
     for key in uniq_keys:
 
