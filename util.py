@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 
 ### Import Iris utils
 from baspy import __modules
