@@ -32,28 +32,24 @@ def eg_DataArray():
     return eg_Dataset().tas
 
 
-def extract_region(ds, bounds):
+def extract_region(da, bounds):
     '''
     Extract region using pre-defined lat/lon bounds
 
     >>> bounds = bp.region.Country.china
-    >>> ds     = bp.region.extract(ds, bounds)
+    >>> da     = bp.region.extract(da, bounds)
     '''
-    lats = ds.variables['lat'][:] 
-    lons = ds.variables['lon'][:]
+    lats = da['lat'][:] 
+    lons = da['lon'][:]
     lat_bnds, lon_bnds = list(bounds['lat_bnds']), list(bounds['lon_bnds'])
     lat_inds = np.where((lats > lat_bnds[0]) & (lats < lat_bnds[1]))[0]
     lon_inds = np.where((lons > lon_bnds[0]) & (lons < lon_bnds[1]))[0]
-    ds = ds.sel(lat=slice(*lat_bnds), lon=slice(*lon_bnds))
-    return ds
+    da = da.sel(lat=slice(*lat_bnds), lon=slice(*lon_bnds))
+    return da
 
 
-def extract_nearest_neighbour(ds, coord):
-    from baspy.util import nearest_neighbour
-    lats = ds.variables['lat'][:] 
-    lons = ds.variables['lon'][:]
-    nearest_lat  = nearest_neighbour(lats, coord['lat']).values
-    nearest_lon  = nearest_neighbour(lons, coord['lon']).values
-    extracted_ds = ds.sel(lat=nearest_lat, lon=nearest_lon)
-    return ds
+def extract_nearest_neighbour(da, coord):
+    da = da.interp( coords={'lat':coord['lat'], 'lon':coord['lon'] },
+                    method='nearest')
+    return da
 
