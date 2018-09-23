@@ -4,10 +4,7 @@ import numpy as np
 from baspy import __modules
 if 'iris' in __modules: from baspy._iris.util import *
 
-'''
-General python utilities (For numpy, scipy, pandas etc)
 
-'''
 
 def haversine(lon1, lat1, lon2, lat2):
     """
