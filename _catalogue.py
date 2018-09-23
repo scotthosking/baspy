@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-import glob, re, os
+import glob, os
 import pandas as pd
 from .datasets import dataset_dictionaries, __default_dataset
 
@@ -127,7 +127,7 @@ def __refresh_shared_catalogue(dataset):
     n_root_levels = len(dataset_dict['Root'].split('/'))
     for path in paths:
 
-        parts = re.split('/', path)[n_root_levels:]
+        parts = path.split('/')[n_root_levels:]
 
         # relative_path = '/'.join(parts)
 
@@ -492,7 +492,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
 
 
-def get_files(df, **kwargs):
+def get_files(df):
 
     ### sanity checks
     if 'pandas.core.frame.DataFrame' not in str(type(df)):
@@ -505,6 +505,3 @@ def get_files(df, **kwargs):
     files     = [ directory+f for f in files ]
 
     return files
-
-
-
