@@ -62,6 +62,7 @@ from . import util
 from . import region
 from . import _catalogue
 catalogue = _catalogue.catalogue
+get_files = _catalogue.get_files
 
 ### Set up wrappers for iris, xarray etc
 if 'iris' in __modules:

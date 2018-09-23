@@ -2,24 +2,7 @@ from pandas import DataFrame
 import baspy as bp
 import xarray as xr
 
-'''
-Wishlist for baspy v2:
-    * include capability to use Xarray in addition to Iris
-    * add start and end dates to the data catalogues
-    * automatically select nc files to read based on date range
-    * check lat/lon dims all match between nc files then use concat_dim=time in open_mfdataset 
-        if all's well. Can record the status in CSV catalogue
-    * 
-
-'''
-
-
-#########################
-#########################
-### Learning Xarray
-#########################
-#########################
-
+###########
 ### read example data
 models = 'HadGEM2-ES'
 experiments = ['historical', 'rcp26', 'rcp45', 'rcp85']
@@ -31,9 +14,8 @@ ds = xr.open_mfdataset(catlg['Path'].values[0]+'/*.nc', concat_dim='time')
 ds.attrs.update(Analyst='Dr Scott Hosking, jask@bas.ac.uk')
 
 
-#########################
+##############
 ### Extract region
-#########################
 lats = ds.variables['lat'][:] 
 lons = ds.variables['lon'][:]
 lat_bnds, lon_bnds = [40, 43], [0, 5]
@@ -44,36 +26,8 @@ extracted_ds = ds.sel(lat=slice(*lat_bnds), lon=slice(*lon_bnds))
 tas = extracted_ds['tas']
 
 
-#########################
-### Extract nearest point
-#########################
-
-def nearest(items,pivot):
-    nearest=min(items, key=lambda x: abs(x - pivot))
-    timedelta = abs(nearest - pivot)
-    return nearest
-
-lats = ds.variables['lat'][:] 
-lons = ds.variables['lon'][:]
-lat_ind = nearest(lats, 40).values
-lon_ind = nearest(lons, 5).values
-extracted_ds = ds.sel(lat=lat_ind, lon=lon_ind)
-
-tas = extracted_ds['tas']
-df = tas.to_dataframe()
-
-
-
-
-
-
-
-
-
-#########################
+###################
 ### Resample / Interpolation [WIP!!!]
-#########################
-
 var_name = 'tas'
 
 ### New grid

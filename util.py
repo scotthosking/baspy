@@ -86,4 +86,38 @@ def cumulative_rolling_window(arr,n):
     return b    
 
 
-# End of util.py
+
+###############
+### Plotting
+###############
+
+def cmap_centre_to_white(cmap, nlevs):
+
+    ### Get 255 colors from cmap
+    cmap255 = cm.get_cmap(cmap, 255) 
+    vals    = cmap255(np.arange(255))
+
+    ### number of different colours within colorscale/colourbar
+    n_contours = nlevs + 1 
+    n_points_within_1contour = np.round(255. / n_contours)
+
+    ### mid-point is 128 (Sanity check: 127 + 1 + 127 = 255)
+    ### reset to white, using zero indexing midpoint = index(127), i.e., 128-1
+    if n_contours % 2 == 0:
+        ### n_contours is even
+        lower_bound = int(127 - n_points_within_1contour)
+        upper_bound = int(127 + n_points_within_1contour)
+    else:
+        ### n_contours is odd
+        lower_bound = int(127 - np.round(n_points_within_1contour/2.))
+        upper_bound = int(127 + np.round(n_points_within_1contour/2.))
+
+    vals[lower_bound:upper_bound+1] = [1, 1, 1, 1] ### set to white
+
+    ### create new cmap
+    new_cmap = LinearSegmentedColormap.from_list(cmap+"_with_white_centre", vals)
+
+    return new_cmap
+
+
+
