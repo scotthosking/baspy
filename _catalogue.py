@@ -494,6 +494,10 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
 def get_files(df):
 
+    ### convert to DataFrame if Series
+    if 'pandas.core.series.Series' in str(type(df)):
+        df = pd.DataFrame([df.values], columns=df.keys())
+
     ### sanity checks
     if 'pandas.core.frame.DataFrame' not in str(type(df)):
         raise ValueError('Not a Pandas DataFrame')
@@ -501,7 +505,7 @@ def get_files(df):
         raise ValueError('Catalogue contains more than one row')
 
     directory = df['Path'].values[0]+'/'
-    files     = df['DataFiles'].values[0].split('|')
+    files     = df['DataFiles'].values[0].split(';')
     files     = [ directory+f for f in files ]
 
     return files
