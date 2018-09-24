@@ -28,7 +28,7 @@ def eg_Dataset():
         with open(file, 'wb') as f:  
             f.write(r.content)
 
-    ### Load file, suppressing any warnings
+    ### open file
     ds = xr.open_dataset(file)
 
     return ds
