@@ -10,12 +10,13 @@ __default_dataset = 'cmip5'
 Define information for each dataset to be indexed and used
 
     Standard elements (case sensitive):
-        * 'Centre', 'Model', Var, Frequency, Experiment, CMOR, Version (i.e., data version), 
-                RunID, StartDate-EndDate
+        * 'Centre', 'Model', Var, Frequency, Experiment, CMOR, 
+                Version (i.e., data version), RunID, StartDate-EndDate
 
     Notes:
-    ../!latest/... means only use the 'latest' directory (and ignore sister directories)
-        during the filewalk (i.e, default is to use the '*' wildcard)
+    ../Version!latest/... means only use the 'latest' directory as the 
+        Version (and ignore sister directories) during the 
+        filewalk (i.e, default is to use the '*' wildcard)
 
 
 '''
@@ -32,9 +33,10 @@ dataset_dictionaries = \
 
     'cmip5': 
     {'Root':'/badc/cmip5/data/cmip5/output1',
-    'DirStructure':'Centre/Model/Experiment/Frequency/SubModel/CMOR/RunID/!latest/Var',
+    'DirStructure':'Centre/Model/Experiment/Frequency/SubModel/CMOR/RunID/Version!latest/Var',
     'FilenameStructure':'Var_CMOR_Model_Experiment_RunID_StartDate-EndDate',
     'InclExtensions':['.nc', '.nc4'],
-    'Cached': {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 'Frequency':['mon']}}
+    'Cached': {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 
+                'Frequency':['mon']}}
     
     }

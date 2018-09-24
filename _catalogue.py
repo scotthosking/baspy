@@ -110,10 +110,12 @@ def __refresh_shared_catalogue(dataset):
 
     ### Get paths for data   
     filewalk = ''
-    for D in DirStructure:
-        if D.startswith('!'):
-            ### fix directory to string after '!'
-            filewalk = filewalk + '/' + D[1:]
+    for i, D in enumerate(DirStructure):
+        if '!' in D:
+            ### fix directory to part of string after '!'
+            filewalk = filewalk + '/' + D.split('!')[1]
+            ### remove trailing !XXXX from string
+            DirStructure[i] = D.split('!')[0]
         else:
             filewalk = filewalk + '/*'
 
@@ -127,9 +129,21 @@ def __refresh_shared_catalogue(dataset):
     n_root_levels = len(dataset_dict['Root'].split('/'))
     for path in paths:
 
-        parts = path.split('/')[n_root_levels:]
+        ### Update 'path' by turning all symlinks linked to a folder in 
+        ###    the same directory into its real location
+        ### e.g., for cmip5, Version: latest --> v20120709
+        parts = path.split('/')
+        for i in range(n_root_levels, len(parts)):
+            if os.path.islink('/'.join(parts[0:i])):
+                realpath = os.readlink('/'.join(parts[0:i]))
+                if len(realpath.split('/')) == 1:
+                    ### i.e., symlink is linked to folder in same dir
+                    path = '/'.join(parts[0:i-1]) + '/' + \
+                            realpath + '/' + \
+                            '/'.join(parts[i:])
 
-        # relative_path = '/'.join(parts)
+        ### Now use updated 'path' to create catalogue
+        parts = path.split('/')[n_root_levels:]
 
         ### Make list of file names: i.e., 'file1.nc;file2.nc'
         fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in InclExtensions)]
