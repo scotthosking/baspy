@@ -10,20 +10,26 @@ def eg_Dataset():
     import os
     import warnings
 
-    url = "https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc"
-    nc_file = __baspy_path+'/sample_data/sresa1b_ncar_ccsm3-example.nc'
+    url = 'http://esgdata.gfdl.noaa.gov/thredds/fileServer/' + \
+            'gfdl_dataroot3/CMIP/NOAA-GFDL/GFDL-AM4/amip/' + \
+            'r1i1p1f1/Amon/tas/gr1/v20180807/' + \
+            'tas_Amon_GFDL-AM4_amip_r1i1p1f1_gr1_198001-201412.nc'
+
+    file = __baspy_path+'/sample_data/'+url.split('/')[-1]
 
     ### Create sample_data folder if it doesn't already exist
     if not os.path.exists(__baspy_path+'/sample_data'): 
         os.makedirs(os.path.expanduser(__baspy_path+'/sample_data'))
 
-    if (os.path.isfile(nc_file) == False):
-        import urllib
-        print('Downloading example netcdf file: '+url)
-        urllib.urlretrieve (url, nc_file)
+    if (os.path.isfile(file) == False):
+        import requests
+        print('Downloading sample CMIP6 file: '+url.split('/')[-1])
+        r = requests.get(url)
+        with open(file, 'wb') as f:  
+            f.write(r.content)
 
     ### Load file, suppressing any warnings
-    ds = xr.open_dataset(nc_file)
+    ds = xr.open_dataset(file)
 
     return ds
 
