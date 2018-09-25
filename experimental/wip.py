@@ -2,32 +2,20 @@ from pandas import DataFrame
 import baspy as bp
 import xarray as xr
 
-###########
+######################
 ### read example data
-models = 'HadGEM2-ES'
-experiments = ['historical', 'rcp26', 'rcp45', 'rcp85']
-catlg = bp.catalogue(Var=['tas'], Frequency='day', Experiment=experiments, Model=models, RunID='r1i1p1')
-
-ds = xr.open_mfdataset(catlg['Path'].values[0]+'/*.nc', concat_dim='time') 
+######################
+catlg = bp.catalogue(Var=['tas'], Frequency='mon', Experiment='historical')
+catlg = catlg.iloc[0]
+ds    = xr.open_mfdataset(bp.get_files(catlg), concat_dim='time') 
 
 ### Add an attribute
 ds.attrs.update(Analyst='Dr Scott Hosking, jask@bas.ac.uk')
 
 
-##############
-### Extract region
-lats = ds.variables['lat'][:] 
-lons = ds.variables['lon'][:]
-lat_bnds, lon_bnds = [40, 43], [0, 5]
-lat_inds = np.where((lats > lat_bnds[0]) & (lats < lat_bnds[1]))[0]
-lon_inds = np.where((lons > lon_bnds[0]) & (lons < lon_bnds[1]))[0]
-extracted_ds = ds.sel(lat=slice(*lat_bnds), lon=slice(*lon_bnds))
-
-tas = extracted_ds['tas']
-
-
-###################
+######################################
 ### Resample / Interpolation [WIP!!!]
+######################################
 var_name = 'tas'
 
 ### New grid
