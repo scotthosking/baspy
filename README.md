@@ -1,58 +1,45 @@
-# baspy
+# BASpy
 
-baspy is a python package, and a set of wrappers around Iris (http://scitools.org.uk/iris/) and (over time) also Xarray.
+baspy is a python package to make it easier to analyse large climate 
+datasets using Xarray (http://xarray.pydata.org) and Iris (http://scitools.org.uk/iris/).
 
-### 1. Install Python, Iris using conda
+### 1. Setup and import package
 
-see: http://scitools.org.uk/iris/docs/latest/installing.html
-
-Once you have installed miniconda you can then use these commands to install iris and ipython
-
-```
-$> conda install -c conda_forge iris ipython
-```
-
-### 2. Setup and import package
-
-Setup your PYTHONPATH to point to your directory of python scripts.  Then download (or git clone) baspy python package.
+Setup your PYTHONPATH to point to your directory of python scripts.  Then 
+download (or git clone) baspy python package.
 
 ```
-$> mkdir ~/PYTHON
-$> export PYTHONPATH="$HOME/PYTHON"  # <-- add to ~/.bashrc etc
-$> cd $PYTHONPATH
-$> git clone https://github.com/scott-hosking/baspy.git
-$> ipython
->>> import baspy as bp
+    $> mkdir ~/PYTHON
+    $> export PYTHONPATH="$HOME/PYTHON"  # <-- add to ~/.bashrc etc
+    $> cd $PYTHONPATH
+    $> git clone https://github.com/scott-hosking/baspy.git
+    $> ipython
+    >>> import baspy as bp
 ```
 
-### 3. Define the directory and filename structures of your local datasets
+### 2. Define the directory and filename structures of your local datasets
 
 see and edit datasets.py
 
-Once you have setup this all the loading of files becomes transparent
+Once you have setup this all the loading of files should become transparent
 
-### 4. Usage
+### 3. Usage
 
-To read in a small number of cubes:
-
-```
-import baspy as bp
-cat = bp.catalogue(dataset='cmip5', Model='HadGEM2-CC', RunID='r1i1p1', 
-					Experiment='historical', Var=['tas', 'pr'], Frequency='mon')
-cubes = bp.get_cubes(cat)
-```
-
-To loop over many models, reading one model at a time:
+Example:
 
 ```
-import baspy as bp
-import numpy as np
+    import baspy as bp
 
-cat = bp.catalogue(dataset='cmip5', Experiment='amip', Var='tas', Frequency='mon')
+    ### Retrieve a filtered version of the CMIP5 catalogue as a Pandas DataFrame
+    df = bp.catalogue(dataset='cmip5', Model='HadGEM2-CC', RunID='r1i1p1', 
+    					Experiment='historical', Var=['tas', 'pr'], Frequency='mon')
 
-uniq_models = np.unqiue(cat['Model'])
+    ### Iterate over rows in catalogue
+    for index, row in df.iterrows():
 
-for model in uniq_models:
-	filtered_cat = cat[ cat['Model'] == model ]
-	cubes = bp.get_cubes(filtered_cat)
+        ### In Xarray
+        ds = xr.open_mfdataset(bp.get_files(row))
+
+        ### In iris
+        cubes = bp.get_cubes(row)
 ```
