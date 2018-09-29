@@ -9,12 +9,14 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.offsetbox import AnchoredText
 from matplotlib import cm
 
+from baspy.util import cmap_centre_to_white
+
 '''
 To do:
     * shifted (non-centred) colour-scale
 '''
 
-cmap_centre_to_white = bp.util.cmap_centre_to_white
+
 
 
 def _add_source(name):
