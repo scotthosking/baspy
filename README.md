@@ -41,8 +41,8 @@ Example:
         ### In Xarray
         ds = xr.open_mfdataset(bp.get_files(row))
 
-        ### In Iris
-        cubes = bp.get_cubes(row)
+        ### Or... In Iris
+        cubes = bp.get_cube(row)
 ```
 
 Jupyter Notebook 
