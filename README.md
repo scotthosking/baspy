@@ -11,7 +11,7 @@ download (or git clone) baspy python package.
 
 ```
     $> mkdir ~/PYTHON
-    $> export PYTHONPATH="$HOME/PYTHON"  # <-- add to ~/.bashrc etc
+    $> export PYTHONPATH="$HOME/PYTHON"  # <- add to ~/.bashrc
     $> cd $PYTHONPATH
     $> git clone https://github.com/scott-hosking/baspy.git
 ```
