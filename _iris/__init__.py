@@ -1,3 +1,3 @@
-import get_cubes
-import erai
-import util
+from . import get_cubes
+from . import erai
+from . import util

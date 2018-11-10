@@ -5,7 +5,8 @@ from baspy.datasets import dataset_dictionaries
 import iris
 import iris.coords as coords
 from baspy._iris.util import rm_time_overlaps, unify_similar_grid_coords
-from cube_fixes import fix_cubelist_before_concat
+from . import cube_fixes
+fix_cubelist_before_concat = cube_fixes.fix_cubelist_before_concat
 import numpy as np
 
 ### this will be updated as get_cubes is run
