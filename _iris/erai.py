@@ -7,6 +7,7 @@ import iris
 from baspy import __baspy_path
 import pandas as pd
 
+erai_catalogue_file = __baspy_path+'/era-interim_6hr_catalogue.csv'
 
 root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf'
 
@@ -52,7 +53,7 @@ def create_6hr_catalogue():
     df['Filename']      = filenames
 
     print('Saving ERA-Interim catalogue to csv')
-    df.to_csv(__baspy_path+'/era-interim_6hr_catalogue.csv', index=False)
+    df.to_csv(erai_catalogue_file, index=False)
 
     return df
 
@@ -67,10 +68,10 @@ def get_erai_6h_cat(start_date, end_date, level=None, verbose=True):
         level = 'as'
 
     ### read in catalogue
-    if not os.path.exists(__baspy_path):
+    if not os.path.exists(erai_catalogue_file):
         df = create_6hr_catalogue()
     else:
-        df = pd.read_csv(__baspy_path+'/era-interim_6hr_catalogue.csv') 
+        df = pd.read_csv(erai_catalogue_file) 
 
     ### Filter by level type (surface or pressure, as or ap)
     df = df[ df['Level'] == level ]
