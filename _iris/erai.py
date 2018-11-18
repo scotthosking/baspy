@@ -5,6 +5,8 @@ import os.path
 import cf_units as units
 import iris
 from baspy import __baspy_path
+import pandas as pd
+
 
 root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf'
 
@@ -12,41 +14,77 @@ root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf'
 if not os.path.exists(__baspy_path):
     os.makedirs(os.path.expanduser(__baspy_path))
 
-def get_daily_from_6hr(cube):
-    iris.coord_categorisation.add_day_of_month(cube, 't')
-    iris.coord_categorisation.add_month_number(cube, 't')
-    cube = cube.aggregated_by(['day_of_month','month_number'], 
-                                iris.analysis.MEAN)
-    return cube
 
 
-def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
-    """
-
-    Get /Path/filenames for ERA-Interim files within date range
-
-    Start and end date can be specified using a range of strings:
-        e.g., '19790101', '1979-01-01', '19790101010101'
-
-    Months, default is all months
-        e.g., Months=[6,7,8]
-
-    """
+def create_6hr_catalogue():
 
     from dateutil import parser
     import pandas as pd
+    datelist = pd.date_range(start='1979-01-01', end='2025-01-01', freq='D')    
+    filenames, date_store, level_store = [], [], []
 
+    print('Creating ERA-Interim catalogue.')
+
+    for level in ['as', 'ap']:
+        
+        for date in datelist:
+            yr       = str(date.year)
+            mon      = str("{:0>2d}".format(date.month))
+            day      = str("{:0>2d}".format(date.day))
+            
+            directory = root+'/era-interim/6hr/gg/'+level+'/'+yr+ \
+                            '/'+mon+'/'+day+'/'
+
+            if os.path.exists(directory):
+                files = glob.glob(directory+'/*.nc')
+                if len(files) == 4:
+                    for file in files:
+                        filenames.append(file)
+                        date_str = parser.parse(file.split('/')[-1][4:-3])
+                        date_store.append(date_str)
+                        level_store.append(level)
+
+    ### write to dataframe
+    df = pd.DataFrame()
+    df['Date']          = date_store
+    df['Level']         = level_store
+    df['Frequency']     = '6h'
+    df['Filename']      = filenames
+
+    print('Saving ERA-Interim catalogue to csv')
+    df.to_csv(__baspy_path+'/era-interim_6hr_catalogue.csv', index=False)
+
+    return df
+
+
+def get_erai_6h_cat(start_date, end_date, level=None, verbose=True):
+   
+    from dateutil import parser
+
+    if level == None:
+        print("'level' undefined, setting to 'as' (surface level data). \n" + \
+                " Alt option 'ap' (pressure level data) ")
+        level = 'as'
+
+    ### read in catalogue
+    if not os.path.exists(__baspy_path):
+        df = create_6hr_catalogue()
+    else:
+        df = pd.read_csv(__baspy_path+'/era-interim_6hr_catalogue.csv') 
+
+    ### Filter by level type (surface or pressure, as or ap)
+    df = df[ df['Level'] == level ]
+
+    ### Filter by dates
     start_datetime = parser.parse(start_date)
     end_datetime   = parser.parse(end_date)
-    if verbose == True:
-        print(start_datetime)
-        print(end_datetime)
-    
-    filenames = [] # create an empty list, ready to create list of *.nc filenames
-    date = start_datetime
+    dates = pd.DatetimeIndex(df['Date'])
+    df = df[ (dates >= start_datetime) & (dates < end_datetime) ]
 
-    if months == 'all': months=range(1,13)
+    return df
 
+
+def level_from_var_name(var_name):
     ### Get level_str from var_name
     level_str = None
     df_as = pd.read_csv(root+'/era-interim/era-interim_6hrly_surface_vars.csv')
@@ -57,31 +95,10 @@ def get_6hr_fnames(start_date, end_date, var_name, months='all', verbose=True):
         print('Surface Vars        =', df_as['surface_vars'].values)
         print('Pressure Level Vars =', df_ap['pressure_lev_vars'].values)
         raise ValueError('Can not find files for var_name='+var_name)
-
-    ### Get all filenames for all 6 hourly fields between start and end, inclusive
-    while date <= end_datetime:
-        yr       = str(date.year)
-        mon      = str("{:0>2d}".format(date.month))
-        day      = str("{:0>2d}".format(date.day))
-        hr       = str("{:0>2d}".format(date.hour))
-        minute   = str("{:0>2d}".format(date.minute))
-        date_str = ''.join([yr,mon,day,hr,minute])
-        
-        file=root+'/era-interim/6hr/gg/'+level_str+ \
-                    '/'+yr+'/'+mon+'/'+day+'/gg'+level_str+ \
-                    ''+date_str+'.nc'
-        
-        if int(mon) in months:
-            filenames.append(file)
-        
-        # Add 6 hours to read in next file
-        time_increment = datetime.timedelta(days=0, hours=6, minutes=0)
-        date = date + time_increment  
-    
-    return filenames
+    return level_str
 
 
-def edit_erai_attributes(cube, field, filename):
+def edit_erai_attrs(cube, field, filename):
     ### Remove attributes from cube on read
     cube.attributes.pop('history', None)
     cube.attributes.pop('time',    None)
@@ -91,7 +108,7 @@ def edit_erai_attributes(cube, field, filename):
     cube.coord('t').attributes.pop('time_origin', None)
 
 
-def get_cube(start_date, end_date, var_name, months='all', frequency='6hr', 
+def get_cube(start_date, end_date, var_name, frequency='6hr', 
                 constraints=None, verbose=True):
 
     """
@@ -106,52 +123,43 @@ def get_cube(start_date, end_date, var_name, months='all', frequency='6hr',
 
     """
 
-    ### To do....
-    #
-    # if >30 fnames then do 30 fnames at a time, and then concatenate at the end !!!!!!!!!
-    #
-    # change default frequency to monthly
-    #
-    # create daily straight after reading data, incase constraint messes things up
-    #
+    ### Iris v2.2 hangs when saving netcdf files, use NETCDF3-CLASSIC 
+    ### as a workaround - SH
 
-    create_daily = False
-    if (frequency == 'day') | (frequency == 'daily') : 
-        create_daily = True
-        frequency = '6hr'
+    level = level_from_var_name(var_name)
 
     if frequency == '6hr': 
-        fnames = get_6hr_fnames(start_date, end_date, var_name, 
-                                    months=months, verbose=verbose)
+        df = get_erai_6h_cat(start_date, end_date, level, verbose=verbose)
+    else:
+        raise ValueError('Only 6hr frequency currently supported')
     
     con = iris.Constraint(cube_func=lambda cube: cube.var_name == var_name)
     
     ### Additional constrains (level, time)
     if (constraints != None): con = con & constraints
 
+    fnames = df['Filename'].values
+    print('first & last files=', fnames[0].split('/')[-1], fnames[-1].split('/')[-1])
     with units.suppress_errors():
         cubelist = iris.load(fnames, constraints=con, 
-                                    callback=edit_erai_attributes)
+                                callback=edit_erai_attrs)
 
     ### Setup new coord to add to cube (see below)
     model_coord = iris.coords.AuxCoord('ERA-Interim', long_name='Model', 
                                             units='no_unit')
 
     ### Fix cubes to all match a reference cube before we can merge
-    ref_cube = cubelist[0]
+    ref = cubelist[0]
     for c in cubelist: 
-        c.coord('latitude').points         = ref_cube.coord('latitude').points
-        c.coord('longitude').points        = ref_cube.coord('longitude').points
-        c.coord('latitude').standard_name  = ref_cube.coord('latitude').standard_name
-        c.coord('longitude').standard_name = ref_cube.coord('longitude').standard_name
+        c.coord('latitude').points         = ref.coord('latitude').points
+        c.coord('longitude').points        = ref.coord('longitude').points
+        c.coord('latitude').standard_name  = ref.coord('latitude').standard_name
+        c.coord('longitude').standard_name = ref.coord('longitude').standard_name
         c.add_aux_coord(model_coord)       # Add model name as a scalar coord
 
     iris.util.unify_time_units(cubelist)
     cube = cubelist.concatenate_cube()
     cube = iris.util.squeeze(cube)
-
-    if create_daily == True: 
-        cube = get_daily_from_6hr(cube)
 
     return cube
 
