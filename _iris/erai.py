@@ -108,6 +108,16 @@ def edit_erai_attrs(cube, field, filename):
     cube.attributes.pop('valid_min',    None)
     cube.coord('t').attributes.pop('time_origin', None)
 
+    ### Add additional time coordinate categorisations
+    if (len(cube.coords(axis='t')) > 0):
+        time_name = cube.coord(axis='t').var_name
+        iris.coord_categorisation.add_year(cube, time_name, name='year')
+        iris.coord_categorisation.add_month_number(cube, time_name, name='month')
+        iris.coord_categorisation.add_day_of_year(cube, time_name, name='day_of_year')
+        seasons = ['djf', 'mam', 'jja', 'son']
+        iris.coord_categorisation.add_season(cube, time_name, name='clim_season', seasons=seasons)
+        iris.coord_categorisation.add_season_year(cube, time_name, name='season_year', seasons=seasons)
+
 
 def get_cube(start_date, end_date, var_name, frequency='6hr', 
                 constraints=None, verbose=True):
@@ -161,6 +171,10 @@ def get_cube(start_date, end_date, var_name, frequency='6hr',
     iris.util.unify_time_units(cubelist)
     cube = cubelist.concatenate_cube()
     cube = iris.util.squeeze(cube)
+
+    ### add bounds to lon/lat coordinates
+    cube.coord('latitude').guess_bounds()
+    cube.coord('longitude').guess_bounds()
 
     return cube
 
