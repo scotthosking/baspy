@@ -269,21 +269,23 @@ def eg_cubelist():
     import warnings
 
     url = "https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc"
-    nc_file = __baspy_path+'/sample_data/sresa1b_ncar_ccsm3-example.nc'
+    file = __baspy_path+'/sample_data/sresa1b_ncar_ccsm3-example.nc'
 
     ### Create sample_data folder if it doesn't already exist
     if not os.path.exists(__baspy_path+'/sample_data'): 
         os.makedirs(os.path.expanduser(__baspy_path+'/sample_data'))
 
-    if (os.path.isfile(nc_file) == False):
-        import urllib
-        print('Downloading example netcdf file: '+url)
-        urllib.urlretrieve (url, nc_file)
+    if (os.path.isfile(file) == False):
+        import requests
+        print('Downloading sample file: '+url.split('/')[-1])
+        r = requests.get(url)
+        with open(file, 'wb') as f:  
+            f.write(r.content)
 
     ### Load file, suppressing any warnings
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        cubelist = iris.load(nc_file, ['air_temperature', 'eastward_wind', 'precipitation_flux'])
+        cubelist = iris.load(file, ['air_temperature', 'eastward_wind', 'precipitation_flux'])
 
     return cubelist
 
