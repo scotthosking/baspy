@@ -16,6 +16,14 @@ class City:
     chongqing = { 'lon':106.3400, 'lat':28.3330 }
     hangzhou  = { 'lon':120.1233, 'lat':30.2649 }
 
+class Ice_Cores:
+    palmer      = { 'lon':-65.2795, 'lat':-73.5176 }
+    gomez       = { 'lon':-70.3669, 'lat':-73.5940 }
+    jurassic    = { 'lon':-73.0358, 'lat':-74.1987 }
+    rendezvous  = { 'lon':-78.0994, 'lat':-74.2694 }
+    bryan_coast = { 'lon':-81.4041, 'lat':-74.2946 }
+    ferrigno    = { 'lon':-86.5416, 'lat':-74.3437 }
+
 ###############################
 ### Pre-defined regional bounds
 ###############################
