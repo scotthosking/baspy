@@ -27,8 +27,8 @@ antarctic_60_90S = {'lat_bnds':(-90, -60)}
 mid_latitudes    = {'lat_bnds':(-60, 78) } # to leave off the poles from plots
 
 class Continent: 
-    europe               = {'lon_bnds':(-11.25, 33.75), 'lat_bnds':(35.1, 72.5) }
-    noth_atlantic_europe = {'lon_bnds':(-50., 33.75),   'lat_bnds':(25.0, 72.5) }
+    europe          = {'lon_bnds':(-11.25, 33.75), 'lat_bnds':(35.1, 72.5) }
+    europe_atlantic = {'lon_bnds':(-50., 33.75),   'lat_bnds':(25.0, 72.5) }
 
 class Country:
     uk     = {'lon_bnds':(-11, 2), 'lat_bnds':(48, 60) }
