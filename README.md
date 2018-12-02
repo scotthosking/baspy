@@ -24,7 +24,7 @@ Once you have set this up all file loading should become transparent
 
 ### 3. Usage
 
-Example:
+Reading data:
 
 ```
     import baspy as bp
@@ -45,5 +45,5 @@ Example:
         cubes = bp.get_cube(row)
 ```
 
-Jupyter Notebook 
-* [Xarray with BASpy](https://github.com/scott-hosking/baspy/blob/master/notebooks/xarray_examples.ipynb)
+Other Examples: 
+* [Xarray with BASpy (Notebook)](https://github.com/scott-hosking/baspy/blob/master/examples/xarray_examples.ipynb)
