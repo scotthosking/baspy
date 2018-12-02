@@ -18,14 +18,6 @@ def convert_units_mm_day(cube):
 
 
 
-
-
-
-def cube_regrid(cube, template_cube):
-    ### see http://scitools.org.uk/iris/docs/latest/iris/iris/cube.html#iris.cube.Cube.regrid
-    cube = cube.regrid( template_cube, iris.analysis.Linear() )
-    return cube
-
 def area_weighted_mean(cube):
     weights = iris.analysis.cartography.area_weights(cube)
     ts = cube.collapsed(['latitude','longitude'], iris.analysis.MEAN, weights=weights)
