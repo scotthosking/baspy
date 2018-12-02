@@ -47,3 +47,4 @@ Reading data:
 
 Other Examples: 
 * [Xarray with BASpy (Notebook)](https://github.com/scott-hosking/baspy/blob/master/examples/xarray_examples.ipynb)
+* [Statistical Downscaling in Iris (Script)](https://github.com/scott-hosking/baspy/blob/master/examples/statistical_downscaling.py)
