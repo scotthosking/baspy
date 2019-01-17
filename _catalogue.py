@@ -309,7 +309,7 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
         vals = cat_dict['Var']
 
-        other_keys = cat_dict.keys()
+        other_keys = list(cat_dict.keys())
         other_keys.remove('Var')
         for i in other_keys: 
             if len(cat_dict[i]) > 1:

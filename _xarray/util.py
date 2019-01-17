@@ -45,12 +45,12 @@ def extract_region(da, bounds):
     >>> bounds = bp.region.Country.china
     >>> da     = bp.region.extract(da, bounds)
     '''
-    lats = da['lat'][:] 
-    lons = da['lon'][:]
     lat_bnds, lon_bnds = list(bounds['lat_bnds']), list(bounds['lon_bnds'])
-    lat_inds = np.where((lats > lat_bnds[0]) & (lats < lat_bnds[1]))[0]
-    lon_inds = np.where((lons > lon_bnds[0]) & (lons < lon_bnds[1]))[0]
     da = da.sel(lat=slice(*lat_bnds), lon=slice(*lon_bnds))
+    # lats = da['lat'][:] 
+    # lons = da['lon'][:]
+    # lat_inds = np.where((lats > lat_bnds[0]) & (lats < lat_bnds[1]))[0]
+    # lon_inds = np.where((lons > lon_bnds[0]) & (lons < lon_bnds[1]))[0]
     return da
 
 
