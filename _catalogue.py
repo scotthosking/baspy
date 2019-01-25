@@ -3,6 +3,7 @@ import warnings
 import glob, os
 import pandas as pd
 from .datasets import dataset_dictionaries, __default_dataset
+import requests
 
 ##################
 ### Global values
@@ -42,14 +43,20 @@ def setup_catalogue_file(dataset):
     ### 2. Setup local baspy folder to store catalogues
     if not os.path.exists(__baspy_path): 
         os.makedirs(os.path.expanduser(__baspy_path))
-    
+
     ### 3. Do we have a catalogue file to work with?
     get_file = False
     if (os.path.isfile(cat_file) == False):    
         print(cat_file+" does not exist, this may be the first time you've requested this catalogue")
         get_file = True
 
-    ### 4. Get catalogue file (if we need to)
+    ### 4. no trace of catalogue file, lets build one
+    force_catalogue_refresh = False
+    if (requests.get(__shared_url_cat_file).status_code == 404) & \
+            (os.path.isfile(cat_file) == False):
+        force_catalogue_refresh = True
+    
+    ### 5. Get catalogue file (if we need to)
     if get_file == True:
         if os.path.exists(__shared_local_cat_file):
             ### We have access to the shared catalogue file
@@ -57,14 +64,17 @@ def setup_catalogue_file(dataset):
             import shutil
             shutil.copy2(__shared_local_cat_file, cat_file)
             copied_new_cat_file = True
-        else:
+        elif (requests.get(__shared_url_cat_file).status_code == 200):
             ### Download file over the internet (slower)
             print('Downloading shared catalogue to '+__baspy_path)
-            import urllib
-            urllib.urlretrieve (__shared_url_cat_file, cat_file)
+            r = requests.get(__shared_url_cat_file)
+            with open(cat_file, 'wb') as f:  
+                f.write(r.content)
             copied_new_cat_file = True
+        else:
+            pass
 
-    ### 5. Check whether a newer version of the catalogue is available compared to the one 
+    ### 6. Check whether a newer version of the catalogue is available compared to the one 
     ###            we already have
     newer_available_location = None
     if os.path.exists(__shared_local_cat_file):
@@ -73,17 +83,14 @@ def setup_catalogue_file(dataset):
     else:
         from datetime import datetime
         url_file_timestamp = get_last_modified_time_from_http_file(__shared_url_cat_file)
-        if ( url_file_timestamp > os.path.getmtime(cat_file) ):
-            newer_available_location = __shared_url_cat_file
+        if os.path.exists(cat_file):
+            if ( url_file_timestamp > os.path.getmtime(cat_file) ):
+                newer_available_location = __shared_url_cat_file
 
     if newer_available_location != None:
         warnings.warn('Using catalogue '+cat_file+'. Note that a newer version is available at '+newer_available_location)
 
-    ### 6. If __shared_local_cat_file does not exist then set it to personal file in .baspy
-    if os.path.exists(__shared_local_cat_file) == False:
-        __shared_local_cat_file = cat_file
-
-    return copied_new_cat_file, cat_file, __shared_local_cat_file
+    return force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_local_cat_file
 
 
 
@@ -98,7 +105,7 @@ def __refresh_shared_catalogue(dataset):
     '''
 
     ### Setup catalogue file (copy over if needs be)
-    copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
+    force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
 
     if dataset not in dataset_dictionaries.keys():
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
@@ -123,7 +130,6 @@ def __refresh_shared_catalogue(dataset):
     paths = glob.glob(root+filewalk)
     paths = filter(lambda f: os.path.isdir(f), paths)
 
-
     ### write data to catalogue (.csv) using a Pandas DataFrame
     rows = []
     n_root_levels = len(dataset_dict['Root'].split('/'))
@@ -133,7 +139,7 @@ def __refresh_shared_catalogue(dataset):
         ###    the same directory into its real location
         ### e.g., for cmip5, Version: latest --> v20120709
         parts = path.split('/')
-        for i in range(n_root_levels, len(parts)):
+        for i in range(n_root_levels, len(parts)+1):
             if os.path.islink('/'.join(parts[0:i])):
                 realpath = os.readlink('/'.join(parts[0:i]))
                 if len(realpath.split('/')) == 1:
@@ -144,6 +150,7 @@ def __refresh_shared_catalogue(dataset):
 
         ### Now use updated 'path' to create catalogue
         parts = path.split('/')[n_root_levels:]
+        parts.remove('')
 
         ### Make list of file names: i.e., 'file1.nc;file2.nc'
         fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in InclExtensions)]
@@ -172,18 +179,12 @@ def __refresh_shared_catalogue(dataset):
     ### save to local dir
     df.to_csv(cat_file, index=False)
 
-    ### Add Root directory as header (Python v2)
-    # with file(cat_file, 'r') as original: file_data = original.read()
-    # with file(cat_file, 'w') as modified: modified.write("# Root="+root+"\n" + file_data)
-    ### Python 3
-    # with open(cat_file, 'r') as original: file_data = original.read()
-    # with open(cat_file, 'w') as modified: modified.write("# Root="+root+"\n" + file_data)
-
-    if os.path.exists(__shared_cat_file):
+    if os.path.exists('/'.join(__shared_cat_file.split('/')[:-1])):
         ### We have access to __shared_cat_file
         print('Copying new catalogue to '+__shared_cat_file)
-        import shutil
-        shutil.copy2(cat_file, __shared_cat_file)
+        if cat_file != __shared_cat_file:
+            import shutil
+            shutil.copy2(cat_file, __shared_cat_file)
 
 
 
@@ -199,7 +200,7 @@ def get_file_date_ranges(fnames, filename_structure):
         fname = os.path.splitext(fname)[0] # rm extention
 
         ### Is this file time-varying?
-        if '_fx_' in fname:
+        if ('_fx_' in fname) | ('_Efx_' in fname):
             ### Fixed variable (e.g., land-mask)
             start_date, end_date = 0, 0
 
@@ -437,8 +438,11 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         update_cached_cat = True
 
     ### Setup catalogue (incl. copying over new files if need to)
-    copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
+    force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
     if (copied_new_cat_file == True): update_cached_cat=True
+    if (force_catalogue_refresh == True):
+        __refresh_shared_catalogue(dataset)
+        update_cached_cat = True
 
     ### Read whole catalogue (AND RETURN)
     if read_everything == True:
@@ -467,9 +471,10 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         __cached_cat    = read_csv(cat_file)
         __cached_values = expanded_cached_values.copy()
         __cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
-        print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')
-        print(__cached_values)
-        print('')
+        if __cached_values != {}:
+            print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')
+            print(__cached_values)
+            print('')
 
 
     if user_values != {}:
@@ -498,7 +503,12 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
             raise ValueError('Can not specify complete_var_set when less than two variables (Var) are defined')
 
         ### If no user_values are specified then read in default/original list of cached values
-        print('No user values defined, will therefore filter catalogue using default values')
+
+        if __cached_values == {}:
+            print('No user values defined, retrieving whole catalogue')
+        else:
+            print('No user values defined, will therefore filter catalogue using default values')
+
         cat = __filter_cat_by_dictionary( __cached_cat, __orig_cached_values )
 
     return cat
