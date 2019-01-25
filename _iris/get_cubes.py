@@ -46,7 +46,6 @@ def callback(cube, field, filename):
 
 
 
-
 def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
     """
     Use filtered catalogue to read files and return a CubeList
@@ -81,18 +80,15 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         path      = row['Path']
         parts     = re.split('/', path)[n_root_levels:]
         datafiles = re.split(';', row['DataFiles'] )
-        var       = parts[ DirStructure.index('Var')        ]
-        freq      = parts[ DirStructure.index('Frequency')  ]
-        model     = parts[ DirStructure.index('Model')      ]
-        run_id    = parts[ DirStructure.index('RunID')      ]
-        exp       = parts[ DirStructure.index('Experiment') ]
-        centre    = parts[ DirStructure.index('Centre')     ]
+
+        my_dict = {}
+        for key in DirStructure:
+            my_dict[key] = parts[ DirStructure.index(key) ]
 
         ### Print progress to screen
         if (verbose == True): 
             count = count+1
-            print('['+str(count)+'/'+str(len_filt)+'] '+__current_dataset+' '+centre+ \
-                                                ' '+model+' '+run_id+' '+exp+' '+var)
+            print('['+str(count)+'/'+str(len_filt)+'] '+__current_dataset+', '+', '.join(list(my_dict.values())))
 
 
         '''
@@ -100,7 +96,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         '''
         ### Check that filenames represent what we requested
         for d in datafiles:
-            if (model not in d) | (var not in d) | (run_id not in d) | (exp not in d):
+            if (my_dict['Model'] not in d) | (my_dict['Var'] not in d) | (my_dict['RunID'] not in d) | (my_dict['Experiment'] not in d):
                 raise ValueError('>> WARNING: Detected misplaced files in '+path+' <<')
 
         ### Make sure we only use files with the same file extension.
@@ -139,7 +135,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
             dirfilename = path+'/'+j
 
             ### contraint by var_name
-            con = iris.Constraint(cube_func=lambda cube: cube.var_name == var)
+            con = iris.Constraint(cube_func=lambda cube: cube.var_name == my_dict['Var'])
             
             ### Add user defined constrains (e.g., level, time)
             if (constraints != None): con = con & constraints
@@ -169,10 +165,11 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         tmp_cubelist = rm_time_overlaps(tmp_cubelist)
 
         ### Unify lat-lon grid
-        tmp_cubelist = unify_similar_grid_coords(tmp_cubelist, tmp_cubelist[0])
+        tmp_cubelist = unify_similar_grid_coords(tmp_cubelist, tmp_cubelist[0]) # !! issue with ocean variables
         
         ### Apply Fixes to enable cubes in tmp_cubelist to concatenate ###
-        tmp_cubelist = fix_cubelist_before_concat(tmp_cubelist, __current_dataset, model, freq)
+        if (__current_dataset == 'cmip5') | (__current_dataset == 'happi'):
+            tmp_cubelist = fix_cubelist_before_concat(tmp_cubelist, __current_dataset, my_dict['Model'], my_dict['Frequency']) # !! CMIP6 does not have Frequency label
 
         ### if the number of netcdf files (and cubes) >1 then 
         ### merge them together
@@ -182,6 +179,15 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         final_cubelist.extend([cube])
 
     return final_cubelist
+
+
+
+
+
+
+
+
+
 
 
 ### This is a wrapper for get_cubes. 
