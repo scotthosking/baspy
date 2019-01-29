@@ -492,10 +492,15 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
                     print('SubModel=', np.unique(cat_tmp['SubModel']))
                     raise ValueError(v+" maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
 
-        ### We do not want a cube with multiple Frequencies (e.g., monthly and 6-hourly)
-        if (len(np.unique(cat['Frequency'])) > 1):
-            print('Frequency=', np.unique(cat['Frequency']))
-            raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
+        ### We do not want a cube with multiple Frequencies OR CMOR (e.g., monthly and 6-hourly)
+        if 'Frequency' in user_values.keys():
+            if (len(np.unique(cat['Frequency'])) > 1):
+                print('Frequency=', np.unique(cat['Frequency']))
+                raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
+        if 'CMOR' in user_values.keys():
+            if (len(np.unique(cat['CMOR'])) > 1):
+                print('CMOR=', np.unique(cat['CMOR']))
+                raise ValueError("Multiple CMOR values present in catalogue, try defining CMOR (e.g., CMOR='Amon')")
 
     else:
 
