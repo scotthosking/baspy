@@ -485,22 +485,23 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         # Some Var names are duplicated across SubModels (e.g., Var='pr')
         # Force code to fall over if we spot more than one unique SubModel
         # when Var has been set.
-        if 'Var' in user_values.keys():
-            for v in np.unique(cat['Var']):
-                cat_tmp = cat[ cat['Var'] == v ]
-                if (len(np.unique(cat_tmp['SubModel'])) > 1):
-                    print('SubModel=', np.unique(cat_tmp['SubModel']))
-                    raise ValueError(v+" maybe ambiguous, try defining Submodel (e.g., SubModel='atmos')")
+        if 'SubModel' in cat.columns:
+            if 'Var' in user_values.keys():
+                for v in np.unique(cat['Var']):
+                    cat_tmp = cat[ cat['Var'] == v ]
+                    if (len(np.unique(cat_tmp['SubModel'])) > 1):
+                        raise ValueError("Var='"+v+"' maybe ambiguous, try defining Submodel"+ \
+                                            "\n SubModel values available: "+str(np.unique(cat_tmp['SubModel'])))
 
-        ### We do not want a cube with multiple Frequencies OR CMOR (e.g., monthly and 6-hourly)
-        if 'Frequency' in user_values.keys():
+        ### We do not want a list which contains a mixture of Frequencies or CMOR (e.g., monthly and 6-hourly)
+        if 'Frequency' in cat.columns:
             if (len(np.unique(cat['Frequency'])) > 1):
-                print('Frequency=', np.unique(cat['Frequency']))
-                raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency (e.g., Frequency='mon')")
-        if 'CMOR' in user_values.keys():
+                raise ValueError("Multiple time Frequencies present in catalogue, try defining Frequency"+ \
+                                    "\n Frequency values available: "+str(np.unique(cat['Frequency'])))
+        if 'CMOR' in cat.columns:
             if (len(np.unique(cat['CMOR'])) > 1):
-                print('CMOR=', np.unique(cat['CMOR']))
-                raise ValueError("Multiple CMOR values present in catalogue, try defining CMOR (e.g., CMOR='Amon')")
+                raise ValueError("Multiple CMOR values present in catalogue, try defining CMOR"+ \
+                                   "\n CMOR values available: "+str(np.unique(cat['CMOR'])) )
 
     else:
 
