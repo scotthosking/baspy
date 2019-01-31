@@ -28,8 +28,7 @@ Reading data:
 
 ```
     import baspy as bp
-    import xarray as xr
-
+ 
     ### Retrieve a filtered version of the CMIP5 catalogue as a Pandas DataFrame
     df = bp.catalogue(dataset='cmip5', model='HadGEM2-CC', run='r1i1p1', 
                         exp='historical', var=['tas', 'pr'], 
@@ -39,7 +38,7 @@ Reading data:
     for index, row in df.iterrows():
 
         ### In Xarray
-        ds = xr.open_mfdataset( bp.get_files(row) )
+        ds = bp.open_dataset(row)
 
         ### Or... In Iris
         cubes = bp.get_cube(row)
