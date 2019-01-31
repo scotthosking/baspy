@@ -15,11 +15,9 @@ catlg = bp.catalogue(dataset='cmip6', Experiment='amip',
                         Var=['tasmax','tasmin'], CMOR='day', 
                         Model='CNRM-CM6-1', RunID='r1i1p1f2')
 
-''' Read Datasets using Xarray '''
-tasmin_files = bp.get_files( catlg[catlg.Var == 'tasmin'] )
-tasmax_files = bp.get_files( catlg[catlg.Var == 'tasmax'] )
-tasmin_ds    = xr.open_mfdataset(tasmin_files)
-tasmax_ds    = xr.open_mfdataset(tasmax_files)
+''' Read Datasets using BASpy wrapper for Xarray '''
+tasmin_ds = bp.open_dataset(catlg[catlg.Var == 'tasmin'])
+tasmax_ds = bp.open_dataset(catlg[catlg.Var == 'tasmax'])
 
 ''' extract DataArray from Dataset '''
 tasmin = tasmin_ds.tasmin

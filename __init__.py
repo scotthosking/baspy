@@ -26,7 +26,7 @@ Contributors: Tom Bracegirdle, Tony Phillips
 import os, sys
 
 ### BASpy version number
-__version__ = "0.9"
+__version__ = "1.0"
 
 ### Place to store catalogues and example data
 __baspy_path = os.path.expanduser("~/.baspy")
@@ -74,5 +74,8 @@ if 'iris' in __modules:
     erai        = _iris.erai
 
 if 'xarray' in __modules:
-    from . import _xarray as XR
+    from . import _xarray
+    eg_Dataset   = _xarray.util.eg_Dataset
+    eg_DataArray = _xarray.util.eg_DataArray
+    open_dataset = _xarray.open_dataset
 

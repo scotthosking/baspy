@@ -568,8 +568,14 @@ def get_files(df):
     if len(df) != 1:
         raise ValueError('Catalogue contains more than one row')
 
-    directory = df['Path'].values[0]+'/'
+    directory = df['Path'].values[0]+'/'.replace('//','/')
     files     = df['DataFiles'].values[0].split(';')
     files     = [ directory+f for f in files ]
 
+    list_file_extensions = [file.split('.')[-1] for file in files]
+    if len(np.unique(list_file_extensions)) > 1:
+        raise ValueError('>> WARNING: Multiple file extensions present in '+directory+' <<')
+
     return files
+
+
