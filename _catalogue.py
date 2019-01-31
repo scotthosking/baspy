@@ -389,23 +389,27 @@ def __compare_dict(dict1_in, dict2_in):
 def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everything=False, **kwargs):
     """
     
-    Read whole dataset catalogue for JASMIN (default catalogue is CMIP5)
-       >>> cat = bp.catalogue()
+    Read whole dataset catalogue for JASMIN (default: dataset='cmip5')
+       >>> catlg = bp.catalogue(dataset='cmip6')
 
-    Read filtered catalogue for JASMIN
-       >>> cat = bp.catalogue(Experiment=['amip','historical'], Var='tas', Frequency=['mon'])
+    Look at the first row to get a feel for the catologue layout
+       >>> print(catlg.iloc[0])
+
+    Read filtered catalogue for JASMIN (
+    (Note to help with filtering, you can use any CASE for kwargs + some common shortened words (freq, exp, run) )
+       >>> cat = bp.catalogue(dataset='cmip5', experiment=['amip','historical'], var='tas', frequency=['mon'])
        
-    complete_var_set = True: return a complete set where all Variables are available
-       >>> cat = bp.catalogue(Var=['tas','psl','tasmx'], complete_var_set=True)
+    complete_var_set = True: return a complete set where all Variables belong to the run
+    (Useful when combining multiple variables to derive another diagnostic)
+       >>> cat = bp.catalogue(var=['tas','psl','tasmax'], complete_var_set=True)
 
     refresh = True: refresh the shared cataloge 
-                    (the user can then choose to replace their personal catalogue once completed)
-                    This should only be run when new data has been uploaded into the data archive, 
-                    or when there has been a change to the items stored within the catalogue
+    This should only be run when new data has been uploaded into the data archive
        >>> cat = bp.catalogue(dataset='cmip5', refresh=True)
-       
-    List of catalogued datasets available:
-        cmip5, happi
+
+    read_everything = True
+    By default, bp.catalogue only stores those items defined by 'Cached' within dataset_dictionaries (see datasets.py) 
+    This option by-passes that and reads the whole catalogue (which could be very large!)
 
     """
 
@@ -421,6 +425,10 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     if (dataset == None):
         print("Warning: dataset not specified, defaulting to: dataset='"+__default_dataset+"'")
         dataset = __default_dataset
+
+    if dataset not in dataset_dictionaries.keys():
+        raise ValueError(dataset+' dataset not currently available: '+str(dataset_dictionaries.keys())+ \
+                            '. \n You can add new datasets within dataset.py')
 
     ### Define cached values for requested catalogue
     __cached_values = dataset_dictionaries[dataset]['Cached']        
@@ -498,7 +506,8 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         ### key is unknown
         if key.lower() not in lower_keys:
             avail_columns = __cached_cat.columns.tolist()
-            avail_columns.remove('Path').remove('DataFiles')      
+            avail_columns.remove('Path')
+            avail_columns.remove('DataFiles')      
             raise ValueError("'"+key+"' is not in list of known identifiers: "+str(avail_columns))
 
 

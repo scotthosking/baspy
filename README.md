@@ -31,15 +31,15 @@ Reading data:
     import xarray as xr
 
     ### Retrieve a filtered version of the CMIP5 catalogue as a Pandas DataFrame
-    df = bp.catalogue(dataset='cmip5', Model='HadGEM2-CC', RunID='r1i1p1', 
-                        Experiment='historical', Var=['tas', 'pr'], 
-                        Frequency='mon')
+    df = bp.catalogue(dataset='cmip5', model='HadGEM2-CC', run='r1i1p1', 
+                        exp='historical', var=['tas', 'pr'], 
+                        freq='mon')
 
     ### Iterate over rows in catalogue
     for index, row in df.iterrows():
 
         ### In Xarray
-        ds = xr.open_mfdataset(bp.get_files(row))
+        ds = xr.open_mfdataset( bp.get_files(row) )
 
         ### Or... In Iris
         cubes = bp.get_cube(row)
