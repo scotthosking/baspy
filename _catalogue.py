@@ -480,7 +480,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         __cached_values = expanded_cached_values.copy()
         __cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
         if __cached_values != {}:
-            print('>> Current cached values from catalogue (this can be extended by specifying additional values) <<')
+            print('>> Current cached values (can be extended by specifying additional values or by setting read_everything=True) <<')
             print(__cached_values)
             print('')
 
