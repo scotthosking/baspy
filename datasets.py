@@ -25,7 +25,7 @@ dataset_dictionaries = \
     { 
 
     'happi': 
-    {'Root':'/group_workspaces/jasmin4/bas_climate/data/happi',
+    {'Root':'/gws/nopw/j04/bas_climate/data/happi',
     'DirStructure':'Raw_Derived/Centre/Model/Experiment/CMOR/Version/Frequency/SubModel/Var/RunID',
     'FilenameStructure':'Var_CMOR_Model_Experiment_ExperimentXXX_Version_RunID_StartDate-EndDate',
     'InclExtensions':['.nc', '.nc4'],
