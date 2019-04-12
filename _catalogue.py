@@ -150,7 +150,7 @@ def __refresh_shared_catalogue(dataset):
 
         ### Now use updated 'path' to create catalogue
         parts = path.split('/')[n_root_levels:]
-        parts.remove('')
+        if '' in parts: parts.remove('')
 
         ### Make list of file names: i.e., 'file1.nc;file2.nc'
         fnames = [fn for fn in os.listdir(path) if any(fn.endswith(ext) for ext in InclExtensions)]

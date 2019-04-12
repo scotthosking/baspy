@@ -199,6 +199,9 @@ def unify_similar_grid_coords(cubes, cube_template=None):
                         np.all(np.isclose(cube.coord(axis=axis).bounds, cube_template.coord(axis=axis).bounds))):
                         cube.coord(axis=axis).bounds = cube_template.coord(axis=axis).bounds
                         cubes[i] = cube
+                if (axis == 'X'):
+                        cube.coord(axis=axis).circular = cube_template.coord(axis=axis).circular
+                        cubes[i] = cube
 
     return cubes
 
