@@ -1,4 +1,4 @@
-import os
+import os, glob
 import numpy as np
 import datetime
 import os.path
@@ -9,7 +9,7 @@ import pandas as pd
 
 erai_catalogue_file = __baspy_path+'/era-interim_6hr_catalogue.csv'
 
-root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf'
+root = '/gws/nopw/j04/bas_climate/data/ecmwf'
 
 ### Create folder for storing data
 if not os.path.exists(__baspy_path):
