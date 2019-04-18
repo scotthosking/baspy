@@ -473,6 +473,33 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     if (compare_dicts == 'different'): update_cached_cat = True
 
 
+    # ### Edit user keys if they exist but using a different case or shortened
+    # for key in user_values.keys():
+
+    #     ### rename keys if using wrong case
+    #     lower_keys = [x.lower() for x in __cached_cat.columns]
+    #     if (key.lower() in lower_keys) & (key not in __cached_cat.columns):
+    #         new_key = __cached_cat.columns[lower_keys.index(key.lower())]
+    #         user_values = { k.replace(key,new_key): v for k, v in user_values.items() }
+
+    #     ### Convert some commonly used shortened words
+    #     if (key.lower() == 'exp') & ('Experiment' in __cached_cat.columns):
+    #         user_values = { k.replace('exp','Experiment'): v for k, v in user_values.items() }
+    #     if (key.lower() == 'run') & ('RunID' in __cached_cat.columns):
+    #         user_values = { k.replace('run','RunID'): v for k, v in user_values.items() }
+    #     if (key.lower() == 'freq') & ('Frequency' in __cached_cat.columns):
+    #         user_values = { k.replace('freq','Frequency'): v for k, v in user_values.items() }
+
+    # for key in user_values.keys():
+    #     ### key is unknown
+    #     if key.lower() not in lower_keys:
+    #         avail_columns = __cached_cat.columns.tolist()
+    #         avail_columns.remove('Path')
+    #         avail_columns.remove('DataFiles')      
+    #         raise ValueError("'"+key+"' is not in list of known identifiers: "+str(avail_columns))
+
+
+
     if (update_cached_cat == True):
         print('Updating cached catalogue...')
         from pandas import read_csv
@@ -483,32 +510,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
             print('>> Current cached values (can be extended by specifying additional values or by setting read_everything=True) <<')
             print(__cached_values)
             print('')
-
-
-    ### Edit user keys if they exist but using a different case or shortened
-    for key in user_values.keys():
-
-        ### rename keys if using wrong case
-        lower_keys = [x.lower() for x in __cached_cat.columns]
-        if (key.lower() in lower_keys) & (key not in __cached_cat.columns):
-            new_key = __cached_cat.columns[lower_keys.index(key.lower())]
-            user_values = { k.replace(key,new_key): v for k, v in user_values.items() }
-
-        ### Convert some commonly used shortened words
-        if (key.lower() == 'exp') & ('Experiment' in __cached_cat.columns):
-            user_values = { k.replace('exp','Experiment'): v for k, v in user_values.items() }
-        if (key.lower() == 'run') & ('RunID' in __cached_cat.columns):
-            user_values = { k.replace('run','RunID'): v for k, v in user_values.items() }
-        if (key.lower() == 'freq') & ('Frequency' in __cached_cat.columns):
-            user_values = { k.replace('freq','Frequency'): v for k, v in user_values.items() }
-
-    for key in user_values.keys():
-        ### key is unknown
-        if key.lower() not in lower_keys:
-            avail_columns = __cached_cat.columns.tolist()
-            avail_columns.remove('Path')
-            avail_columns.remove('DataFiles')      
-            raise ValueError("'"+key+"' is not in list of known identifiers: "+str(avail_columns))
 
 
     if user_values != {}:
