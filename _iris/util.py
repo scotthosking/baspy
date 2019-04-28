@@ -189,7 +189,7 @@ def unify_similar_grid_coords(cubes, cube_template=None):
         raise ValueError('cube_template is not a cube')
 
 
-    if (len(cube_template.coords(axis='X')) == 1) | (len(cube_template.coords(axis='Y')) == 1):
+    if (len(cube_template.coords(axis='X')) == 1) & (len(cube_template.coords(axis='Y')) == 1):
 
         for axis in ['X', 'Y']:
             if 'NoneType' in str(type(cube_template.coord(axis=axis).bounds)):
