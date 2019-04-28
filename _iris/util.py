@@ -188,31 +188,37 @@ def unify_similar_grid_coords(cubes, cube_template=None):
     if (type(cube_template) != iris.cube.Cube):
         raise ValueError('cube_template is not a cube')
 
-    for axis in ['X', 'Y']:
-        if 'NoneType' in str(type(cube_template.coord(axis=axis).bounds)):
-            cube_template.coord(axis=axis).guess_bounds()
-    
-    if len(cubes) > 0:
-        for i, cube in enumerate(cubes):
-            for axis in ['X', 'Y']:
-                 
-                if (np.any(cube.coord(axis=axis).points != cube_template.coord(axis=axis).points) and
-                        np.all(np.isclose(cube.coord(axis=axis).points, cube_template.coord(axis=axis).points))):
-                        cube.coord(axis=axis).points = cube_template.coord(axis=axis).points
-                        cubes[i] = cube
 
-                if 'NoneType' in str(type(cube.coord(axis=axis).bounds)):
-                        cube.coord(axis=axis).bounds = cube_template.coord(axis=axis).bounds
-                        cubes[i] = cube
+    if (len(cube_template.coords(axis='X')) == 1) | (len(cube_template.coords(axis='Y')) == 1):
 
-                if (np.any(cube.coord(axis=axis).bounds != cube_template.coord(axis=axis).bounds) and
-                        np.all(np.isclose(cube.coord(axis=axis).bounds, cube_template.coord(axis=axis).bounds))):
-                        cube.coord(axis=axis).bounds = cube_template.coord(axis=axis).bounds
-                        cubes[i] = cube
+        for axis in ['X', 'Y']:
+            if 'NoneType' in str(type(cube_template.coord(axis=axis).bounds)):
+                cube_template.coord(axis=axis).guess_bounds()
+        
+        if len(cubes) > 0:
+            for i, cube in enumerate(cubes):
+                for axis in ['X', 'Y']:
+                     
+                    if (np.any(cube.coord(axis=axis).points != cube_template.coord(axis=axis).points) and
+                            np.all(np.isclose(cube.coord(axis=axis).points, cube_template.coord(axis=axis).points))):
+                            cube.coord(axis=axis).points = cube_template.coord(axis=axis).points
+                            cubes[i] = cube
 
-                if (axis == 'X'):
-                        cube.coord(axis=axis).circular = cube_template.coord(axis=axis).circular
-                        cubes[i] = cube
+                    if 'NoneType' in str(type(cube.coord(axis=axis).bounds)):
+                            cube.coord(axis=axis).bounds = cube_template.coord(axis=axis).bounds
+                            cubes[i] = cube
+
+                    if (np.any(cube.coord(axis=axis).bounds != cube_template.coord(axis=axis).bounds) and
+                            np.all(np.isclose(cube.coord(axis=axis).bounds, cube_template.coord(axis=axis).bounds))):
+                            cube.coord(axis=axis).bounds = cube_template.coord(axis=axis).bounds
+                            cubes[i] = cube
+
+                    if (axis == 'X'):
+                            cube.coord(axis=axis).circular = cube_template.coord(axis=axis).circular
+                            cubes[i] = cube
+
+    else:
+        print("WARNING: Can not attempt to unify similar cube coordinates as more than one coord associated with axis='X' and/or axis='Y' ")
 
     return cubes
 
