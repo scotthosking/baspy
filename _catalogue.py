@@ -51,6 +51,8 @@ def setup_catalogue_file(dataset):
         get_file = True
 
     ### 4. no trace of catalogue file, lets build one
+    requests.get(__shared_url_cat_file, timeout=20) # check we have connection - stops the users terminal hanging...
+
     force_catalogue_refresh = False
     if (requests.get(__shared_url_cat_file).status_code == 404) & \
             (os.path.isfile(cat_file) == False):
