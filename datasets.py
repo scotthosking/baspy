@@ -44,6 +44,14 @@ dataset_dictionaries = \
     'DirStructure':'Centre/Model/Experiment/RunID/CMOR/Var/Grid/Version!latest',
     'FilenameStructure':'Var_CMOR_Model_Experiment_RunID_Grid_StartDate-EndDate',
     'InclExtensions':['.nc', '.nc4'],
-    'Cached': {}}
+    'Cached': {}},
     
+    'cmip5_all_versions': 
+    {'Root':'/badc/cmip5/data/cmip5/output1',
+    'DirStructure':'Centre/Model/Experiment/Frequency/SubModel/CMOR/RunID/Version/Var',
+    'FilenameStructure':'Var_CMOR_Model_Experiment_RunID_StartDate-EndDate',
+    'InclExtensions':['.nc', '.nc4'],
+    'Cached': {'Experiment':['piControl','historical','rcp26','rcp45','rcp85'], 
+                'Frequency':['mon']}},
+
     }

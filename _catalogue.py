@@ -202,7 +202,7 @@ def get_file_date_ranges(fnames, filename_structure):
         fname = os.path.splitext(fname)[0] # rm extention
 
         ### Is this file time-varying?
-        if ('_fx_' in fname) | ('_Efx_' in fname):
+        if ('_fx_' in fname) | ('_Efx_' in fname) | ('_Ofx_' in fname):
             ### Fixed variable (e.g., land-mask)
             start_date, end_date = 0, 0
 

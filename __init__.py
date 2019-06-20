@@ -35,7 +35,7 @@ if not os.path.exists(__baspy_path):
 
 ### For sharing catalogues between users
 __catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
-__catalogues_dir = "/group_workspaces/jasmin4/bas_climate/public/files/baspy/"
+__catalogues_dir = "/gws/nopw/j04/bas_climate/public/files/baspy/"
 
 
 ###############
