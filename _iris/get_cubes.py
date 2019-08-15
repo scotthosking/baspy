@@ -2,6 +2,7 @@ import re
 from pandas.core.series import Series
 from pandas import DataFrame
 from baspy.datasets import dataset_dictionaries
+from baspy._catalogue import get_files
 import iris
 import iris.coords as coords
 from baspy._iris.util import rm_time_overlaps, unify_similar_grid_coords
@@ -55,18 +56,16 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
     """
 
     global __current_dataset
+    __current_dataset = filt_cat['dataset'].iloc[0]
 
     ### Convert Pandas Series to DataFrame
-    if 'pandas.core.series.Series' in str(type(filt_cat)):
+    if 'Series' in str(type(filt_cat)):
         filt_cat = DataFrame([filt_cat.values], columns=filt_cat.keys() )
 
     ### Identify dataset and use defined information
     ### to know how to interpret the directory + filename structures
-    datasets = dataset_dictionaries.keys()
-    for dataset in datasets:
-        if dataset in filt_cat['Path'].values[0]:
-            __current_dataset = dataset
     dataset_dict  = dataset_dictionaries[__current_dataset]
+    root          = dataset_dict['Root']
     DirStructure  = dataset_dict['DirStructure'].split('/')
     n_root_levels = len(dataset_dict['Root'].split('/'))
 
@@ -77,9 +76,9 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
 
     for index, row in filt_cat.iterrows():
 
-        path      = row['Path']
+        path      = root+row['Path']
         parts     = re.split('/', path)[n_root_levels:]
-        datafiles = re.split(';', row['DataFiles'] )
+        datafiles = get_files(row)
 
         my_dict = {}
         for key in DirStructure:
@@ -130,10 +129,8 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         ### Read data with callback to add Experiment (Run) ID to 
         ### distinguish between ensemble memebers
         tmp_cubelist = iris.cube.CubeList([])
-        for j in datafiles:
+        for datafile in datafiles:
             
-            dirfilename = path+'/'+j
-
             ### contraint by var_name
             con = iris.Constraint(cube_func=lambda cube: cube.var_name == my_dict['Var'])
             
@@ -141,7 +138,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
             if (constraints != None): con = con & constraints
             
             ### Load single file
-            cube = iris.load(dirfilename, callback=callback, constraints=con)
+            cube = iris.load(datafile, callback=callback, constraints=con)
             if (len(cube) > 1): raise ValueError('more than one cube loaded, expected only one!')
 
             if ( ('iris.cube.CubeList' in str(type(cube))) & (len(cube) == 1) ):    
@@ -168,7 +165,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         tmp_cubelist = unify_similar_grid_coords(tmp_cubelist, tmp_cubelist[0]) # !! issue with ocean variables
         
         ### Apply Fixes to enable cubes in tmp_cubelist to concatenate ###
-        if (__current_dataset == 'cmip5') | (__current_dataset == 'happi'):
+        if ('cmip5' in __current_dataset) | ('happi' in __current_dataset):
             tmp_cubelist = fix_cubelist_before_concat(tmp_cubelist, __current_dataset, my_dict['Model'], 
                                                         my_dict['Frequency'], 
                                                         my_dict['Experiment']) # !! CMIP6 does not have Frequency label
@@ -224,7 +221,7 @@ def get_cube(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
 
 
 '''
-These only work with CMIP5 at the moment
+These only work with CMIP5 at the moment !!
 '''
 
 

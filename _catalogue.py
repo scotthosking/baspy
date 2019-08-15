@@ -96,9 +96,46 @@ def setup_catalogue_file(dataset):
 
 
 
+# class baspy_DataFrame(pd.DataFrame): # better to use standard DataFrames with dtype='category' to reduce memory
+#     _metadata = ['metadata']  
+#     @property
+#     def _constructor(self):
+#         return baspy_DataFrame
+
+def write_csv_with_comments(df, fname, **kwargs):
+  user_values = kwargs.copy()
+  keys   = list(user_values.keys())
+  values = list(user_values.values())
+  if 'root' in keys:
+    df['Path'] = df['Path'].map(lambda x: x.replace(user_values['root'], ''))
+
+  with open(fname, 'w') as file:
+      for key, value in zip(keys,values):
+        comment = '# '+str(key)+'='+str(value)+'\n'
+        file.write(comment)
+      df.to_csv(file, index=False)
 
 
 
+def read_csv_with_comments(fname):
+  ### read file
+  from pandas import read_csv
+  store_metadata = {}
+  with open(fname) as fp:  
+      line = fp.readline()
+      while line.startswith('#'):
+         # takes elements from comment and add to dictionary
+         elements=line.strip().replace('#','').replace(' ','').split('=')
+         store_metadata.update({elements[0]:elements[1]})
+         ### read next line
+         line = fp.readline()
+
+  df = read_csv(fname, comment='#') # define dtypes here to reduce memory usage (see df.memory_usage() and df.dtypes())!
+  df['dataset'] = store_metadata['dataset']
+  df = df.astype({'dataset':'category'}) # can we do this in one step to limit initial memory usage from line above? (see df.memory_usage())
+  # df = baspy_DataFrame(df)
+  # df.metadata = store_metadata
+  return df
 
 
 def __refresh_shared_catalogue(dataset):
@@ -179,7 +216,8 @@ def __refresh_shared_catalogue(dataset):
     df = pd.DataFrame(rows, columns=DirStructure + ['StartDate', 'EndDate', 'Path','DataFiles'])
 
     ### save to local dir
-    df.to_csv(cat_file, index=False)
+    #df.to_csv(cat_file, index=False)
+    write_csv_with_comments(df, cat_file, dataset=dataset, root=root)
 
     if os.path.exists('/'.join(__shared_cat_file.split('/')[:-1])):
         ### We have access to __shared_cat_file
@@ -301,6 +339,7 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
 
     ### "2nd Pass" keep only items where all Variables are available for that Model/Experiment/RunID/Frequency etc
+    ## If we have >1 variable then we should always use complete_var_set=True !!
     if (complete_var_set == True):
 
         if ('Var' not in keys):
@@ -456,8 +495,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
     ### Read whole catalogue (AND RETURN)
     if read_everything == True:
-        from pandas import read_csv
-        cat = read_csv(cat_file)
+        cat = read_csv_with_comments(cat_file)
         print(">> Read whole catalogue, any filtering has been ignored <<")
         return cat
 
@@ -504,8 +542,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
     if (update_cached_cat == True):
         print('Updating cached catalogue...')
-        from pandas import read_csv
-        __cached_cat    = read_csv(cat_file)
+        __cached_cat    = read_csv_with_comments(cat_file)
         __cached_values = expanded_cached_values.copy()
         __cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
         if __cached_values != {}:
@@ -561,24 +598,27 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
 def get_files(df):
 
-    ### convert to DataFrame if Series
-    if 'pandas.core.series.Series' in str(type(df)):
+    if ('Series' in str(type(df))):
         df = pd.DataFrame([df.values], columns=df.keys())
 
     ### sanity checks
-    if 'pandas.core.frame.DataFrame' not in str(type(df)):
-        raise ValueError('Not a Pandas DataFrame')
-    if len(df) != 1:
-        raise ValueError('Catalogue contains more than one row')
+    if 'DataFrame' not in str(type(df)):
+        raise ValueError('Not a DataFrame')
 
-    directory = df['Path'].values[0]+'/'.replace('//','/')
+    if len(df) != 1:
+        raise ValueError('DataFrame should only have one row. e.g., df.iloc[i]')
+
+    dataset        = df['dataset'].iloc[0]
+    dataset_dict   = dataset_dictionaries[dataset]
+    root           = dataset_dict['Root']
+
+    directory = root+df['Path'].values[0]+'/'.replace('//','/')
     files     = df['DataFiles'].values[0].split(';')
     files     = [ directory+f for f in files ]
 
     list_file_extensions = [file.split('.')[-1] for file in files]
     if len(np.unique(list_file_extensions)) > 1:
+        # Should we automatically select which extension to use?? (i.e., .nc vs .nc4)
         raise ValueError('>> WARNING: Multiple file extensions present in '+directory+' <<')
 
     return files
-
-
