@@ -26,6 +26,7 @@ __catalogue_version = 20190816
 
 
 
+
 ##################
 ### Definitions
 ##################
@@ -149,7 +150,6 @@ def read_csv_with_comments(fname):
     raise ValueError('Your catalogue needs to be updated to work with this version of the code')
 
   return df
-
 
 
 
@@ -327,12 +327,67 @@ def __combine_dictionaries(keys, dict1_in, dict2_in):
     return dict1
 
 
+def __create_unique_run_identifer(catlg, col_name):
+    dataset = catlg['dataset'].iloc[0]
+    dataset_dict = dataset_dictionaries[dataset]
+    my_list = dataset_dict['DirStructure'].replace('Var','').split('/')
+    my_list.remove('')
+    
+    my_command = ''
+    for l in my_list: my_command = my_command + "catlg['" +l+ "']+'-'+"
+        
+    catlg[col_name] = eval(my_command[0:-5])
+    
+    return catlg
 
-def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
-    keys = cat_dict.keys()
 
-    ### Filter catalogue
+def __complete_var_set(catlg, filt_dict):
+    '''
+    Ensure we have a complete set of variables 
+    for each model-run-version
+    '''
+    
+    if 'Var' not in filt_dict.keys(): 
+        return catlg
+
+    Vars  = filt_dict['Var']
+    nVars = len(Vars)
+
+    if (nVars == 1): return catlg
+
+    print('More than one Var specified, return rows where we ' + \
+            'have a complete set of variables for each '     + \
+            'unique run \n')
+
+    # create unique identifier for each unique run (generalise!!!)
+    catlg = __create_unique_run_identifer(catlg,'Unique_Model_Run')
+
+    # number of Vars in each model-run-version group
+    catlg_gp = catlg.groupby(['Unique_Model_Run']).count().max(axis=1)
+
+    # select groups where we have the correct number of variables 
+    catlg_gp = catlg_gp[ catlg_gp == nVars ]
+
+    # filter whole catalogue
+    catlg = catlg[ catlg.isin({'Unique_Model_Run':catlg_gp.index}
+                                )['Unique_Model_Run'] == True ]
+
+    if len(catlg) == 0:
+        raise ValueError('There are no rows where all specified Vars exist for Model-RunID-Version',
+                             filt_dict['Var'])
+
+    return catlg
+
+
+
+def __filter_cat_by_dictionary(catlg, cat_dict):
+    '''
+    Get rows which match cat_dict
+    '''
+    keys  = cat_dict.keys() 
+    nkeys = len(keys)
+
     for key in keys:
 
         ### Ensure that values within a key are defined as a list
@@ -340,60 +395,19 @@ def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
         if (cat_dict[key].__class__ == np.string_): cat_dict[key] = [cat_dict[key]]
 
         vals      = cat_dict[key]
-        cat_bool  = np.zeros(len(cat), dtype=bool)
-        uniq_vals = np.unique(cat[key])
+        uniq_vals = np.unique(catlg[key])
 
         for val in vals:
             if (val not in uniq_vals): 
                 print('Are you sure that data exists that satisfy all your constraints?')
-                raise ValueError(val+' not found. See available in current catalouge: '+np.array_str(uniq_vals) )
-            cat_bool = np.add( cat_bool, (cat[key] == val) )
+                raise ValueError(val+' not found. See available in current catalouge: ' \
+                                    +np.array_str(uniq_vals) )
 
-        ### Apply filter     
-        cat = cat[cat_bool]
+    a     = catlg.isin(cat_dict)
+    catlg = catlg[ (a.sum(axis=1) == nkeys) ]
+    catlg = __complete_var_set(catlg, cat_dict)
 
-
-    ### "2nd Pass" keep only items where all Variables are available for that Model/Experiment/RunID/Frequency etc
-    ## If we have >1 variable then we should always use complete_var_set=True !!
-    if (complete_var_set == True):
-
-        if ('Var' not in keys):
-            raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
-        if (len(cat_dict['Var']) < 2):
-            raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
-
-        print('Filtering catalogue to provide a complete set for variables: ', cat_dict['Var'])
-
-        vals = cat_dict['Var']
-
-        other_keys = list(cat_dict.keys())
-        other_keys.remove('Var')
-        for i in other_keys: 
-            if len(cat_dict[i]) > 1:
-                raise ValueError('complete_var_set: only one item allowed for keys other than Var. You have: '+i+'='+str(cat_dict[i]) )
-
-        ### Create a new column in catalogue creating strings of unique Model-Run-identifiers
-        ### i.e., a list of strings with all the useful info in it, e.g., '_MIROC_MIROC5_historical_Amon_v2_mon_atmos_r1i1p1'
-        print("complete_var_set=True: Adding 'Unique_Model_Run' as a new column to the catalogue")
-        cat['Unique_Model_Run'] = cat['Centre']+'_'+cat['Model']+'_'+cat['RunID'].astype(str)+'_'+cat['Experiment']
-
-        ### Remove (drop) all items which do not complete a full set of Variables
-        for val in vals:
-            df0    = cat[ cat['Var'] == vals[0] ]
-            df1    = cat[ cat['Var'] == val     ]
-            paths0 = np.unique( df0['Unique_Model_Run'].values ).tolist()
-            paths1 = np.unique( df1['Unique_Model_Run'].values ).tolist()
-            diff   = set(paths0).symmetric_difference(set(paths1))
-
-            for d in diff: 
-                ind = cat[ cat['Unique_Model_Run'] == d ].index
-                cat = cat.drop(ind, axis=0)
-
-        ### Remove temporary column 'Unique_Model_Run'
-        # cat = cat.drop('Unique_Model_Run', axis=1)
-
-    ### Return a filtered catalogue
-    return cat
+    return catlg
 
 
 
@@ -442,7 +456,7 @@ def __compare_dict(dict1_in, dict2_in):
 
 
 
-def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everything=False, **kwargs):
+def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     """
     
     Read whole dataset catalogue for JASMIN (default: dataset='cmip5')
@@ -454,10 +468,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     Read filtered catalogue for JASMIN (
     (Note to help with filtering, you can use any CASE for kwargs + some common shortened words (freq, exp, run) )
        >>> cat = bp.catalogue(dataset='cmip5', experiment=['amip','historical'], var='tas', frequency=['mon'])
-       
-    complete_var_set = True: return a complete set where all Variables belong to the run
-    (Useful when combining multiple variables to derive another diagnostic)
-       >>> cat = bp.catalogue(var=['tas','psl','tasmax'], complete_var_set=True)
 
     refresh = True: refresh the shared cataloge 
     This should only be run when new data has been uploaded into the data archive
@@ -475,6 +485,8 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     global __current_dataset
     global __orig_cached_values
     
+    # need to check that all kwargs.keys are available in dataset !!!
+
     update_cached_cat = False
 
     ### Ensure we have a dataset specified - use default if none specified by user
@@ -569,7 +581,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     if user_values != {}:
 
         ### Produce the catalogue for user
-        cat = __filter_cat_by_dictionary( __cached_cat, user_values, complete_var_set=complete_var_set )
+        cat = __filter_cat_by_dictionary( __cached_cat, user_values )
 
         # Some Var names are duplicated across SubModels (e.g., Var='pr')
         # Force code to fall over if we spot more than one unique SubModel
@@ -594,9 +606,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
     else:
 
-        if (complete_var_set == True): 
-            raise ValueError('Can not specify complete_var_set when less than two variables (Var) are defined')
-
         ### If no user_values are specified then read in default/original list of cached values
 
         if __cached_values == {}:
@@ -604,9 +613,10 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
         else:
             print('No user values defined, will therefore filter catalogue using default values')
 
-        cat = __filter_cat_by_dictionary( __cached_cat, __orig_cached_values )
+        cat = __filter_cat_by_dictionary(__cached_cat, __orig_cached_values)
 
     return cat
+
 
 
 
