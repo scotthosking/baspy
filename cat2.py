@@ -142,12 +142,25 @@ def read_csv_with_comments(fname):
          ### read next line
          line = fp.readline()
 
-  df = read_csv(fname, comment='#') # define dtypes here to reduce memory usage (see df.memory_usage() and df.dtypes())!
-  df['dataset'] = metadata['dataset']
-  df = df.astype({'dataset':'category'}) # can we do this in one step to limit initial memory usage from line above? (see df.memory_usage())
+  dataset        = metadata['dataset']
+  dataset_dict   = dataset_dictionaries[dataset]
+  
+  if 'dtypes' in dataset_dict.keys():
+    # define dtypes to reduce memory usage
+    # check: df.memory_usage(), df.dtypes()
+    dtypes = dataset_dict['dtypes']
+    df = read_csv(fname, comment='#', dtype=dtypes)
+  else:
+    df = read_csv(fname, comment='#')
+  
+  df['dataset'] = dataset
+  df = df.astype({'dataset':'category'}) # can we do this in one step, with line above? !!
 
   if __catalogue_version > int(metadata['catalogue_version']):
     raise ValueError('Your catalogue needs to be updated to work with this version of the code')
+    ### !!! automate downloading?
+
+  print('catalogue memory usage (MB):', df.memory_usage().sum() * 0.000001)
 
   return df
 
@@ -283,7 +296,7 @@ def get_file_date_ranges(fnames, filename_structure):
 
             else:
                 ### Can't define date
-                ###### To do: if no date_range then get from ncdump? !!
+                ###### To do: if no date_range then get from ncdump -h ? !!
                 print('Cannot identify dates '+fname)
                 start_date, end_date = np.nan, np.nan
 
@@ -360,7 +373,7 @@ def __complete_var_set(catlg, filt_dict):
             'have a complete set of variables for each '     + \
             'unique run \n')
 
-    # create unique identifier for each unique run (generalise!!!)
+    # create unique identifier for each unique run
     catlg = __create_unique_run_identifer(catlg,'Unique_Model_Run')
 
     # number of Vars in each model-run-version group
@@ -484,8 +497,6 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     global __default_dataset
     global __current_dataset
     global __orig_cached_values
-    
-    # need to check that all kwargs.keys are available in dataset !!!
 
     update_cached_cat = False
 
@@ -607,7 +618,6 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     else:
 
         ### If no user_values are specified then read in default/original list of cached values
-
         if __cached_values == {}:
             print('No user values defined, retrieving whole catalogue')
         else:

@@ -147,7 +147,10 @@ def read_csv_with_comments(fname):
 
   if __catalogue_version > int(metadata['catalogue_version']):
     raise ValueError('Your catalogue needs to be updated to work with this version of the code')
+    ### !!! automate downloading?
 
+  print('catalogue memory usage (MB):', df.memory_usage().sum() * 0.000001)
+    
   return df
 
 
