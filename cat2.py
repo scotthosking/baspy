@@ -59,12 +59,12 @@ def setup_catalogue_file(dataset):
         get_file = True
 
     ### 4. no trace of catalogue file, lets build one
-    requests.get(__shared_url_cat_file, timeout=20) # check we have connection - stops the users terminal hanging...
+    # requests.get(__shared_url_cat_file, timeout=20) # check we have connection - stops the users terminal hanging... # slows things down!!!
 
     force_catalogue_refresh = False
-    if (requests.get(__shared_url_cat_file).status_code == 404) & \
-            (os.path.isfile(cat_file) == False):
-        force_catalogue_refresh = True
+    # if (requests.get(__shared_url_cat_file).status_code == 404) & \  # Should we do this? !!
+    #         (os.path.isfile(cat_file) == False):
+    #     force_catalogue_refresh = True
     
     ### 5. Get catalogue file (if we need to)
     if get_file == True:
@@ -303,7 +303,7 @@ def get_file_date_ranges(fnames, filename_structure):
         start_dates = np.append( start_dates, start_date )
         end_dates   = np.append( end_dates,   end_date )   
 
-    return start_dates, end_dates
+    return start_dates, end_dates       
 
 
 
@@ -345,13 +345,13 @@ def __create_unique_run_identifer(catlg, col_name):
     dataset_dict = dataset_dictionaries[dataset]
     my_list = dataset_dict['DirStructure'].replace('Var','').split('/')
     my_list.remove('')
-    
-    my_command = ''
-    for l in my_list: my_command = my_command + "catlg['" +l+ "']+'-'+"
-        
-    catlg[col_name] = eval(my_command[0:-5])
+          
+    catlg[col_name] = catlg[my_list].apply(lambda x: '_'.join(x), axis=1)
     
     return catlg
+
+
+
 
 
 

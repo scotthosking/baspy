@@ -1,45 +1,40 @@
-import baspy as bp
 import numpy as np
+from baspy import cat2
+import baspy as bp
+
+### use experimental catalogue - which ensures a complete set of variables as standard
+catlg = cat2.catalogue(dataset='cmip5_all_versions', Var=['tas','pr'], Frequency='day')
+
+catlg = catlg[catlg['Version'] != 'latest'] # why do these Version ids exist?? !!
+
+if 'cmip5' not in catlg['dataset'].iloc[0]:
+    raise ValueError('currently this only works for CMIP5 cataloging')
 
 
-def get_newest_version(catlg):
-
-    if dataset != 'cmip5':
-        raise ValueError('currently this only works for CMIP5 cataloging')
-
-    ### add column of Version numbers we can sort (Check with Tony!!!)
-    ### may need to do this model-by-model ?
-    catlg['VersionToSort'] = catlg['Version'].replace({'v1':'v01',
-                                                       'v2':'v02',
-                                                       'v3':'v03',
-                                                       'v4':'v04'})
-
-    ### Get rows with max Version ID where all vars present
-    latest_versions = catlg.groupby('Unique_Model_Run').max()['VersionToSort'].reset_index()
-
-    latest_versions['Unique_Model_Run_Version'] = latest_versions['Unique_Model_Run'] + '_' +latest_versions['VersionToSort']
-    catlg['Unique_Model_Run_Version']           = catlg['Unique_Model_Run'] + '_' +catlg['Version']
-
-    catlg = catlg[  catlg['Unique_Model_Run_Version'].isin(latest_versions['Unique_Model_Run_Version']) ]
+### convert Version strings into integers (e.g., 'v20110101' --> 20110101)
+catlg['Version'] = catlg['Version'].map(lambda x: x.lstrip('v')).astype(int)
 
 
-    ### Clean-up
-    catlg = catlg.drop( labels=['Unique_Model_Run_Version','VersionToSort'], axis=1 )
+### add column of Version numbers we can tweak and sort
+catlg['VersionToSort'] = catlg['Version']
 
-    return catlg
+
+### tweak version numbers ready to sort
+catlg.loc[ (catlg['Model'] == 'ACCESS1-0') & (catlg['Version'] < 2000_00_00), 'VersionToSort' ] += 1_000_000_000
+## add more models !!!
 
 
 
+### Get rows with max Version ID where all vars present (use observed=True as we have 'category' columns)
+latest_versions = catlg.groupby(['Model', 'Experiment', 'RunID'], observed=True).max()['VersionToSort'].reset_index() 
 
-catlg = bp.catalogue(dataset='cmip5_all_versions', Var=['tas','pr'], 
-                        Experiment=['historical'],
-                        Frequency='day', RunID='r1i1p1', 
-                        complete_var_set=True) # complete_var_set should always be true when more than 1 var specified
+latest_versions['VersionToSort']            = latest_versions['VersionToSort'].astype(str)
+latest_versions['Unique_Model_Run_Version'] = latest_versions[['Model', 'Experiment', 'RunID', 'VersionToSort']].apply(lambda x: '_'.join(x), axis=1)
+catlg['VersionToSort']                      = catlg['VersionToSort'].astype(str)
+catlg['Unique_Model_Run_Version']           = catlg[['Model', 'Experiment', 'RunID', 'VersionToSort']].apply(lambda x: '_'.join(x), axis=1)
+
+catlg = catlg[  catlg['Unique_Model_Run_Version'].isin(latest_versions['Unique_Model_Run_Version']) ]
 
 
-catlg = catlg.drop_duplicates() # these comes from the symbolic links used in the Version folders (e.g., Version --> 20110524)
-# ^ do this before we save the catalogue
-
-
-catlg = get_newest_version(catlg)
-
+### Clean-up
+catlg = catlg.drop( labels=['Unique_Model_Run_Version','VersionToSort'], axis=1 )
