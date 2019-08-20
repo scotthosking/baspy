@@ -1,8 +1,9 @@
 import numpy as np
+import warnings
 import glob, os
 import pandas as pd
 from .datasets import dataset_dictionaries, __default_dataset
-
+import requests
 
 ##################
 ### Global values
@@ -25,31 +26,80 @@ __catalogue_version = 20190816
 
 
 
-
 ##################
 ### Definitions
 ##################
 
-def setup_catalogue_file(dataset): # this has been stripped down compared to bp.catalogue (remove slow requests to http)
+def setup_catalogue_file(dataset):
     '''
-    Define locations of catalogue files
+    Define locations of catalogue files, + copy or download if newer files
+    available (compared to personal files in ~/.baspy)
     '''
 
+    from .util import get_last_modified_time_from_http_file
+    
+    copied_new_cat_file = False
+
     ### 1. define filepaths
-    from baspy import __baspy_path, __catalogues_url
+    from baspy import __baspy_path, __catalogues_dir, __catalogues_url
     cat_fname    = dataset+'_catalogue.csv'
     cat_file     = __baspy_path+'/'+cat_fname
+    __shared_local_cat_file = __catalogues_dir + cat_fname
+    __shared_url_cat_file   = __catalogues_url + cat_fname
 
     ### 2. Setup local baspy folder to store catalogues
     if not os.path.exists(__baspy_path): 
         os.makedirs(os.path.expanduser(__baspy_path))
 
     ### 3. Do we have a catalogue file to work with?
-    if os.path.isfile(cat_file) == False:    
-        raise ValueError(cat_file+" does not exist, download from " +\
-            __catalogues_url+cat_fname)
+    get_file = False
+    if (os.path.isfile(cat_file) == False):    
+        print(cat_file+" does not exist, this may be the first time you've requested this catalogue")
+        get_file = True
 
-    return cat_file
+    ### 4. no trace of catalogue file, lets build one
+    requests.get(__shared_url_cat_file, timeout=20) # check we have connection - stops the users terminal hanging...
+
+    force_catalogue_refresh = False
+    if (requests.get(__shared_url_cat_file).status_code == 404) & \
+            (os.path.isfile(cat_file) == False):
+        force_catalogue_refresh = True
+    
+    ### 5. Get catalogue file (if we need to)
+    if get_file == True:
+        if os.path.exists(__shared_local_cat_file):
+            ### We have access to the shared catalogue file
+            print('Copying shared catalogue to '+__baspy_path)
+            import shutil
+            shutil.copy2(__shared_local_cat_file, cat_file)
+            copied_new_cat_file = True
+        elif (requests.get(__shared_url_cat_file).status_code == 200):
+            ### Download file over the internet (slower)
+            print('Downloading shared catalogue to '+__baspy_path)
+            r = requests.get(__shared_url_cat_file)
+            with open(cat_file, 'wb') as f:  
+                f.write(r.content)
+            copied_new_cat_file = True
+        else:
+            pass
+
+    ### 6. Check whether a newer version of the catalogue is available compared to the one 
+    ###            we already have
+    newer_available_location = None
+    if os.path.exists(__shared_local_cat_file):
+        if ( os.path.getmtime(__shared_local_cat_file) > os.path.getmtime(cat_file) ):
+            newer_available_location = __shared_local_cat_file
+    else:
+        from datetime import datetime
+        url_file_timestamp = get_last_modified_time_from_http_file(__shared_url_cat_file)
+        if os.path.exists(cat_file):
+            if ( url_file_timestamp > os.path.getmtime(cat_file) ):
+                newer_available_location = __shared_url_cat_file
+
+    if newer_available_location != None:
+        warnings.warn('Using catalogue '+cat_file+'. Note that a newer version is available at '+newer_available_location)
+
+    return force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_local_cat_file
 
 
 
@@ -91,27 +141,18 @@ def read_csv_with_comments(fname):
          ### read next line
          line = fp.readline()
 
-  dataset        = metadata['dataset']
-  dataset_dict   = dataset_dictionaries[dataset]
-  
-  if 'dtypes' in dataset_dict.keys():
-    # define dtypes to reduce memory usage
-    # check: df.memory_usage(), df.dtypes()
-    dtypes = dataset_dict['dtypes']
-    df = read_csv(fname, comment='#', dtype=dtypes) # should we be using chunksize to speed things up? !!
-  else:
-    df = read_csv(fname, comment='#')
-  
-  df['dataset'] = dataset
-  df = df.astype({'dataset':'category'}) # can we do this in one step, with line above? !!
+  df = read_csv(fname, comment='#') # define dtypes here to reduce memory usage (see df.memory_usage() and df.dtypes())!
+  df['dataset'] = metadata['dataset']
+  df = df.astype({'dataset':'category'}) # can we do this in one step to limit initial memory usage from line above? (see df.memory_usage())
 
   if __catalogue_version > int(metadata['catalogue_version']):
     raise ValueError('Your catalogue needs to be updated to work with this version of the code')
     ### !!! automate downloading?
 
   print('catalogue memory usage (MB):', df.memory_usage().sum() * 0.000001)
-
+    
   return df
+
 
 
 
@@ -121,7 +162,7 @@ def __refresh_shared_catalogue(dataset):
     '''
 
     ### Setup catalogue file (copy over if needs be)
-    cat_file = setup_catalogue_file(dataset)
+    force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
 
     if dataset not in dataset_dictionaries.keys():
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
@@ -179,7 +220,7 @@ def __refresh_shared_catalogue(dataset):
 
         ### Only add a row for paths where we have data files
         if len(fnames) > 0:
-            start_date, end_date = get_file_date_ranges(fnames, dataset_dict['FilenameStructure']) # this seems clunky !!
+            start_date, end_date = get_file_date_ranges(fnames, dataset_dict['FilenameStructure'])
 
             ### Append parts in correct order
             parts.append(int(np.nanmin(start_date)))
@@ -245,14 +286,14 @@ def get_file_date_ranges(fnames, filename_structure):
 
             else:
                 ### Can't define date
-                ###### To do: if no date_range then get from ncdump -h ? !!
+                ###### To do: if no date_range then get from ncdump? !!
                 print('Cannot identify dates '+fname)
                 start_date, end_date = np.nan, np.nan
 
         start_dates = np.append( start_dates, start_date )
         end_dates   = np.append( end_dates,   end_date )   
 
-    return start_dates, end_dates       
+    return start_dates, end_dates
 
 
 
@@ -289,65 +330,12 @@ def __combine_dictionaries(keys, dict1_in, dict2_in):
     return dict1
 
 
-def __create_unique_run_identifer(catlg, col_name):
-    dataset = catlg['dataset'].iloc[0]
-    dataset_dict = dataset_dictionaries[dataset]
-    my_list = dataset_dict['DirStructure'].replace('Var','').split('/')
-    my_list.remove('')
-    if ('Version!latest' in my_list): # remove !latest from datasets.py (should not use this!!)
-        my_list.remove('Version!latest')
-        my_list = my_list + ['Version']
-    catlg[col_name] = catlg[my_list].apply(lambda x: '_'.join(x), axis=1)
-    return catlg
 
+def __filter_cat_by_dictionary(cat, cat_dict, complete_var_set=False):
 
+    keys = cat_dict.keys()
 
-def __complete_var_set(catlg, filt_dict):
-    '''
-    Ensure we have a complete set of variables 
-    for each model-run-version
-    '''
-    
-    if 'Var' not in filt_dict.keys(): 
-        return catlg
-
-    Vars  = filt_dict['Var']
-    nVars = len(Vars)
-
-    if (nVars == 1): return catlg
-
-    print('More than one Var specified, return rows where we ' + \
-            'have a complete set of variables for each '     + \
-            'unique run \n')
-
-    # create unique identifier for each unique run
-    catlg = __create_unique_run_identifer(catlg,'Unique_Model_Run')
-
-    # number of Vars in each model-run-version group
-    catlg_gp = catlg.groupby(['Unique_Model_Run']).count().max(axis=1)
-
-    # select groups where we have the correct number of variables 
-    catlg_gp = catlg_gp[ catlg_gp == nVars ]
-
-    # filter whole catalogue
-    catlg = catlg[ catlg.isin({'Unique_Model_Run':catlg_gp.index}
-                                )['Unique_Model_Run'] == True ]
-
-    if len(catlg) == 0:
-        raise ValueError('There are no rows where all specified Vars exist for Model-RunID-Version',
-                             filt_dict['Var'])
-
-    return catlg
-
-
-
-def __filter_cat_by_dictionary(catlg, cat_dict):
-    '''
-    Get rows which match cat_dict
-    '''
-    keys  = cat_dict.keys() 
-    nkeys = len(keys)
-
+    ### Filter catalogue
     for key in keys:
 
         ### Ensure that values within a key are defined as a list
@@ -355,24 +343,65 @@ def __filter_cat_by_dictionary(catlg, cat_dict):
         if (cat_dict[key].__class__ == np.string_): cat_dict[key] = [cat_dict[key]]
 
         vals      = cat_dict[key]
-        uniq_vals = np.unique(catlg[key])
+        cat_bool  = np.zeros(len(cat), dtype=bool)
+        uniq_vals = np.unique(cat[key])
 
         for val in vals:
             if (val not in uniq_vals): 
                 print('Are you sure that data exists that satisfy all your constraints?')
-                raise ValueError(val+' not found. See available in current catalouge: ' \
-                                    +np.array_str(uniq_vals) )
+                raise ValueError(val+' not found. See available in current catalouge: '+np.array_str(uniq_vals) )
+            cat_bool = np.add( cat_bool, (cat[key] == val) )
 
-    a     = catlg.isin(cat_dict)
-    catlg = catlg[ (a.sum(axis=1) == nkeys) ]
-    catlg = __complete_var_set(catlg, cat_dict)
-
-    return catlg
+        ### Apply filter     
+        cat = cat[cat_bool]
 
 
+    ### "2nd Pass" keep only items where all Variables are available for that Model/Experiment/RunID/Frequency etc
+    ## If we have >1 variable then we should always use complete_var_set=True !!
+    if (complete_var_set == True):
+
+        if ('Var' not in keys):
+            raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
+        if (len(cat_dict['Var']) < 2):
+            raise ValueError('Two or more Varaibles (Var=) need to be specified in order to use complete_var_set')
+
+        print('Filtering catalogue to provide a complete set for variables: ', cat_dict['Var'])
+
+        vals = cat_dict['Var']
+
+        other_keys = list(cat_dict.keys())
+        other_keys.remove('Var')
+        for i in other_keys: 
+            if len(cat_dict[i]) > 1:
+                raise ValueError('complete_var_set: only one item allowed for keys other than Var. You have: '+i+'='+str(cat_dict[i]) )
+
+        ### Create a new column in catalogue creating strings of unique Model-Run-identifiers
+        ### i.e., a list of strings with all the useful info in it, e.g., '_MIROC_MIROC5_historical_Amon_v2_mon_atmos_r1i1p1'
+        print("complete_var_set=True: Adding 'Unique_Model_Run' as a new column to the catalogue")
+        cat['Unique_Model_Run'] = cat['Centre']+'_'+cat['Model']+'_'+cat['RunID'].astype(str)+'_'+cat['Experiment']
+
+        ### Remove (drop) all items which do not complete a full set of Variables
+        for val in vals:
+            df0    = cat[ cat['Var'] == vals[0] ]
+            df1    = cat[ cat['Var'] == val     ]
+            paths0 = np.unique( df0['Unique_Model_Run'].values ).tolist()
+            paths1 = np.unique( df1['Unique_Model_Run'].values ).tolist()
+            diff   = set(paths0).symmetric_difference(set(paths1))
+
+            for d in diff: 
+                ind = cat[ cat['Unique_Model_Run'] == d ].index
+                cat = cat.drop(ind, axis=0)
+
+        ### Remove temporary column 'Unique_Model_Run'
+        # cat = cat.drop('Unique_Model_Run', axis=1)
+
+    ### Return a filtered catalogue
+    return cat
 
 
-def __compare_dict(dict1_in, dict2_in): # this seems clunky !!
+
+
+def __compare_dict(dict1_in, dict2_in):
 
     dict1 = dict1_in.copy()
     dict2 = dict2_in.copy()
@@ -406,7 +435,17 @@ def __compare_dict(dict1_in, dict2_in): # this seems clunky !!
 
 
 
-def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
+
+
+
+
+
+
+
+
+
+
+def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everything=False, **kwargs):
     """
     
     Read whole dataset catalogue for JASMIN (default: dataset='cmip5')
@@ -418,6 +457,10 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     Read filtered catalogue for JASMIN (
     (Note to help with filtering, you can use any CASE for kwargs + some common shortened words (freq, exp, run) )
        >>> cat = bp.catalogue(dataset='cmip5', experiment=['amip','historical'], var='tas', frequency=['mon'])
+       
+    complete_var_set = True: return a complete set where all Variables belong to the run
+    (Useful when combining multiple variables to derive another diagnostic)
+       >>> cat = bp.catalogue(var=['tas','psl','tasmax'], complete_var_set=True)
 
     refresh = True: refresh the shared cataloge 
     This should only be run when new data has been uploaded into the data archive
@@ -434,7 +477,7 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     global __default_dataset
     global __current_dataset
     global __orig_cached_values
-
+    
     update_cached_cat = False
 
     ### Ensure we have a dataset specified - use default if none specified by user
@@ -461,8 +504,12 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
         __refresh_shared_catalogue(dataset)
         update_cached_cat = True
 
-    ### Setup catalogue
-    cat_file = setup_catalogue_file(dataset)
+    ### Setup catalogue (incl. copying over new files if need to)
+    force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
+    if (copied_new_cat_file == True): update_cached_cat=True
+    if (force_catalogue_refresh == True):
+        __refresh_shared_catalogue(dataset)
+        update_cached_cat = True
 
     ### Read whole catalogue (AND RETURN)
     if read_everything == True:
@@ -484,7 +531,31 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     if (compare_dicts == 'different'): update_cached_cat = True
 
 
-    ### To do: Edit user keys if they exist but with a different case or shortened !!
+    # ### Edit user keys if they exist but using a different case or shortened
+    # for key in user_values.keys():
+
+    #     ### rename keys if using wrong case
+    #     lower_keys = [x.lower() for x in __cached_cat.columns]
+    #     if (key.lower() in lower_keys) & (key not in __cached_cat.columns):
+    #         new_key = __cached_cat.columns[lower_keys.index(key.lower())]
+    #         user_values = { k.replace(key,new_key): v for k, v in user_values.items() }
+
+    #     ### Convert some commonly used shortened words
+    #     if (key.lower() == 'exp') & ('Experiment' in __cached_cat.columns):
+    #         user_values = { k.replace('exp','Experiment'): v for k, v in user_values.items() }
+    #     if (key.lower() == 'run') & ('RunID' in __cached_cat.columns):
+    #         user_values = { k.replace('run','RunID'): v for k, v in user_values.items() }
+    #     if (key.lower() == 'freq') & ('Frequency' in __cached_cat.columns):
+    #         user_values = { k.replace('freq','Frequency'): v for k, v in user_values.items() }
+
+    # for key in user_values.keys():
+    #     ### key is unknown
+    #     if key.lower() not in lower_keys:
+    #         avail_columns = __cached_cat.columns.tolist()
+    #         avail_columns.remove('Path')
+    #         avail_columns.remove('DataFiles')      
+    #         raise ValueError("'"+key+"' is not in list of known identifiers: "+str(avail_columns))
+
 
 
     if (update_cached_cat == True):
@@ -501,7 +572,7 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     if user_values != {}:
 
         ### Produce the catalogue for user
-        cat = __filter_cat_by_dictionary( __cached_cat, user_values )
+        cat = __filter_cat_by_dictionary( __cached_cat, user_values, complete_var_set=complete_var_set )
 
         # Some Var names are duplicated across SubModels (e.g., Var='pr')
         # Force code to fall over if we spot more than one unique SubModel
@@ -526,16 +597,19 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
 
     else:
 
+        if (complete_var_set == True): 
+            raise ValueError('Can not specify complete_var_set when less than two variables (Var) are defined')
+
         ### If no user_values are specified then read in default/original list of cached values
+
         if __cached_values == {}:
             print('No user values defined, retrieving whole catalogue')
         else:
             print('No user values defined, will therefore filter catalogue using default values')
 
-        cat = __filter_cat_by_dictionary(__cached_cat, __orig_cached_values)
+        cat = __filter_cat_by_dictionary( __cached_cat, __orig_cached_values )
 
     return cat
-
 
 
 
@@ -562,7 +636,7 @@ def get_files(df):
 
     list_file_extensions = [file.split('.')[-1] for file in files]
     if len(np.unique(list_file_extensions)) > 1:
-        # Should we automatically select which extension to use?? (i.e., .nc vs .nc4) !!
+        # Should we automatically select which extension to use?? (i.e., .nc vs .nc4)
         raise ValueError('>> WARNING: Multiple file extensions present in '+directory+' <<')
 
     return files
