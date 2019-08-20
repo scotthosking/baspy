@@ -46,8 +46,12 @@ def setup_catalogue_file(dataset): # this has been stripped down compared to bp.
 
     ### 3. Do we have a catalogue file to work with?
     if os.path.isfile(cat_file) == False:    
-        raise ValueError(cat_file+" does not exist, download from " +\
-            __catalogues_url+cat_fname)
+        import platform
+        if platform.system() in ['Darwin','Linux']:
+            raise ValueError('File does not exist. Run: \n wget '+__catalogues_url+cat_fname+' -O '+cat_file)
+        else:
+            raise ValueError(cat_file+" does not exist, download from " +\
+                __catalogues_url+cat_fname)
 
     return cat_file
 
@@ -294,7 +298,7 @@ def __create_unique_run_identifer(catlg, col_name):
     dataset_dict = dataset_dictionaries[dataset]
     my_list = dataset_dict['DirStructure'].replace('Var','').split('/')
     my_list.remove('')
-    if ('Version!latest' in my_list): # remove !latest from datasets.py (should not use this!!)
+    if ('Version!latest' in my_list): # plan to remove !latest from datasets.py (should read all data then take newest version where all Vars exist)
         my_list.remove('Version!latest')
         my_list = my_list + ['Version']
     catlg[col_name] = catlg[my_list].apply(lambda x: '_'.join(x), axis=1)
@@ -368,6 +372,10 @@ def __filter_cat_by_dictionary(catlg, cat_dict, complete_var_set=False):
 
     a     = catlg.isin(cat_dict)
     catlg = catlg[ (a.sum(axis=1) == nkeys) ]
+
+    if 'Var' in cat_dict.keys():
+        if (complete_var_set == False) & (len(cat_dict['Var']) > 1):
+            print('More than one Var specified, consider setting complete_var_set=True')
 
     if complete_var_set == True:
         catlg = __complete_var_set(catlg, cat_dict)
@@ -512,10 +520,6 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
             print('>> Current cached values (can be extended by specifying additional values or by setting read_everything=True) <<')
             print(__cached_values)
             print('')
-
-    if 'Var' in user_values.keys():
-        if (complete_var_set == False) & (len(user_values['Var']) > 1):
-            print('More than one Var specified, consider setting complete_var_set=True')
 
     if user_values != {}:
 
