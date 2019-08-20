@@ -26,7 +26,7 @@ Contributors: Tom Bracegirdle, Tony Phillips
 import os, sys
 
 ### BASpy version number
-__version__ = "1.0"
+__version__ = "1.1"
 
 ### Place to store catalogues and example data
 __baspy_path = os.path.expanduser("~/.baspy")

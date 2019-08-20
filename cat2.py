@@ -1,9 +1,8 @@
 import numpy as np
-import warnings
 import glob, os
 import pandas as pd
 from .datasets import dataset_dictionaries, __default_dataset
-import requests
+
 
 ##################
 ### Global values
@@ -31,76 +30,26 @@ __catalogue_version = 20190816
 ### Definitions
 ##################
 
-def setup_catalogue_file(dataset):
+def setup_catalogue_file(dataset): # this has been stripped down compared to bp.catalogue (remove slow requests to http)
     '''
-    Define locations of catalogue files, + copy or download if newer files
-    available (compared to personal files in ~/.baspy)
+    Define locations of catalogue files
     '''
-
-    from .util import get_last_modified_time_from_http_file
-    
-    copied_new_cat_file = False
 
     ### 1. define filepaths
-    from baspy import __baspy_path, __catalogues_dir, __catalogues_url
+    from baspy import __baspy_path, __catalogues_url
     cat_fname    = dataset+'_catalogue.csv'
     cat_file     = __baspy_path+'/'+cat_fname
-    __shared_local_cat_file = __catalogues_dir + cat_fname
-    __shared_url_cat_file   = __catalogues_url + cat_fname
 
     ### 2. Setup local baspy folder to store catalogues
     if not os.path.exists(__baspy_path): 
         os.makedirs(os.path.expanduser(__baspy_path))
 
     ### 3. Do we have a catalogue file to work with?
-    get_file = False
-    if (os.path.isfile(cat_file) == False):    
-        print(cat_file+" does not exist, this may be the first time you've requested this catalogue")
-        get_file = True
+    if os.path.isfile(cat_file) == False:    
+        raise ValueError(cat_file+" does not exist, download from " +\
+            __catalogues_url+cat_fname)
 
-    ### 4. no trace of catalogue file, lets build one
-    # requests.get(__shared_url_cat_file, timeout=20) # check we have connection - stops the users terminal hanging... # slows things down!!!
-
-    force_catalogue_refresh = False
-    # if (requests.get(__shared_url_cat_file).status_code == 404) & \  # Should we do this? !!
-    #         (os.path.isfile(cat_file) == False):
-    #     force_catalogue_refresh = True
-    
-    ### 5. Get catalogue file (if we need to)
-    if get_file == True:
-        if os.path.exists(__shared_local_cat_file):
-            ### We have access to the shared catalogue file
-            print('Copying shared catalogue to '+__baspy_path)
-            import shutil
-            shutil.copy2(__shared_local_cat_file, cat_file)
-            copied_new_cat_file = True
-        elif (requests.get(__shared_url_cat_file).status_code == 200):
-            ### Download file over the internet (slower)
-            print('Downloading shared catalogue to '+__baspy_path)
-            r = requests.get(__shared_url_cat_file)
-            with open(cat_file, 'wb') as f:  
-                f.write(r.content)
-            copied_new_cat_file = True
-        else:
-            pass
-
-    ### 6. Check whether a newer version of the catalogue is available compared to the one 
-    ###            we already have
-    newer_available_location = None
-    if os.path.exists(__shared_local_cat_file):
-        if ( os.path.getmtime(__shared_local_cat_file) > os.path.getmtime(cat_file) ):
-            newer_available_location = __shared_local_cat_file
-    else:
-        from datetime import datetime
-        url_file_timestamp = get_last_modified_time_from_http_file(__shared_url_cat_file)
-        if os.path.exists(cat_file):
-            if ( url_file_timestamp > os.path.getmtime(cat_file) ):
-                newer_available_location = __shared_url_cat_file
-
-    if newer_available_location != None:
-        warnings.warn('Using catalogue '+cat_file+'. Note that a newer version is available at '+newer_available_location)
-
-    return force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_local_cat_file
+    return cat_file
 
 
 
@@ -172,7 +121,7 @@ def __refresh_shared_catalogue(dataset):
     '''
 
     ### Setup catalogue file (copy over if needs be)
-    force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
+    cat_file = setup_catalogue_file(dataset)
 
     if dataset not in dataset_dictionaries.keys():
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
@@ -230,7 +179,7 @@ def __refresh_shared_catalogue(dataset):
 
         ### Only add a row for paths where we have data files
         if len(fnames) > 0:
-            start_date, end_date = get_file_date_ranges(fnames, dataset_dict['FilenameStructure'])
+            start_date, end_date = get_file_date_ranges(fnames, dataset_dict['FilenameStructure']) # this seems clunky !!
 
             ### Append parts in correct order
             parts.append(int(np.nanmin(start_date)))
@@ -345,13 +294,11 @@ def __create_unique_run_identifer(catlg, col_name):
     dataset_dict = dataset_dictionaries[dataset]
     my_list = dataset_dict['DirStructure'].replace('Var','').split('/')
     my_list.remove('')
-          
+    if ('Version!latest' in my_list): # remove !latest from datasets.py (should not use this!!)
+        my_list.remove('Version!latest')
+        my_list = my_list + ['Version']
     catlg[col_name] = catlg[my_list].apply(lambda x: '_'.join(x), axis=1)
-    
     return catlg
-
-
-
 
 
 
@@ -425,7 +372,7 @@ def __filter_cat_by_dictionary(catlg, cat_dict):
 
 
 
-def __compare_dict(dict1_in, dict2_in):
+def __compare_dict(dict1_in, dict2_in): # this seems clunky !!
 
     dict1 = dict1_in.copy()
     dict2 = dict2_in.copy()
@@ -456,16 +403,6 @@ def __compare_dict(dict1_in, dict2_in):
         if dict1[key] != dict2[key]: compare_dicts = 'different'
 
     return compare_dicts
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -524,12 +461,8 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
         __refresh_shared_catalogue(dataset)
         update_cached_cat = True
 
-    ### Setup catalogue (incl. copying over new files if need to)
-    force_catalogue_refresh, copied_new_cat_file, cat_file, __shared_cat_file = setup_catalogue_file(dataset)
-    if (copied_new_cat_file == True): update_cached_cat=True
-    if (force_catalogue_refresh == True):
-        __refresh_shared_catalogue(dataset)
-        update_cached_cat = True
+    ### Setup catalogue
+    cat_file = setup_catalogue_file(dataset)
 
     ### Read whole catalogue (AND RETURN)
     if read_everything == True:
@@ -551,31 +484,7 @@ def catalogue(dataset=None, refresh=None, read_everything=False, **kwargs):
     if (compare_dicts == 'different'): update_cached_cat = True
 
 
-    # ### Edit user keys if they exist but using a different case or shortened
-    # for key in user_values.keys():
-
-    #     ### rename keys if using wrong case
-    #     lower_keys = [x.lower() for x in __cached_cat.columns]
-    #     if (key.lower() in lower_keys) & (key not in __cached_cat.columns):
-    #         new_key = __cached_cat.columns[lower_keys.index(key.lower())]
-    #         user_values = { k.replace(key,new_key): v for k, v in user_values.items() }
-
-    #     ### Convert some commonly used shortened words
-    #     if (key.lower() == 'exp') & ('Experiment' in __cached_cat.columns):
-    #         user_values = { k.replace('exp','Experiment'): v for k, v in user_values.items() }
-    #     if (key.lower() == 'run') & ('RunID' in __cached_cat.columns):
-    #         user_values = { k.replace('run','RunID'): v for k, v in user_values.items() }
-    #     if (key.lower() == 'freq') & ('Frequency' in __cached_cat.columns):
-    #         user_values = { k.replace('freq','Frequency'): v for k, v in user_values.items() }
-
-    # for key in user_values.keys():
-    #     ### key is unknown
-    #     if key.lower() not in lower_keys:
-    #         avail_columns = __cached_cat.columns.tolist()
-    #         avail_columns.remove('Path')
-    #         avail_columns.remove('DataFiles')      
-    #         raise ValueError("'"+key+"' is not in list of known identifiers: "+str(avail_columns))
-
+    ### To do: Edit user keys if they exist but with a different case or shortened !!
 
 
     if (update_cached_cat == True):
@@ -653,7 +562,7 @@ def get_files(df):
 
     list_file_extensions = [file.split('.')[-1] for file in files]
     if len(np.unique(list_file_extensions)) > 1:
-        # Should we automatically select which extension to use?? (i.e., .nc vs .nc4)
+        # Should we automatically select which extension to use?? (i.e., .nc vs .nc4) !!
         raise ValueError('>> WARNING: Multiple file extensions present in '+directory+' <<')
 
     return files
