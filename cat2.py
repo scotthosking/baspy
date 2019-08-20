@@ -144,7 +144,6 @@ def read_csv_with_comments(fname):
 
   dataset        = metadata['dataset']
   dataset_dict   = dataset_dictionaries[dataset]
-  chunksize      = 1000 # what should we set this to? !!
   
   if 'dtypes' in dataset_dict.keys():
     # define dtypes to reduce memory usage
