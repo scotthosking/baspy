@@ -30,9 +30,9 @@ Reading data:
     import baspy as bp
  
     ### Retrieve a filtered version of the CMIP5 catalogue as a Pandas DataFrame
-    df = bp.catalogue(dataset='cmip5', model='HadGEM2-CC', run='r1i1p1', 
-                        exp='historical', var=['tas', 'pr'], 
-                        freq='mon')
+    df = bp.catalogue(dataset='cmip5', Model='HadGEM2-CC', RunID='r1i1p1', 
+                        Experiment='historical', Var=['tas', 'pr'], 
+                        Frequency='mon')
 
     ### Iterate over rows in catalogue
     for index, row in df.iterrows():
