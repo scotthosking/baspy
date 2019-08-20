@@ -48,7 +48,8 @@ def setup_catalogue_file(dataset): # this has been stripped down compared to bp.
     if os.path.isfile(cat_file) == False:    
         import platform
         if platform.system() in ['Darwin','Linux']:
-            raise ValueError('File does not exist. Run: \n wget '+__catalogues_url+cat_fname+' -O '+cat_file)
+            raise ValueError('File does not exist. Run the following line in your Mac/Linux terminal: \n' +\
+                    ' wget '+__catalogues_url+cat_fname+' -O '+cat_file)
         else:
             raise ValueError(cat_file+" does not exist, download from " +\
                 __catalogues_url+cat_fname)
