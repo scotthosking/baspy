@@ -45,4 +45,4 @@ Reading data:
 ```
 
 Other Examples: 
-* [Xarray with BASpy (Notebook)](https://nbviewer.jupyter.org/github/scott-hosking/baspy/blob/master/examples/xarray_examples.ipynb)
+* [Xarray with BASpy (Notebook)](https://scott-hosking.github.io/notebooks/xarray_examples/)
