@@ -201,12 +201,12 @@ def __refresh_shared_catalogue(dataset):
     #df.to_csv(cat_file, index=False)
     write_csv_with_comments(df, cat_file, dataset=dataset, root=root)
 
-    if os.path.exists('/'.join(__shared_cat_file.split('/')[:-1])):
-        ### We have access to __shared_cat_file
-        print('Copying new catalogue to '+__shared_cat_file)
-        if cat_file != __shared_cat_file:
-            import shutil
-            shutil.copy2(cat_file, __shared_cat_file)
+    # if os.path.exists('/'.join(__shared_cat_file.split('/')[:-1])):
+    #     ### We have access to __shared_cat_file
+    #     print('Copying new catalogue to '+__shared_cat_file)
+    #     if cat_file != __shared_cat_file:
+    #         import shutil
+    #         shutil.copy2(cat_file, __shared_cat_file)
 
 
 
