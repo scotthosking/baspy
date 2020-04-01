@@ -165,10 +165,7 @@ def get_cubes(filt_cat, constraints=None, verbose=True, nearest_lat_lon=False):
         tmp_cubelist = unify_similar_grid_coords(tmp_cubelist, tmp_cubelist[0]) # !! issue with ocean variables
         
         ### Apply Fixes to enable cubes in tmp_cubelist to concatenate ###
-        if ('cmip5' in __current_dataset) | ('happi' in __current_dataset):
-            tmp_cubelist = fix_cubelist_before_concat(tmp_cubelist, __current_dataset, my_dict['Model'], 
-                                                        my_dict['Frequency'], 
-                                                        my_dict['Experiment']) # !! CMIP6 does not have Frequency label
+        tmp_cubelist = fix_cubelist_before_concat(tmp_cubelist, __current_dataset, my_dict)
 
         ### if the number of netcdf files (and cubes) >1 then 
         ### merge them together

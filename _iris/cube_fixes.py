@@ -2,7 +2,26 @@ import iris
 
 
 
-def fix_cubelist_before_concat(cubelist, dataset, model, freq, exp):
+def fix_cubelist_before_concat(cubelist, dataset, my_dict):
+
+
+
+    '''
+    CMIP6
+    '''
+    if dataset == 'cmip6':
+
+        model = my_dict['Model']
+
+        ### MCM-UA-1-0 uses non-standard var_names for x/y coords (rename these)
+        if (model == 'MCM-UA-1-0'):
+            for cube in cubelist:
+                var_names = [dim_coords.var_name for dim_coords in cube.dim_coords]
+                for var_name in var_names:
+                    if var_name == 'latitude':  cube.coord(var_name).var_name = 'lat'
+                    if var_name == 'longitude': cube.coord(var_name).var_name = 'lon'
+
+            print('>> Applied '+model+' fixes <<')
 
 
     '''
@@ -10,6 +29,10 @@ def fix_cubelist_before_concat(cubelist, dataset, model, freq, exp):
 
     '''
     if dataset == 'cmip5':
+
+        model = my_dict['Model']
+        freq  = my_dict['Frequency']
+        exp   = my_dict['Experiment']
 
         ### Fix EC-Earth
         ### turn Gregorian calendars into standard ones
@@ -50,6 +73,10 @@ def fix_cubelist_before_concat(cubelist, dataset, model, freq, exp):
     HAPPI
     '''
     if dataset == 'happi':
+
+        model = my_dict['Model']
+        freq  = my_dict['Frequency']
+        exp   = my_dict['Experiment']
 
         ### fix for HAPPI MIROC monthly data to allow cubes to concatenate (e.g., All-Hist, ua, run001)
         ### --- Make this more generic for all models !!!!
