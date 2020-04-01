@@ -1,1 +1,6 @@
 *.pyc
+.__catalogue.py
+._.DS_Store
+.DS_Store
+_iris/._cube_fixes.py
+_iris/._get_cubes.py
