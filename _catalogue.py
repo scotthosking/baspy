@@ -302,7 +302,7 @@ def __create_unique_run_identifer(catlg, col_name):
     if ('Version!latest' in my_list): # plan to remove !latest from datasets.py (should read all data then take newest version where all Vars exist)
         my_list.remove('Version!latest')
         my_list = my_list + ['Version']
-    catlg[col_name] = catlg[my_list].apply(lambda x: '_'.join(x), axis=1)
+    catlg.loc[:,col_name] = catlg[my_list].apply(lambda x: '_'.join(x), axis=1)
     return catlg
 
 
@@ -329,7 +329,7 @@ def __complete_var_set(catlg, filt_dict):
             'unique run \n')
 
     # create unique identifier for each unique run
-    catlg = __create_unique_run_identifer(catlg,'Unique_Model_Run')
+    catlg = __create_unique_run_identifer(catlg, 'Unique_Model_Run')
 
     # number of Vars in each model-run-version group
     catlg_gp = catlg.groupby(['Unique_Model_Run']).count().max(axis=1)
