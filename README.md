@@ -13,7 +13,7 @@ download (or git clone) baspy python package.
     $> mkdir ~/PYTHON
     $> export PYTHONPATH="$HOME/PYTHON"  # <- add to ~/.bashrc
     $> cd $PYTHONPATH
-    $> git clone https://github.com/scott-hosking/baspy.git
+    $> git clone https://github.com/scotthosking/baspy.git
 ```
 
 ### 2. Define the directory and filename structures of your local datasets
@@ -45,4 +45,4 @@ Reading data:
 ```
 
 Other Examples: 
-* [BASpy with Xarray (Notebook)](https://scott-hosking.github.io/notebooks/baspy_using_xarray/)
+* [BASpy with Xarray (Notebook)](https://scotthosking.com/notebooks/baspy_using_xarray/)
