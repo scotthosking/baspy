@@ -27,5 +27,5 @@ tasmax = tasmax_ds.tasmax
 ''' 
 Now analyse CMIP6 data using the Xarray framework 
 [1] http://xarray.pydata.org/en/stable/
-[2] https://github.com/scott-hosking/notebooks/blob/master/getting_started_with_Xarray%2BDask.ipynb
+[2] https://github.com/scotthosking/notebooks/blob/master/getting_started_with_Xarray%2BDask.ipynb
 '''
