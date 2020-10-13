@@ -9,11 +9,7 @@ import xml.etree.ElementTree as ET
 
 
 def generate_citation(
-    MIP: str,
-    Centre: str,
-    Model: str,
-    Experiment: str,
-    Version: str,
+    MIP: str, Centre: str, Model: str, Experiment: str, Version: str,
 ) -> dict:
     """Generate a data citation from minimum necessary information.
 
@@ -98,13 +94,11 @@ def df_to_citations(df: pd.DataFrame) -> pd.DataFrame:
     """
     results = []
     for row in df.itertuples():
-        results.append(generate_citation(
-            row.MIP,
-            row.Centre,
-            row.Model,
-            row.Experiment,
-            row.Version
-        ))
+        results.append(
+            generate_citation(
+                row.MIP, row.Centre, row.Model, row.Experiment, row.Version
+            )
+        )
     return pd.DataFrame(results)
 
 
@@ -120,13 +114,15 @@ if __name__ == "__main__":
         complete_var_set=True,
     )
     print("Demo generate_citation")
-    print(generate_citation(
-        MIP='CMIP',
-        Centre='MOHC',
-        Model='HadGEM3-GC31-LL',
-        Experiment='historical',
-        Version='v20190624',
-    ))
+    print(
+        generate_citation(
+            MIP="CMIP",
+            Centre="MOHC",
+            Model="HadGEM3-GC31-LL",
+            Experiment="historical",
+            Version="v20190624",
+        )
+    )
 
     print("Demo generate_citations")
     print(df_to_citations(catlg.sample(5).reset_index(drop=True))["citation"])
