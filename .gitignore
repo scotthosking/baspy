@@ -1,4 +1,8 @@
 *.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
 .__catalogue.py
 ._.DS_Store
 .DS_Store
