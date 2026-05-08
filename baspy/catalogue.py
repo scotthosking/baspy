@@ -629,7 +629,7 @@ def get_files(df):
     files     = [ directory+f for f in files ]
 
     list_file_extensions = [file.split('.')[-1] for file in files]
-    if len(pd.unique(list_file_extensions)) > 1:
+    if len(set(list_file_extensions)) > 1:
         # Should we automatically select which extension to use?? (i.e., .nc vs .nc4) !!
         raise ValueError('>> WARNING: Multiple file extensions present in '+directory+' <<')
 

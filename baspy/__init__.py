@@ -55,3 +55,15 @@ from . import catalogue as _catalogue_module
 catalogue = _catalogue_module.catalogue
 get_files = _catalogue_module.get_files
 
+try:
+    import xarray as _xr
+except ImportError:
+    _xr = None
+
+if _xr is not None:
+    def open_dataset(df):
+        files = get_files(df)
+        if len(files) == 1:
+            return _xr.open_dataset(files[0])
+        return _xr.open_mfdataset(files)
+

@@ -10,6 +10,7 @@ BASpy is a Python package for working with large climate model datasets. It prov
 - [pandas](https://pandas.pydata.org/)
 - [NumPy](https://numpy.org/)
 - [pyarrow](https://arrow.apache.org/docs/python/)
+- [Xarray](https://docs.xarray.dev/en/stable/)
 
 ---
 
