@@ -279,9 +279,9 @@ def __combine_dictionaries(keys, dict1_in, dict2_in):
 
         ### If not already, convert key values to list !! (is there a cleaner way to do this?)
         if (dict1[key].__class__ == str):        dict1[key] = [dict1[key]]
-        if (dict1[key].__class__ == np.string_): dict1[key] = [dict1[key]]
+        if (dict1[key].__class__ == np.bytes_): dict1[key] = [dict1[key]]
         if (dict2[key].__class__ == str):        dict2[key] = [dict2[key]]
-        if (dict2[key].__class__ == np.string_): dict2[key] = [dict2[key]]
+        if (dict2[key].__class__ == np.bytes_): dict2[key] = [dict2[key]]
 
         ### combine dictionaries (add dict2 to dict1) and
         ### remove duplicated items from within a key's list 
@@ -360,7 +360,7 @@ def __filter_cat_by_dictionary(catlg, cat_dict, complete_var_set=False):
 
         ### Ensure that values within a key are defined as a list
         if (cat_dict[key].__class__ == str):        cat_dict[key] = [cat_dict[key]]
-        if (cat_dict[key].__class__ == np.string_): cat_dict[key] = [cat_dict[key]]
+        if (cat_dict[key].__class__ == np.bytes_): cat_dict[key] = [cat_dict[key]]
 
         vals      = cat_dict[key]
         uniq_vals = pd.unique(catlg[key])
