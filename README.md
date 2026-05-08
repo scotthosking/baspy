@@ -119,4 +119,4 @@ Dataset configurations (root paths, directory structures, filename structures) a
 
 ## Credits
 
-Created by Scott Hosking. Contributors: Tom Bracegirdle, Tony Phillips.
+Created by Scott Hosking. Contributors: [@TomBracegirdle](https://github.com/TomBracegirdle), [@TonyP-BAS](https://github.com/TonyP-BAS).
