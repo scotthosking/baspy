@@ -24,14 +24,6 @@ Define information for each dataset to be indexed and used
 dataset_dictionaries = \
     { 
 
-    'happi': 
-    {'Root':'/gws/nopw/j04/bas_climate/data/happi',
-    'DirStructure':'Raw_Derived/Centre/Model/Experiment/CMOR/Version/Frequency/SubModel/Var/RunID',
-    'FilenameStructure':'Var_CMOR_Model_Experiment_ExperimentXXX_Version_RunID_StartDate-EndDate',
-    'InclExtensions':['.nc', '.nc4'],
-    'Cached':{'Experiment':['All-Hist','Plus15-Future','Plus20-Future']}},
-
-
     'cmip5': 
     {'Root':'/badc/cmip5/data/cmip5/output1',
     'DirStructure':'Centre/Model/Experiment/Frequency/SubModel/CMOR/RunID/Version!latest/Var',

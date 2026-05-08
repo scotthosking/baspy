@@ -1,15 +1,5 @@
 """
-BASpy is essentially a collection of tools for working with
-large climate model data. For the most part it is a wrapper around the 
-Python package "Iris" although the plan is to do more with Xarray.
-
-Iris 
-------
-Homepage:  http://scitools.org.uk/iris/
-Reference: http://scitools.org.uk/iris/docs/latest/iris/iris.html
-Code:      https://github.com/SciTools/iris
-Forums:    https://groups.google.com/forum/#!forum/scitools-iris
-
+BASpy is a collection of tools for working with large climate model data.
 
 Xarray
 ------
@@ -44,35 +34,19 @@ __catalogues_dir = "/gws/nopw/j04/bas_climate/public/files/baspy/"
 
 ### Optional Libraries
 try:
-    import iris
-except ImportError:
-    # Iris is not installed
-    pass
-
-try:
     import xarray
 except ImportError:
     # Xarray is not installed
     pass
 
-__modules = sys.modules # must come before import baspy.util
+__modules = sys.modules
 
 ### General Libraries
-from . import util
-from . import region
 from . import _catalogue
 catalogue = _catalogue.catalogue
 get_files = _catalogue.get_files
 
-### Set up wrappers for iris, xarray etc
-if 'iris' in __modules:
-    from . import _iris
-    eg_cube     = _iris.util.eg_cube
-    eg_cubelist = _iris.util.eg_cubelist
-    get_cubes   = _iris.get_cubes.get_cubes
-    get_cube    = _iris.get_cubes.get_cube
-    erai        = _iris.erai
-
+### Set up wrappers for xarray etc
 if 'xarray' in __modules:
     from . import _xarray
     eg_Dataset   = _xarray.util.eg_Dataset
