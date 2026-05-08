@@ -34,29 +34,31 @@ __catalogue_version = 20190816
 ### Definitions
 ##################
 
-def setup_catalogue_file(dataset): # this has been stripped down compared to bp.catalogue (remove slow requests to http)
+def setup_catalogue_file(dataset):
     '''
     Define locations of catalogue files
     '''
-
-    ### 1. define filepaths
     from baspy import __baspy_path, __catalogues_url
-    cat_fname    = dataset+'_catalogue.csv'
-    cat_file     = __baspy_path+'/'+cat_fname
 
-    ### 2. Setup local baspy folder to store catalogues
-    if not os.path.exists(__baspy_path): 
+    if not os.path.exists(__baspy_path):
         os.makedirs(os.path.expanduser(__baspy_path))
 
-    ### 3. Do we have a catalogue file to work with?
-    if os.path.isfile(cat_file) == False:    
-        import platform
-        if platform.system() in ['Darwin','Linux']:
-            raise ValueError('File does not exist. Run the following line in your Mac/Linux terminal: \n' +\
-                    ' wget '+__catalogues_url+cat_fname+' -O '+cat_file)
+    cat_file     = os.path.join(__baspy_path, dataset + '_catalogue.parquet')
+    cat_file_csv = os.path.join(__baspy_path, dataset + '_catalogue.csv')
+
+    if not os.path.isfile(cat_file):
+        if os.path.isfile(cat_file_csv):
+            print('Migrating catalogue from CSV to Parquet...')
+            df = _read_csv_legacy(cat_file_csv, dataset)
+            _write_parquet(df, cat_file)
         else:
-            raise ValueError(cat_file+" does not exist, download from " +\
-                __catalogues_url+cat_fname)
+            csv_fname = dataset + '_catalogue.csv'
+            import platform
+            if platform.system() in ['Darwin', 'Linux']:
+                raise ValueError('File does not exist. Download the CSV (it will be auto-converted):\n'
+                    '  wget ' + __catalogues_url + csv_fname + ' -O ' + cat_file_csv)
+            else:
+                raise ValueError(cat_file + ' does not exist, download from ' + __catalogues_url + csv_fname)
 
     return cat_file
 
@@ -64,58 +66,46 @@ def setup_catalogue_file(dataset): # this has been stripped down compared to bp.
 
 
 
-def write_csv_with_comments(df, fname, **kwargs):
-
-  global __catalogue_version
-    
-  user_values = kwargs.copy()
-  user_values.update({'catalogue_version':__catalogue_version})
-  keys   = list(user_values.keys())
-  values = list(user_values.values())
-  if 'root' in keys:
-    df['Path'] = df['Path'].map(lambda x: x.replace(user_values['root'], ''))
-
-  with open(fname, 'w') as file:
-      for key, value in zip(keys,values):
-        comment = '# '+str(key)+'='+str(value)+'\n'
-        file.write(comment)
-      df = df.drop_duplicates()
-      df.to_csv(file, index=False)
+def _write_parquet(df, fname):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    df = df.drop_duplicates()
+    table = pa.Table.from_pandas(df, preserve_index=False)
+    meta  = dict(table.schema.metadata or {})
+    meta[b'catalogue_version'] = str(__catalogue_version).encode()
+    pq.write_table(table.replace_schema_metadata(meta), fname)
 
 
+def write_parquet(df, fname, **kwargs):
+    df = df.copy()
+    if 'root' in kwargs:
+        df['Path'] = df['Path'].map(lambda x: x.replace(kwargs['root'], ''))
+    if 'dataset' in kwargs:
+        df['dataset'] = kwargs['dataset']
+        df = df.astype({'dataset': 'category'})
+    _write_parquet(df, fname)
 
-def read_csv_with_comments(fname):
-  
-  global __catalogue_version
 
-  ### read file
-  metadata = {}
-  with open(fname) as fp:
-      line = fp.readline()
-      while line.startswith('#'):
-         elements=line.strip().replace('#','').replace(' ','').split('=')
-         metadata.update({elements[0]:elements[1]})
-         line = fp.readline()
+def read_parquet(fname):
+    import pyarrow.parquet as pq
+    schema       = pq.read_schema(fname)
+    meta         = schema.metadata or {}
+    file_version = int(meta.get(b'catalogue_version', b'0'))
+    if __catalogue_version > file_version:
+        raise ValueError('Your catalogue needs to be updated to work with this version of the code')
+    df = pd.read_parquet(fname)
+    print('catalogue memory usage (MB):', df.memory_usage().sum() * 0.000001)
+    return df
 
-  dataset        = metadata['dataset']
-  dataset_dict   = dataset_dictionaries[dataset]
 
-  if 'dtypes' in dataset_dict.keys():
-    dtypes = dataset_dict['dtypes']
-    df = pd.read_csv(fname, comment='#', dtype=dtypes)
-  else:
-    df = pd.read_csv(fname, comment='#')
-  
-  df['dataset'] = dataset
-  df = df.astype({'dataset':'category'}) # can we do this in one step, with line above? !!
-
-  if __catalogue_version > int(metadata['catalogue_version']):
-    raise ValueError('Your catalogue needs to be updated to work with this version of the code')
-    ### !!! automate downloading?
-
-  print('catalogue memory usage (MB):', df.memory_usage().sum() * 0.000001)
-
-  return df
+def _read_csv_legacy(fname, dataset):
+    dataset_dict = dataset_dictionaries[dataset]
+    if 'dtypes' in dataset_dict:
+        df = pd.read_csv(fname, comment='#', dtype=dataset_dict['dtypes'])
+    else:
+        df = pd.read_csv(fname, comment='#')
+    df['dataset'] = dataset
+    return df.astype({'dataset': 'category'})
 
 
 
@@ -196,9 +186,7 @@ def __refresh_shared_catalogue(dataset):
 
     df = pd.DataFrame(rows, columns=DirStructure + ['StartDate', 'EndDate', 'Path','DataFiles'])
 
-    ### save to local dir
-    #df.to_csv(cat_file, index=False)
-    write_csv_with_comments(df, cat_file, dataset=dataset, root=root)
+    write_parquet(df, cat_file, dataset=dataset, root=root)
 
     # if os.path.exists('/'.join(__shared_cat_file.split('/')[:-1])):
     #     ### We have access to __shared_cat_file
@@ -446,7 +434,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
        >>> cat = bp.catalogue(dataset='cmip5', refresh=True)
 
     read_everything = True
-    By default, bp.catalogue only stores those items defined by 'Cached' within dataset_dictionaries (see datasets.py) 
+    By default, bp.catalogue only stores those items defined by 'Cached' within datasets.json
     This option by-passes that and reads the whole catalogue (which could be very large!)
 
     """
@@ -488,7 +476,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
     ### Read whole catalogue (AND RETURN)
     if read_everything == True:
-        cat = read_csv_with_comments(cat_file)
+        cat = read_parquet(cat_file)
         print(">> Read whole catalogue, any filtering has been ignored <<")
         return cat
 
@@ -514,7 +502,7 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
 
     if (update_cached_cat == True):
         print('Updating cached catalogue...')
-        __cached_cat    = read_csv_with_comments(cat_file)
+        __cached_cat    = read_parquet(cat_file)
         __cached_values = expanded_cached_values.copy()
         __cached_cat    = __filter_cat_by_dictionary( __cached_cat, __cached_values )
         if __cached_values != {}:
