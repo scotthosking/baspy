@@ -39,6 +39,3 @@ for index, row in df.iterrows():
         ds = bp.open_dataset(row)
 
 ```
-
-Other Examples: 
-* [BASpy with Xarray (Notebook)](https://scotthosking.com/notebooks/baspy_using_xarray.html)

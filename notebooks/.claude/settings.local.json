@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:scotthosking.com)",
+      "Bash(jupyter nbconvert *)"
+    ]
+  }
+}
