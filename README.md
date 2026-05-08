@@ -1,6 +1,6 @@
 # BASpy
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 BASpy is a Python package for working with large climate model datasets. It provides a catalogue system for indexing and filtering datasets (CMIP5, CMIP6).
@@ -133,6 +133,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://scotthosking.com"><img src="https://avatars.githubusercontent.com/u/10783052?v=4?s=100" width="100px;" alt="Scott Hosking"/><br /><sub><b>Scott Hosking</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=scotthosking" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/TomBracegirdle"><img src="https://avatars.githubusercontent.com/u/18678126?v=4?s=100" width="100px;" alt="TomBracegirdle"/><br /><sub><b>TomBracegirdle</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=TomBracegirdle" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/TonyP-BAS"><img src="https://avatars.githubusercontent.com/u/113535863?v=4?s=100" width="100px;" alt="Tony Phillips"/><br /><sub><b>Tony Phillips</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=TonyP-BAS" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/C-H-Simpson"><img src="https://avatars.githubusercontent.com/u/20053498?v=4?s=100" width="100px;" alt="Charles H. Simpson"/><br /><sub><b>Charles H. Simpson</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=C-H-Simpson" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
