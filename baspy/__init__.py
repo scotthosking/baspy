@@ -13,49 +13,45 @@ Contributors: Tom Bracegirdle, Tony Phillips
 
 """
 
-import os, sys
+import os, json as _json
 
 ### BASpy version number
-__version__ = "1.1"
+__version__ = "1.9"
 
 ### Place to store catalogues and example data
 __baspy_path = os.path.expanduser("~/.baspy")
-if not os.path.exists(__baspy_path): 
-	os.makedirs(os.path.expanduser(__baspy_path))
-
-### For sharing catalogues between users
-__catalogues_url = "http://gws-access.ceda.ac.uk/public/bas_climate/files/baspy/"
-__catalogues_dir = "/gws/nopw/j04/bas_climate/public/files/baspy/"
+if not os.path.exists(__baspy_path):
+    os.makedirs(os.path.expanduser(__baspy_path))
 
 
 ###############
-### Setup BASpy
+### Config
 ###############
 
-### Optional Libraries
-try:
-    import xarray
-except ImportError:
-    # Xarray is not installed
-    pass
+def get_config():
+    """Return the current baspy config from ~/.baspy/config.json."""
+    config_file = os.path.join(__baspy_path, 'config.json')
+    if os.path.exists(config_file):
+        with open(config_file) as _f:
+            return _json.load(_f)
+    return {}
 
-__modules = sys.modules
+def set_config(machine):
+    """
+    Set the machine name in ~/.baspy/config.json.
+    baspy will load datasets_{machine}.json from the package directory.
+    e.g. bp.set_config('jasmin')
+    """
+    config_file = os.path.join(__baspy_path, 'config.json')
+    config = get_config()
+    config['machine'] = machine
+    with open(config_file, 'w') as _f:
+        _json.dump(config, _f, indent=4)
+    print("Config saved: machine='" + machine + "'")
+    print("Restart Python for the change to take effect.")
 
-### General Libraries
-from . import _catalogue
-catalogue = _catalogue.catalogue
-get_files = _catalogue.get_files
 
-### Set up wrappers for xarray etc
-if 'xarray' in __modules:
-    import xarray as xr
-    from . import util
-    eg_Dataset   = util.eg_Dataset
-    eg_DataArray = util.eg_DataArray
-
-    def open_dataset(df):
-        files = get_files(df)
-        if len(files) == 1:
-            return xr.open_dataset(files[0])
-        return xr.open_mfdataset(files)
+from . import catalogue as _catalogue_module
+catalogue = _catalogue_module.catalogue
+get_files = _catalogue_module.get_files
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "baspy"
-version = "1.1.0"
+version = "1.9.0"
 description = "A Python package for working with large climate model datasets"
 readme = "README.md"
 license = { text = "MIT" }
@@ -23,4 +23,4 @@ Homepage = "https://github.com/scotthosking/baspy"
 include = ["baspy", "baspy.*"]
 
 [tool.setuptools.package-data]
-baspy = ["datasets.json"]
+baspy = ["datasets.json", "datasets_*.json", "catalogues/*.parquet"]
