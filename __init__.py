@@ -48,8 +48,14 @@ get_files = _catalogue.get_files
 
 ### Set up wrappers for xarray etc
 if 'xarray' in __modules:
-    from . import _xarray
-    eg_Dataset   = _xarray.util.eg_Dataset
-    eg_DataArray = _xarray.util.eg_DataArray
-    open_dataset = _xarray.open_dataset
+    import xarray as xr
+    from . import util
+    eg_Dataset   = util.eg_Dataset
+    eg_DataArray = util.eg_DataArray
+
+    def open_dataset(df):
+        files = get_files(df)
+        if len(files) == 1:
+            return xr.open_dataset(files[0])
+        return xr.open_mfdataset(files)
 
