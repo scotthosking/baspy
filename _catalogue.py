@@ -85,27 +85,22 @@ def read_csv_with_comments(fname):
   global __catalogue_version
 
   ### read file
-  from pandas import read_csv
   metadata = {}
-  with open(fname) as fp:  
+  with open(fname) as fp:
       line = fp.readline()
       while line.startswith('#'):
-         # takes elements from comment and add to dictionary
          elements=line.strip().replace('#','').replace(' ','').split('=')
          metadata.update({elements[0]:elements[1]})
-         ### read next line
          line = fp.readline()
 
   dataset        = metadata['dataset']
   dataset_dict   = dataset_dictionaries[dataset]
-  
+
   if 'dtypes' in dataset_dict.keys():
-    # define dtypes to reduce memory usage
-    # check: df.memory_usage(), df.dtypes()
     dtypes = dataset_dict['dtypes']
-    df = read_csv(fname, comment='#', dtype=dtypes) # should we be using chunksize to speed things up? !!
+    df = pd.read_csv(fname, comment='#', dtype=dtypes)
   else:
-    df = read_csv(fname, comment='#')
+    df = pd.read_csv(fname, comment='#')
   
   df['dataset'] = dataset
   df = df.astype({'dataset':'category'}) # can we do this in one step, with line above? !!
@@ -353,8 +348,7 @@ def __filter_cat_by_dictionary(catlg, cat_dict, complete_var_set=False):
     '''
     Get rows which match cat_dict
     '''
-    keys  = cat_dict.keys() 
-    nkeys = len(keys)
+    keys  = cat_dict.keys()
 
     for key in keys:
 
@@ -362,17 +356,19 @@ def __filter_cat_by_dictionary(catlg, cat_dict, complete_var_set=False):
         if (cat_dict[key].__class__ == str):        cat_dict[key] = [cat_dict[key]]
         if (cat_dict[key].__class__ == np.bytes_): cat_dict[key] = [cat_dict[key]]
 
-        vals      = cat_dict[key]
-        uniq_vals = pd.unique(catlg[key])
+        vals     = cat_dict[key]
+        col_set  = set(catlg[key])
 
         for val in vals:
-            if (val not in uniq_vals): 
+            if (val not in col_set):
                 print('Are you sure that data exists that satisfy all your constraints?')
                 raise ValueError(val+' not found. See available in current catalouge: ' \
-                                    +np.array_str(uniq_vals) )
+                                    +np.array_str(pd.unique(catlg[key])) )
 
-    a     = catlg.isin(cat_dict)
-    catlg = catlg[ (a.sum(axis=1) == nkeys) ]
+    mask = pd.Series(True, index=catlg.index)
+    for key, vals in cat_dict.items():
+        mask &= catlg[key].isin(vals)
+    catlg = catlg[mask]
 
     if 'Var' in cat_dict.keys():
         if (complete_var_set == False) & (len(cat_dict['Var']) > 1):
