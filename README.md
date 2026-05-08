@@ -120,10 +120,6 @@ Dataset configurations (root paths, directory structures, filename structures) a
 
 ---
 
-## Credits
-
-Created by Scott Hosking. Contributors: [@TomBracegirdle](https://github.com/TomBracegirdle), [@TonyP-BAS](https://github.com/TonyP-BAS).
-
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
