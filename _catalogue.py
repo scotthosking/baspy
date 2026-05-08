@@ -1,7 +1,11 @@
 import numpy as np
 import glob, os
 import pandas as pd
-from .datasets import dataset_dictionaries, __default_dataset
+import json as _json
+with open(os.path.join(os.path.dirname(__file__), 'datasets.json')) as _f:
+    _datasets = _json.load(_f)
+dataset_dictionaries = _datasets['dataset_dictionaries']
+__default_dataset    = _datasets['default_dataset']
 
 
 ##################
