@@ -144,7 +144,13 @@ def __build_catalogue_from_scans(dataset, dataset_dict, cat_file):
     DirStructure   = [d.split('!')[0] for d in dataset_dict['DirStructure'].split('/')]
 
     scan_files = sorted(glob.glob(os.path.join(scan_dir, '*.json')))
-    print(f'Building {dataset} catalogue from {len(scan_files)} scan files...')
+    filter_mip = dataset_dict.get('FilterMIP')
+    if filter_mip:
+        scan_files = [f for f in scan_files
+                      if os.path.basename(f).split('.')[1] in set(filter_mip)]
+        print(f'Building {dataset} catalogue (MIPs: {filter_mip}) from {len(scan_files)} scan files...')
+    else:
+        print(f'Building {dataset} catalogue from {len(scan_files)} scan files...')
 
     rows = []
     for scan_file in scan_files:

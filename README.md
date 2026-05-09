@@ -3,7 +3,7 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-BASpy is a Python package for working with large climate model datasets. It provides a catalogue system for indexing and filtering datasets (CMIP5, CMIP6).
+BASpy is a Python package for working with large climate model datasets. It provides a catalogue system for indexing and filtering CMIP6 datasets.
 
 ---
 
@@ -80,31 +80,38 @@ Existing CSV catalogues are automatically migrated to Parquet on first use.
 
 ## Usage
 
-### Filter the CMIP5 catalogue
+### Filter the CMIP6 catalogue
 
 ```python
 import baspy as bp
 
-df = bp.catalogue(dataset='cmip5',
-                  Model='HadGEM2-CC',
-                  RunID='r1i1p1',
-                  Experiment='historical',
-                  Var=['tas', 'pr'],
-                  Frequency='mon')
-
-print(df.head())
-```
-
-### Filter the CMIP6 catalogue
-
-Note: CMIP6 does not have a `Frequency` column — use `CMOR` instead (e.g. `Amon` for monthly atmosphere).
-
-```python
 df = bp.catalogue(dataset='cmip6',
                   Experiment='historical',
                   Var=['tas', 'pr'],
                   CMOR='Amon')
+
+print(df.head())
 ```
+
+Use `CMOR` to select frequency and realm (e.g. `Amon` for monthly atmosphere, `day` for daily).
+
+### Available columns
+
+| Column | Description | Example values |
+|--------|-------------|----------------|
+| `MIP` | CMIP6 activity | `CMIP`, `ScenarioMIP` |
+| `Centre` | Modelling centre | `MOHC`, `CNRM-CERFACS` |
+| `Model` | Model name | `HadGEM3-GC31-LL`, `CNRM-ESM2-1` |
+| `Experiment` | Experiment ID | `historical`, `ssp245`, `ssp585` |
+| `RunID` | Ensemble member | `r1i1p1f1`, `r2i1p1f2` |
+| `CMOR` | CMOR table (encodes frequency and realm) | `Amon`, `Omon`, `day`, `fx` |
+| `Var` | Variable name | `tas`, `pr`, `tos` |
+| `Grid` | Grid label | `gn` (native), `gr` (regridded) |
+| `Version` | Data version | `v20190621` |
+| `StartDate` | Start date of files (YYYYMMDD) | `19500101` |
+| `EndDate` | End date of files (YYYYMMDD) | `21001231` |
+| `Path` | Relative path to data directory | |
+| `DataFiles` | Semicolon-separated list of filenames | |
 
 ### Read everything (bypass default filters)
 

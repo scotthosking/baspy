@@ -25,6 +25,7 @@
             "DirStructure": "MIP/Centre/Model/Experiment/RunID/CMOR/Var/Grid/Version!latest",
             "FilenameStructure": "Var_CMOR_Model_Experiment_RunID_Grid_StartDate-EndDate",
             "ScanDir": "/badc/cmip6/metadata/mip-to-moles/scans",
+            "FilterMIP": ["ScenarioMIP", "CMIP"],
             "dtypes": {
                 "Experiment": "category", "Var": "category", "Model": "category",
                 "CMOR": "category", "RunID": "category", "Centre": "category",
