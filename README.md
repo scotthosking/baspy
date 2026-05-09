@@ -113,6 +113,33 @@ Use `CMOR` to select frequency and realm (e.g. `Amon` for monthly atmosphere, `d
 | `Path` | Relative path to data directory | |
 | `DataFiles` | Semicolon-separated list of filenames | |
 
+### Open a dataset
+
+Pass a single-row catalogue entry to `bp.open_dataset()` to load it as an Xarray Dataset. Multiple files (e.g. a variable split across decades) are combined automatically via `xarray.open_mfdataset`.
+
+```python
+import baspy as bp
+
+catlg = bp.catalogue(dataset='cmip6',
+                     Experiment='historical',
+                     Var='tas',
+                     CMOR='Amon',
+                     Model='HadGEM3-GC31-LL',
+                     RunID='r1i1p1f3')
+
+ds = bp.open_dataset(catlg.iloc[0])
+print(ds)
+```
+
+To loop over multiple variables:
+
+```python
+for _, row in catlg.iterrows():
+    ds = bp.open_dataset(row)
+```
+
+`bp.open_dataset` requires [Xarray](https://docs.xarray.dev/en/stable/) and access to the underlying data files.
+
 ### Read everything (bypass default filters)
 
 ```python
