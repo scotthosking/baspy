@@ -4,7 +4,7 @@ import pandas as pd
 import json as _json
 
 def _load_datasets():
-    config_file = os.path.expanduser("~/.baspy/config.json")
+    config_file = os.path.expanduser("~/.esmcat/config.json")
     machine = None
     if os.path.exists(config_file):
         with open(config_file) as _cf:
@@ -57,13 +57,13 @@ def setup_catalogue_file(dataset):
     '''
     Define locations of catalogue files
     '''
-    from baspy import __baspy_path
+    from esmcat import __esmcat_path
 
-    if not os.path.exists(__baspy_path):
-        os.makedirs(os.path.expanduser(__baspy_path))
+    if not os.path.exists(__esmcat_path):
+        os.makedirs(os.path.expanduser(__esmcat_path))
 
-    cat_file     = os.path.join(__baspy_path, dataset + '_catalogue.parquet')
-    cat_file_csv = os.path.join(__baspy_path, dataset + '_catalogue.csv')
+    cat_file     = os.path.join(__esmcat_path, dataset + '_catalogue.parquet')
+    cat_file_csv = os.path.join(__esmcat_path, dataset + '_catalogue.csv')
 
     if not os.path.isfile(cat_file):
         if os.path.isfile(cat_file_csv):
@@ -199,8 +199,8 @@ def __refresh_shared_catalogue(dataset):
     if dataset not in dataset_dictionaries.keys():
         raise ValueError("The keyword 'dataset' needs to be set and recognisable in order to refresh catalogue")
 
-    from baspy import __baspy_path
-    cat_file     = os.path.join(__baspy_path, dataset + '_catalogue.parquet')
+    from esmcat import __esmcat_path
+    cat_file     = os.path.join(__esmcat_path, dataset + '_catalogue.parquet')
     dataset_dict = dataset_dictionaries[dataset]
 
     if 'ScanDir' in dataset_dict:
@@ -478,25 +478,25 @@ def catalogue(dataset=None, refresh=None, complete_var_set=False, read_everythin
     """
     
     Read whole dataset catalogue for JASMIN (default: dataset='cmip5')
-       >>> catlg = bp.catalogue(dataset='cmip6')
+       >>> catlg = ecat.catalogue(dataset='cmip6')
 
     Look at the first row to get a feel for the catologue layout
        >>> print(catlg.iloc[0])
 
     Read filtered catalogue for JASMIN (
     (Note to help with filtering, you can use any CASE for kwargs + some common shortened words (freq, exp, run) )
-       >>> cat = bp.catalogue(dataset='cmip5', experiment=['amip','historical'], var='tas', frequency=['mon'])
+       >>> cat = ecat.catalogue(dataset='cmip5', experiment=['amip','historical'], var='tas', frequency=['mon'])
 
     complete_var_set = True: return a complete set where all Variables belong to the run
     (Useful when combining multiple variables to derive another diagnostic)
-       >>> cat = bp.catalogue(var=['tas','psl','tasmax'], complete_var_set=True)
+       >>> cat = ecat.catalogue(var=['tas','psl','tasmax'], complete_var_set=True)
 
     refresh = True: refresh the shared cataloge 
     This should only be run when new data has been uploaded into the data archive
-       >>> cat = bp.catalogue(dataset='cmip5', refresh=True)
+       >>> cat = ecat.catalogue(dataset='cmip5', refresh=True)
 
     read_everything = True
-    By default, bp.catalogue only stores those items defined by 'Cached' within datasets.json
+    By default, ecat.catalogue only stores those items defined by 'Cached' within datasets.json
     This option by-passes that and reads the whole catalogue (which could be very large!)
 
     """

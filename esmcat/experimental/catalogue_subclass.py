@@ -7,12 +7,12 @@ filepath = 'dummy.csv'
 
 
 
-class baspy_DataFrame(pd.DataFrame):
+class esmcat_DataFrame(pd.DataFrame):
     _metadata = ['metadata']
-    
+
     @property
     def _constructor(self):
-        return baspy_DataFrame
+        return esmcat_DataFrame
 
 def write_csv_with_comments(df, fname, **kwargs):
   user_values = kwargs.copy()
@@ -38,7 +38,7 @@ def read_csv_with_comments(fname):
          line = fp.readline()
 
   df = pd.read_csv(fname, comment='#')
-  df = baspy_DataFrame(df)
+  df = esmcat_DataFrame(df)
   df.metadata = store_metadata
   return df
 

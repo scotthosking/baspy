@@ -2,11 +2,11 @@ import numpy as np
 import datetime
 import os.path, glob
 import xarray as xr
-from baspy import __baspy_path
-import baspy as bp
+from esmcat import __esmcat_path
+import esmcat as ecat
 import pandas as pd
 
-get_erai_6h_cat = bp._iris.era.get_erai_6h_cat
+get_erai_6h_cat = ecat._iris.era.get_erai_6h_cat
 
 out_dir_root = '/group_workspaces/jasmin4/bas_climate/data/ecmwf/era-interim/day_xr_test'
 

@@ -1,9 +1,9 @@
-# BASpy
+# ESMcat
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-BASpy is a Python package for working with large climate model datasets. It provides a catalogue system for indexing and filtering CMIP6 datasets.
+ESMcat is a Python package for working with large climate model datasets. It provides a catalogue system for indexing and filtering CMIP6 datasets.
 
 ---
 
@@ -22,14 +22,14 @@ BASpy is a Python package for working with large climate model datasets. It prov
 Install directly from GitHub:
 
 ```bash
-pip install git+https://github.com/scotthosking/baspy.git
+pip install git+https://github.com/scotthosking/ESMcat.git
 ```
 
 Or clone and install in editable mode for development:
 
 ```bash
-git clone https://github.com/scotthosking/baspy.git
-cd baspy
+git clone https://github.com/scotthosking/ESMcat.git
+cd ESMcat
 pip install -e .
 ```
 
@@ -37,32 +37,32 @@ pip install -e .
 
 ## Machine configuration
 
-BASpy uses a config file at `~/.baspy/config.json` to know which machine you are on, and therefore which dataset paths and catalogue files to use.
+ESMcat uses a config file at `~/.esmcat/config.json` to know which machine you are on, and therefore which dataset paths and catalogue files to use.
 
 Set your machine on first use:
 
 ```python
-import baspy as bp
-bp.set_config('jasmin')
+import esmcat as ecat
+ecat.set_config('jasmin')
 ```
 
-This writes `{"machine": "jasmin"}` to `~/.baspy/config.json`. BASpy will then load `datasets_jasmin.json` from the package for dataset root paths and directory structures.
+This writes `{"machine": "jasmin"}` to `~/.esmcat/config.json`. ESMcat will then load `datasets_jasmin.json` from the package for dataset root paths and directory structures.
 
 To check your current config:
 
 ```python
-bp.get_config()
+ecat.get_config()
 ```
 
-To add support for a new machine, create a `datasets_{machine}.json` file in the `baspy/` package directory following the same structure as `datasets_jasmin.json`.
+To add support for a new machine, create a `datasets_{machine}.json` file in the `esmcat/` package directory following the same structure as `datasets_jasmin.json`.
 
 ---
 
 ## Catalogue files
 
-BASpy uses pre-built catalogue files (Parquet format) stored in `~/.baspy/`. These index the files available on your system for each dataset.
+ESMcat uses pre-built catalogue files (Parquet format) stored in `~/.esmcat/`. These index the files available on your system for each dataset.
 
-Bundled catalogue files are included in the package under `baspy/catalogues/` and are copied to `~/.baspy/` automatically on first use. Currently bundled:
+Bundled catalogue files are included in the package under `esmcat/catalogues/` and are copied to `~/.esmcat/` automatically on first use. Currently bundled:
 
 | Dataset | Coverage |
 |---------|----------|
@@ -71,7 +71,7 @@ Bundled catalogue files are included in the package under `baspy/catalogues/` an
 To rebuild a catalogue from scratch (e.g. after new data has been added to the archive):
 
 ```python
-bp.catalogue(dataset='cmip6', refresh=True)
+ecat.catalogue(dataset='cmip6', refresh=True)
 ```
 
 Existing CSV catalogues are automatically migrated to Parquet on first use.
@@ -83,9 +83,9 @@ Existing CSV catalogues are automatically migrated to Parquet on first use.
 ### Filter the CMIP6 catalogue
 
 ```python
-import baspy as bp
+import esmcat as ecat
 
-df = bp.catalogue(dataset='cmip6',
+df = ecat.catalogue(dataset='cmip6',
                   Experiment='historical',
                   Var=['tas', 'pr'],
                   CMOR='Amon')
@@ -115,19 +115,19 @@ Use `CMOR` to select frequency and realm (e.g. `Amon` for monthly atmosphere, `d
 
 ### Open a dataset
 
-Pass a single-row catalogue entry to `bp.open_dataset()` to load it as an Xarray Dataset. Multiple files (e.g. a variable split across decades) are combined automatically via `xarray.open_mfdataset`.
+Pass a single-row catalogue entry to `ecat.open_dataset()` to load it as an Xarray Dataset. Multiple files (e.g. a variable split across decades) are combined automatically via `xarray.open_mfdataset`.
 
 ```python
-import baspy as bp
+import esmcat as ecat
 
-catlg = bp.catalogue(dataset='cmip6',
+catlg = ecat.catalogue(dataset='cmip6',
                      Experiment='historical',
                      Var='tas',
                      CMOR='Amon',
                      Model='HadGEM3-GC31-LL',
                      RunID='r1i1p1f3')
 
-ds = bp.open_dataset(catlg.iloc[0])
+ds = ecat.open_dataset(catlg.iloc[0])
 print(ds)
 ```
 
@@ -135,15 +135,15 @@ To loop over multiple variables:
 
 ```python
 for _, row in catlg.iterrows():
-    ds = bp.open_dataset(row)
+    ds = ecat.open_dataset(row)
 ```
 
-`bp.open_dataset` requires [Xarray](https://docs.xarray.dev/en/stable/) and access to the underlying data files.
+`ecat.open_dataset` requires [Xarray](https://docs.xarray.dev/en/stable/) and access to the underlying data files.
 
 ### Read everything (bypass default filters)
 
 ```python
-df = bp.catalogue(dataset='cmip6', read_everything=True)
+df = ecat.catalogue(dataset='cmip6', read_everything=True)
 ```
 
 ---
@@ -164,10 +164,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://scotthosking.com"><img src="https://avatars.githubusercontent.com/u/10783052?v=4?s=100" width="100px;" alt="Scott Hosking"/><br /><sub><b>Scott Hosking</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=scotthosking" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/TomBracegirdle"><img src="https://avatars.githubusercontent.com/u/18678126?v=4?s=100" width="100px;" alt="TomBracegirdle"/><br /><sub><b>TomBracegirdle</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=TomBracegirdle" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/TonyP-BAS"><img src="https://avatars.githubusercontent.com/u/113535863?v=4?s=100" width="100px;" alt="Tony Phillips"/><br /><sub><b>Tony Phillips</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=TonyP-BAS" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/C-H-Simpson"><img src="https://avatars.githubusercontent.com/u/20053498?v=4?s=100" width="100px;" alt="Charles H. Simpson"/><br /><sub><b>Charles H. Simpson</b></sub></a><br /><a href="https://github.com/scotthosking/baspy/commits?author=C-H-Simpson" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://scotthosking.com"><img src="https://avatars.githubusercontent.com/u/10783052?v=4?s=100" width="100px;" alt="Scott Hosking"/><br /><sub><b>Scott Hosking</b></sub></a><br /><a href="https://github.com/scotthosking/ESMcat/commits?author=scotthosking" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/TomBracegirdle"><img src="https://avatars.githubusercontent.com/u/18678126?v=4?s=100" width="100px;" alt="TomBracegirdle"/><br /><sub><b>TomBracegirdle</b></sub></a><br /><a href="https://github.com/scotthosking/ESMcat/commits?author=TomBracegirdle" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/TonyP-BAS"><img src="https://avatars.githubusercontent.com/u/113535863?v=4?s=100" width="100px;" alt="Tony Phillips"/><br /><sub><b>Tony Phillips</b></sub></a><br /><a href="https://github.com/scotthosking/ESMcat/commits?author=TonyP-BAS" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/C-H-Simpson"><img src="https://avatars.githubusercontent.com/u/20053498?v=4?s=100" width="100px;" alt="Charles H. Simpson"/><br /><sub><b>Charles H. Simpson</b></sub></a><br /><a href="https://github.com/scotthosking/ESMcat/commits?author=C-H-Simpson" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

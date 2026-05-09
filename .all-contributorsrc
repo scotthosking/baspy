@@ -48,6 +48,6 @@
   "skipCi": true,
   "repoType": "github",
   "repoHost": "https://github.com",
-  "projectName": "baspy",
+  "projectName": "ESMcat",
   "projectOwner": "scotthosking"
 }

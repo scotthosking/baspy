@@ -1,5 +1,5 @@
-import baspy as bp
-from baspy._iris import downscaling as SD
+import esmcat as ecat
+from esmcat._iris import downscaling as SD
 import iris
 
 
@@ -22,7 +22,7 @@ def edit_erai_attrs(cube, field, filename):
         iris.coord_categorisation.add_season(cube, time_name, name='clim_season', seasons=seasons)
         iris.coord_categorisation.add_season_year(cube, time_name, name='season_year', seasons=seasons)
 
-region_bounds = bp.region.Sub_regions.central_england 
+region_bounds = ecat.region.Sub_regions.central_england 
 
 
 
@@ -32,18 +32,18 @@ hist_con = iris.Constraint(year=lambda y: 1979 <= y <= 2004)
 
 erai = iris.load_cube('/group_workspaces/jasmin4/bas_climate/data/ecmwf/era-interim/mon/surface/t2m_mon.nc',
                         callback=edit_erai_attrs, constraint=hist_con)
-erai = bp.region.extract(erai, region_bounds)
+erai = ecat.region.extract(erai, region_bounds)
 
-hist_catlg = bp.catalogue(Experiment='historical', Frequency='mon', Model='HadGEM2-CC', Var='tas', RunID='r1i1p1')
-hist = bp.get_cube(hist_catlg, constraints=hist_con)
-hist = bp.region.extract(hist, region_bounds)
+hist_catlg = ecat.catalogue(Experiment='historical', Frequency='mon', Model='HadGEM2-CC', Var='tas', RunID='r1i1p1')
+hist = ecat.get_cube(hist_catlg, constraints=hist_con)
+hist = ecat.region.extract(hist, region_bounds)
 
 
 ### Future Period
 fut_con = iris.Constraint(year=lambda y: 2070 <= y <= 2100)
-fut_catlg = bp.catalogue(Experiment='rcp45', Frequency='mon', Model='HadGEM2-CC', Var='tas', RunID='r1i1p1')
-fut = bp.get_cube(fut_catlg, constraints=fut_con)
-fut = bp.region.extract(fut, region_bounds)
+fut_catlg = ecat.catalogue(Experiment='rcp45', Frequency='mon', Model='HadGEM2-CC', Var='tas', RunID='r1i1p1')
+fut = ecat.get_cube(fut_catlg, constraints=fut_con)
+fut = ecat.region.extract(fut, region_bounds)
 
 print(erai.summary)
 print(hist.summary)

@@ -6,7 +6,7 @@ def eg_Dataset():
     """
     Load an example Xarray Dataset
     """
-    from baspy import __baspy_path
+    from esmcat import __esmcat_path
     import os
     import warnings
 
@@ -15,10 +15,10 @@ def eg_Dataset():
             'r1i1p1f1/Amon/tas/gr1/v20180807/' + \
             'tas_Amon_GFDL-AM4_amip_r1i1p1f1_gr1_198001-201412.nc'
 
-    file = __baspy_path+'/sample_data/'+url.split('/')[-1]
+    file = __esmcat_path+'/sample_data/'+url.split('/')[-1]
 
-    if not os.path.exists(__baspy_path+'/sample_data'):
-        os.makedirs(os.path.expanduser(__baspy_path+'/sample_data'))
+    if not os.path.exists(__esmcat_path+'/sample_data'):
+        os.makedirs(os.path.expanduser(__esmcat_path+'/sample_data'))
 
     if (os.path.isfile(file) == False):
         import requests

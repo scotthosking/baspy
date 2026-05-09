@@ -1,4 +1,4 @@
-import baspy as bp
+import esmcat as ecat
 import xarray as xr
 
 ''' 
@@ -11,13 +11,13 @@ Define scope of CMIP6 that we want (our catalogue)
 * Model = our chosen CMIP6 climate model
 * RunID = the run ID :-)
 '''
-catlg = bp.catalogue(dataset='cmip6', Experiment='amip', 
+catlg = ecat.catalogue(dataset='cmip6', Experiment='amip', 
                         Var=['tasmax','tasmin'], CMOR='day', 
                         Model='CNRM-CM6-1', RunID='r1i1p1f2')
 
-''' Read Datasets using BASpy wrapper for Xarray '''
-tasmin_ds = bp.open_dataset(catlg[catlg.Var == 'tasmin'])
-tasmax_ds = bp.open_dataset(catlg[catlg.Var == 'tasmax'])
+''' Read Datasets using ESMcat wrapper for Xarray '''
+tasmin_ds = ecat.open_dataset(catlg[catlg.Var == 'tasmin'])
+tasmax_ds = ecat.open_dataset(catlg[catlg.Var == 'tasmax'])
 
 ''' extract DataArray from Dataset '''
 tasmin = tasmin_ds.tasmin

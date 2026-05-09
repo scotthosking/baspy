@@ -9,7 +9,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.offsetbox import AnchoredText
 from matplotlib import cm
 
-from baspy.util import cmap_centre_to_white
+from esmcat.util import cmap_centre_to_white
 
 '''
 To do:
@@ -145,7 +145,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
 
     '''
     import matplotlib.pyplot as plt
-    from baspy.experimental import jsh_plot as bplt
+    from esmcat.experimental import jsh_plot as bplt
     bplt.plot_maps(cube)
     plt.show()
 
@@ -290,7 +290,7 @@ def maps(cubes, plot_type='contourf', force_cmap=None,
 
         ### Region mask
         if region_mask != None:
-            from baspy.util import region_mask as _region_mask
+            from esmcat.util import region_mask as _region_mask
             c = _region_mask(c, region_mask) ### is it better to run this once for all cubes???
             if (mask_ocean == None): mask_ocean = True
             
